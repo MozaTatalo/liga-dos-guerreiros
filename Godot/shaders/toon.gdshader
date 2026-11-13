@@ -20,6 +20,8 @@ uniform float forca_chave = 0.78;
 uniform float forca_contra = 0.45;
 uniform float forca_amb = 0.4;
 uniform float brilho = 1.0;
+uniform bool recorte = false;     // manto rasgado do espectro (alfa da textura)
+uniform float flash = 0.0;         // pisca branco ao levar golpe
 
 float degrau(float d) {
 	float k = clamp(d * 0.5 + 0.5, 0.0, 0.999);
@@ -37,5 +39,6 @@ void fragment() {
 	float dc = dot(nw, normalize(luz_contra));
 	vec3 amb = mix(chao, ceu, nw.y * 0.5 + 0.5) * forca_amb;
 	vec3 luz = amb + cor_chave * degrau(dk) * forca_chave + cor_contra * step(0.35, dc) * forca_contra * 0.6;
-	ALBEDO = base.rgb * luz * brilho;
+	if (recorte && base.a < 0.5) discard;
+	ALBEDO = mix(base.rgb * luz * brilho, vec3(1.0), flash);
 }

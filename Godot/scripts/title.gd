@@ -56,4 +56,4 @@ func _draw() -> void:
 		Gfx.text(self, "%s  %s  (%d MP)" % ["ASD"[i], s.n, s.mp], W / 2 - 142, 211 + i * 9, s.c, 6)
 	Gfx.text(self, "Vida %d  ·  Mana %d" % [d.hp, d.mp], W / 2 + 132, 211, "#cfd3e6", 6, 2)
 	if t % 60 < 40:
-		Gfx.text(self, "← → escolher  ·  Enter ou Z para começar", W / 2, 264, "#ffffff", 7, 1)
+		Gfx.text(self, "Setas: escolher  ·  Enter ou Z: começar", W / 2, 264, "#ffffff", 7, 1)

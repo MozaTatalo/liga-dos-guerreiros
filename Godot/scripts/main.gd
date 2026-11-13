@@ -1,7 +1,6 @@
 extends Node
 ## Raiz do jogo: alterna entre a tela de título e a partida.
 
-const BgScript := preload("res://scripts/background.gd")
 const TitleScript := preload("res://scripts/title.gd")
 const GameScript := preload("res://scripts/game.gd")
 
@@ -10,11 +9,8 @@ var current: Node
 var last_sel := 0
 
 func _ready() -> void:
-	var layer := CanvasLayer.new()
-	layer.layer = -1
-	add_child(layer)
-	bg = BgScript.new()
-	layer.add_child(bg)
+	bg = Cenario3D.new()   # mapa gótico em 3D, atrás de tudo que é 2D
+	add_child(bg)
 	show_title()
 
 func _clear() -> void:

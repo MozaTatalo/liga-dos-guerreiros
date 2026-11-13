@@ -209,7 +209,7 @@ func kill_enemy(e: Enemy) -> void:
 	sparks(ex, ey, "#ffffff", 30 if e.boss else 6, 3)
 	if e.boss:
 		boss_dead = true; shake = 14; hitstop = 20
-		show_msg("Colosso derrotado! Siga para o portal ➜", 220)
+		show_msg("Espectro Ancião derrotado! Siga para o portal »", 220)
 		for i in 6:
 			timers.append({"t": i * 8, "fn": func(): sparks(ex + randf_range(-20, 20), ey + randf_range(-20, 20), "#ffb347", 20, 4)})
 	elif randf() < 0.3:
@@ -279,7 +279,7 @@ func step() -> void:
 		boss_started = true
 		var b := add_enemy("boss", 2660, 2)
 		b.y = -80; b.state = "intro"; b.active = true
-		show_msg("O Colosso de Pedra despertou!", 150)
+		show_msg("O Espectro Ancião despertou!", 150)
 	for e in enemies:
 		if e.hp > 0: e.tick()
 	# dano por contato
@@ -325,7 +325,7 @@ func step() -> void:
 	for i in 2:
 		if not cleared[i] and sec_cleared(i):
 			cleared[i] = true
-			show_msg("Área liberada! Avance ➜" if i == 0 else "Caminho para a arena liberado ➜", 150)
+			show_msg("Área liberada! Avance »" if i == 0 else "Caminho para a arena liberado »", 150)
 	# timers, itens, partículas
 	for tm in timers:
 		tm.t -= 1
@@ -393,6 +393,8 @@ func redraw() -> void:
 	var off := Vector2(randf_range(-shake, shake), randf_range(-shake, shake)) if shake > 0 else Vector2.ZERO
 	camera.position = Vector2(roundf(cam_x) + GameData.W / 2, GameData.H / 2) - off
 	bg.cam_x = cam_x
+	bg.tremor = -off
+	bg.chefe = clampf((cam_x - 2050) / 250.0, 0, 1)
 	bg.queue_redraw()
 	world.queue_redraw()
 	for p in players: p.sync_node()

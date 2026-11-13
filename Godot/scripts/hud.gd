@@ -27,7 +27,7 @@ func _draw() -> void:
 			var by := H - 18
 			Gfx.rect(self, bx - 1, by - 1, bw + 2, 10, "#000000"); Gfx.rect(self, bx, by, bw, 8, "#220000")
 			Gfx.rect(self, bx, by, bw * e.hp / e.maxhp, 8, "#c0392b"); Gfx.rect(self, bx, by, bw * e.hp / e.maxhp, 2, "#ff7b6b")
-			Gfx.text(self, "COLOSSO DE PEDRA", bx, by - 7, "#ffcf8a", 7)
+			Gfx.text(self, "ESPECTRO ANCIÃO", bx, by - 7, "#ffcf8a", 7)
 	if game.msg_t > 0 and game.result == null:
 		Gfx.text(self, game.msg, W / 2, 70, "#fff3c4", 12, 1, minf(1.0, game.msg_t / 20.0))
 	if game.paused:

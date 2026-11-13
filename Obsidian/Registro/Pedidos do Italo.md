@@ -34,3 +34,4 @@ tags: [pedido, registro]
 - **2026-11-13** — Quer mais diferença entre homem e mulher: masculino com ombros para fora e pose de pernas abertas, feminino com ombros para dentro e pernas juntas. Roupa base feminina diferente, com top, e com seios.
 - **2026-11-13** — Gostou do rascunho 19. Pediu o corpo feminino só um pouquinho mais largo.
 - **2026-11-13** — Pediu para levar os bonecos novos (corpo masculino e feminino) para o jogo no Godot e para trazer o jogo para jogar direto no chat. #pedido #tecnologia
+- **2026-11-13** — Adorou os bonecos no jogo, mas achou o mapa feio. Pediu para trazer para o jogo o mapa e o inimigo (espectro) do teste gótico. #pedido #mapa #inimigo
