@@ -428,12 +428,6 @@ function KaelLib(T) {
       peca(og, esfera(1, 0.1, 0.18, 0.035), M.orelha, 0.012, -0.01, s * 0.055);
     });
     slot('cabelo'); // o cabelo pode ser escondido para conferir o formato da cabeça
-    (function () { // sombra da franja na testa: some junto com o cabelo
-      var gs = new T.SphereGeometry(1, 30, 8, PI - 1.2, 2.4, 0.45, 0.88), ps = gs.attributes.position;
-      for (var i = 0; i < ps.count; i++) { var v = cabecaPt(ps.getX(i), ps.getY(i), ps.getZ(i)); ps.setXYZ(i, v[0] * 1.006, v[1] * 1.006, v[2] * 1.006); }
-      var ms = new T.Mesh(gs, new T.MeshBasicMaterial({ color: cor('#7a4a62'), transparent: true, opacity: 0.3, depthWrite: false }));
-      cab.add(ms); slotAtual.push(ms);
-    })();
     var CAB_TRAS = 0.72; // o cabelo de trás acompanha o crânio menor
     // calota do cabelo
     var calota = peca(cab, geoCabeca(1.045, PI * 0.6), M.calota, 0, 0, 0, C_CABECA); calota.rotation.z = 0.78;
