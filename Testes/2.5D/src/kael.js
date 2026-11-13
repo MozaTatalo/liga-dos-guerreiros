@@ -26,7 +26,7 @@ function KaelLib(T) {
     var t = new T.DataTexture(new Uint8Array(d), vals.length, 1, T.RGBAFormat);
     t.minFilter = t.magFilter = T.NearestFilter; t.needsUpdate = true; return t;
   }
-  var GRAD = degraus([70, 135, 200, 255]), GRAD_PELE = degraus([205, 255]), GRAD_CABELO = degraus([150, 215, 255]);
+  var GRAD = degraus([70, 135, 200, 255]), GRAD_PELE = degraus([172, 228, 255]), GRAD_CABELO = degraus([150, 215, 255]);
   function toon(extra, grad) {
     var o = { color: 0xffffff, gradientMap: grad || GRAD };
     if (extra) for (var k in extra) o[k] = extra[k];
@@ -39,7 +39,7 @@ function KaelLib(T) {
     };
     return m;
   }
-  var C_GROSSO = contorno(0.014), C_FINO = contorno(0.007), C_CABECA = contorno(0.05), C_MECHA = contorno(0.035);
+  var C_GROSSO = contorno(0.014), C_FINO = contorno(0.007), C_MEDIO = contorno(0.0095), C_CABECA = contorno(0.05), C_MECHA = contorno(0.035);
 
   var texBrilho = (function () {
     var c = document.createElement('canvas'); c.width = c.height = 128; var g = c.getContext('2d');
@@ -314,7 +314,7 @@ function KaelLib(T) {
     if (borda) m.add(new T.Mesh(geo, borda));
     pai.add(m); if (slotAtual) slotAtual.push(m); return m;
   }
-  function membro(rTopo, rBase, comp) { var g = new T.CylinderGeometry(rTopo, rBase, comp, 14); g.translate(0, -comp / 2, 0); return g; }
+  function membro(rTopo, rBase, comp, aberto) { var g = new T.CylinderGeometry(rTopo, rBase, comp, 16, 1, !!aberto); g.translate(0, -comp / 2, 0); return g; }
   function esfera(r, sx, sy, sz) { var g = new T.SphereGeometry(r, 16, 12); g.scale(sx || 1, sy || 1, sz || 1); return g; }
   function uvCaixa(geo) { // UV planar em XY a partir da caixa envolvente
     geo.computeBoundingBox(); var b = geo.boundingBox, p = geo.attributes.position, uv = [];
@@ -333,7 +333,7 @@ function KaelLib(T) {
     }
     // materiais lisos (cor vem da paleta) e texturizados
     ['aco', 'friso', 'pano', 'couro', 'lamina', 'pena', 'capaLisa'].forEach(function (k) { M[k] = toon(); });
-    M.pele = toon(null, GRAD_PELE); M.orelha = toon(null, GRAD_PELE); M.acoDuplo = toon({ side: T.DoubleSide });
+    M.pele = toon(null, GRAD_PELE); M.orelha = toon(null, GRAD_PELE); M.pescoco = toon(null, GRAD_PELE); M.acoDuplo = toon({ side: T.DoubleSide });
     M.rosto = toon({ map: tex(2048, 1024, function (g, w, h, p) { pintarRosto(g, w, h, p, false); }) }, GRAD_PELE);
     a.texAberto = M.rosto.map; a.texFechado = tex(2048, 1024, function (g, w, h, p) { pintarRosto(g, w, h, p, true); });
     M.cabelo = toon({ map: tex(32, 256, pintarCabelo) }, GRAD_CABELO);
@@ -360,7 +360,7 @@ function KaelLib(T) {
 
     // ----- quadril -----
     P.quadril = grupo(a.raiz, 0, QY, 0);
-    peca(P.quadril, esfera(0.15, 0.7, 0.72, 1.16), M.macLiso, 0, -0.035, 0, C_FINO);
+    peca(P.quadril, esfera(0.15, 0.7, 0.72, 1.16), M.macLiso, 0, -0.035, 0, C_MEDIO);
     slot('armadura');
     var saia = new T.CylinderGeometry(0.16, 0.265, 0.34, 24, 1, true); saia.scale(0.9, 1, 1.2);
     peca(P.quadril, saia, M.saia, 0, -0.085, 0).scale.set(0.95, 0.62, 0.95);
@@ -412,7 +412,7 @@ function KaelLib(T) {
     slot(null);
     // ----- cabeça -----
     P.cabeca = grupo(P.tronco, 0, NK * TS, 0);
-    peca(P.cabeca, new T.CylinderGeometry(0.04, 0.046, 0.1, 12), M.pele, -0.005, 0.02, 0, C_FINO);
+    peca(P.cabeca, new T.CylinderGeometry(0.04, 0.046, 0.1, 12), M.pescoco, -0.005, 0.02, 0, C_FINO); // pescoço na sombra do queixo
     var cab = grupo(P.cabeca, -0.03, H * 0.8, 0); cab.scale.set(H, H, H * 0.78); a.cab = cab;
     a.rosto = peca(cab, geoCabeca(1), M.rosto, 0, 0, 0, C_CABECA);
     [1, -1].forEach(function (s) { // orelhas: concha fina, levemente aberta para trás, com o miolo mais escuro
@@ -421,24 +421,40 @@ function KaelLib(T) {
       peca(og, esfera(1, 0.1, 0.18, 0.035), M.orelha, 0.012, -0.01, s * 0.055);
     });
     slot('cabelo'); // o cabelo pode ser escondido para conferir o formato da cabeça
+    (function () { // sombra da franja na testa: some junto com o cabelo
+      var gs = new T.SphereGeometry(1, 30, 8, PI - 1.2, 2.4, 0.45, 0.88), ps = gs.attributes.position;
+      for (var i = 0; i < ps.count; i++) { var v = cabecaPt(ps.getX(i), ps.getY(i), ps.getZ(i)); ps.setXYZ(i, v[0] * 1.006, v[1] * 1.006, v[2] * 1.006); }
+      var ms = new T.Mesh(gs, new T.MeshBasicMaterial({ color: cor('#7a4a62'), transparent: true, opacity: 0.3, depthWrite: false }));
+      cab.add(ms); slotAtual.push(ms);
+    })();
     var CAB_TRAS = 0.72; // o cabelo de trás acompanha o crânio menor
     // calota do cabelo
     var calota = peca(cab, geoCabeca(1.045, PI * 0.6), M.cabeloLiso, 0, 0, 0, C_CABECA); calota.rotation.z = 0.5;
-    function mecha(pts, larg, esp, mat, pai) { if (!pai) pts = pts.map(function (p) { return [p[0] < 0 ? p[0] * CAB_TRAS * (1 - 0.2 * Math.min(1, Math.max(0, -p[1]))) : p[0], p[1], p[2]]; }); return peca(pai || cab, geoMecha(pts, larg, esp || 0.38), mat || M.cabelo, 0, 0, 0, C_MECHA); }
+    function mecha(pts, larg, esp, mat, pai) { if (!pai || pai.userData.cabeca) pts = pts.map(function (p) { return [p[0] < 0 ? p[0] * CAB_TRAS * (1 - 0.2 * Math.min(1, Math.max(0, -p[1]))) : p[0], p[1], p[2]]; }); return peca(pai || cab, geoMecha(pts, larg, esp || 0.38), mat || M.cabelo, 0, 0, 0, C_MECHA); }
     // franja
     [[-0.8, 0.1, 0.16], [-0.62, 0.3, 0.17], [-0.44, 0.2, 0.17], [-0.26, 0.4, 0.17], [-0.08, 0.02, 0.15], [0.1, 0.42, 0.16], [0.28, 0.28, 0.17], [0.46, 0.38, 0.17], [0.64, 0.2, 0.17], [0.8, 0.08, 0.15]].forEach(function (b, i) {
       var z0 = b[0], fim = sup(b[1], z0 * 0.98, 1.1), meio = sup(0.62, z0 * 0.72, 1.14);
       mecha([[0.1, 1.04, z0 * 0.25], [0.55, 1.0, z0 * 0.5], meio, [fim[0] + 0.02, fim[1], fim[2] + (z0 > 0 ? -0.06 : 0.06)]], b[2], 0.4, M.cabelo);
+    });
+    // segunda camada da franja: mechas finas cruzadas, para quebrar o efeito de capacete
+    [[-0.72, 0.36, 0.09, 1], [-0.4, 0.14, 0.1, -1], [-0.14, 0.3, 0.08, 1], [0.2, 0.1, 0.1, -1], [0.5, 0.32, 0.09, 1], [0.76, 0.18, 0.09, -1]].forEach(function (b) {
+      var z0 = b[0], fim = sup(b[1], z0 * 0.96 + b[3] * 0.11, 1.17), meio = sup(0.66, z0 * 0.7, 1.2);
+      mecha([[0.05, 1.07, z0 * 0.2], [0.5, 1.05, z0 * 0.45], meio, fim], b[2], 0.45, M.cabelo);
     });
     // mechas laterais que emolduram o rosto
     [1, -1].forEach(function (s) {
       mecha([[0.2, 0.98, s * 0.5], sup(0.45, s * 0.86, 1.12), [0.52, -0.3, s * 0.95], [0.5, -0.95, s * 0.8], [0.58, -1.35, s * 0.7]], s > 0 ? 0.13 : 0.2, 0.42, s > 0 ? M.mecha : M.cabelo);
       mecha([[0.0, 1.0, s * 0.55], sup(0.3, s * 0.93, 1.12), [0.12, -0.5, s * 0.98], [0.05, -1.05, s * 0.92]], 0.24, 0.4);
     });
-    // cabelo de trás em camadas
+    // cabelo de trás em camadas (num grupo próprio, que balança ao correr)
+    P.cabeloTras = grupo(cab, 0, 0, 0); P.cabeloTras.userData.cabeca = true;
     for (var bi = 0; bi < 9; bi++) {
       var ba = (bi / 8 - 0.5) * 3.6, bc = -Math.cos(ba), bs = Math.sin(ba), comp = 1.25 + (bi % 2) * 0.3 + rnd() * 0.15;
-      mecha([[-0.25 + bc * 0.1, 1.02, bs * 0.3], [bc * 1.12, 0.45, bs * 1.02], [bc * 1.08, -0.4, bs * 0.95], [bc * 1.0, -comp + 0.25, bs * 0.85], [bc * 1.22, -comp, bs * 0.95]], 0.3, 0.36);
+      mecha([[-0.25 + bc * 0.1, 1.02, bs * 0.3], [bc * 1.12, 0.45, bs * 1.02], [bc * 1.08, -0.4, bs * 0.95], [bc * 1.0, -comp + 0.25, bs * 0.85], [bc * 1.22, -comp, bs * 0.95]], 0.3, 0.36, M.cabelo, P.cabeloTras);
+    }
+    for (var b2 = 0; b2 < 8; b2++) { // camada de cima, mais curta, com as pontas viradas para fora
+      var a2 = ((b2 + 0.5) / 8 - 0.5) * 3.3, c2 = -Math.cos(a2), s2 = Math.sin(a2), cp2 = 0.45 + (b2 % 3) * 0.2;
+      mecha([[-0.2 + c2 * 0.1, 1.07, s2 * 0.25], [c2 * 1.2, 0.5, s2 * 1.07], [c2 * 1.2, -0.05, s2 * 1.04], [c2 * 1.36, -cp2, s2 * 1.14]], 0.22, 0.42, M.cabelo, P.cabeloTras);
     }
     // rabo de cavalo baixo com fita
     P.cabeloLongo = grupo(cab, -0.62, -0.55, 0);
@@ -472,15 +488,21 @@ function KaelLib(T) {
       var o = {};
       o.ombro = grupo(P.tronco, 0, 0.42 * TS, z * TW);
       // base lisa: manga curta do macacão, braço e mão de pele
-      peca(o.ombro, esfera(0.062, 1, 1.05, 1), M.macLiso, 0, 0.004, 0, C_FINO);
-      peca(o.ombro, membro(0.047, 0.045, LU), M.pele, 0, 0, 0, C_FINO);
-      peca(o.ombro, membro(0.058, 0.054, LU * 0.62), M.macLiso, 0, 0, 0, C_FINO);
+      peca(o.ombro, esfera(0.062, 1, 1.05, 1), M.macLiso, 0, 0.004, 0, C_MEDIO);
+      peca(o.ombro, membro(0.047, 0.046, LU, true), M.pele, 0, 0, 0, C_MEDIO);
+      peca(o.ombro, membro(0.058, 0.055, LU * 0.62), M.macLiso, 0, 0, 0, C_MEDIO);
       o.cotovelo = grupo(o.ombro, 0, -LU, 0);
-      peca(o.cotovelo, esfera(0.046), M.pele, 0, 0, 0, C_FINO);
-      peca(o.cotovelo, membro(0.046, 0.062, LF), M.pele, 0, 0, 0, C_FINO);
-      o.mao = grupo(o.cotovelo, 0, -LF - 0.055, 0);
-      peca(o.mao, esfera(0.08, 0.9, 1.1, 0.95), M.pele, 0, -0.004, 0, C_GROSSO);
-      peca(o.mao, esfera(0.034, 1, 1.15, 1), M.pele, 0.05, 0.012, 0, C_FINO); // polegar
+      peca(o.cotovelo, esfera(0.046), M.pele, 0, 0, 0, C_MEDIO); // junta do mesmo raio do braço: sem emenda
+      peca(o.cotovelo, membro(0.046, 0.05, LF, true), M.pele, 0, 0, 0, C_MEDIO);
+      peca(o.cotovelo, esfera(0.05), M.pele, 0, -LF, 0, C_MEDIO); // pulso
+      o.mao = grupo(o.cotovelo, 0, -LF - 0.05, 0);
+      // punho fechado em volta do cabo: palma, quatro dedos dobrados e polegar por cima
+      peca(o.mao, esfera(0.058, 1.28, 1.0, 1.0), M.pele, 0, 0, 0, C_MEDIO);
+      [-0.045, -0.015, 0.015, 0.045].forEach(function (dx, di) {
+        var dedo = new T.TorusGeometry(0.046, 0.019 - (di === 0 ? 0.002 : 0), 7, 14, PI * 1.4); dedo.rotateZ(PI * 0.8); dedo.rotateY(PI / 2);
+        peca(o.mao, dedo, M.pele, dx, 0, 0, C_FINO);
+      });
+      peca(o.mao, esfera(0.025, 1.7, 1, 1), M.pele, 0.022, 0.03, z > 0 ? -0.05 : 0.05, C_FINO).rotation.y = z > 0 ? 0.35 : -0.35;
       slot('armadura');
       peca(o.ombro, membro(0.056, 0.053, LU), M.malha, 0, 0, 0, C_FINO);
       peca(o.cotovelo, esfera(0.062), M.aco, 0, 0, 0, C_FINO);
@@ -520,9 +542,9 @@ function KaelLib(T) {
     var um = geoMad.attributes.uv, pm2 = geoMad.attributes.position; for (var ui = 0; ui < um.count; ui++) um.setXY(ui, pm2.getY(ui) * 8 + 0.5, pm2.getX(ui));
     peca(Em, geoMad, M.madeira, 0, 0, 0, C_FINO);
     peca(Em, new T.BoxGeometry(0.05, 0.24, 0.05), M.madeiraEsc, 0.085, 0, 0, C_FINO);
-    var caboM = new T.CylinderGeometry(0.021, 0.021, 0.22, 8); caboM.rotateZ(PI / 2);
-    peca(Em, caboM, M.capaLisa, -0.035, 0, 0, C_FINO);
-    peca(Em, esfera(0.03), M.madeiraEsc, -0.16, 0, 0, C_FINO);
+    var caboM = new T.CylinderGeometry(0.021, 0.021, 0.19, 8); caboM.rotateZ(PI / 2);
+    peca(Em, caboM, M.capaLisa, -0.02, 0, 0, C_FINO);
+    peca(Em, esfera(0.028), M.madeiraEsc, -0.118, 0, 0, C_FINO);
     Em.scale.set(1.0, 1.25, 1.5); Em.visible = false;
 
     // ----- escudo com brasão pintado -----
@@ -544,14 +566,19 @@ function KaelLib(T) {
       var o = {};
       o.coxa = grupo(P.quadril, 0, -0.06, z);
       // base lisa: short do macacão, perna e pé de pele
-      peca(o.coxa, membro(0.076, 0.066, L1), M.pele, 0, 0, 0, C_FINO);
-      peca(o.coxa, esfera(0.088), M.macLiso, 0, 0, 0, C_FINO); // raiz da coxa, une a perna ao quadril
-      peca(o.coxa, membro(0.086, 0.079, L1 * 0.66), M.macLiso, 0, 0, 0, C_FINO);
+      peca(o.coxa, membro(0.076, 0.066, L1, true), M.pele, 0, 0, 0, C_MEDIO);
+      peca(o.coxa, esfera(0.088), M.macLiso, 0, 0, 0, C_MEDIO); // raiz da coxa, une a perna ao quadril
+      peca(o.coxa, membro(0.086, 0.079, L1 * 0.66), M.macLiso, 0, 0, 0, C_MEDIO);
       o.joelho = grupo(o.coxa, 0, -L1, 0);
-      peca(o.joelho, esfera(0.066), M.pele, 0.004, 0, 0, C_FINO);
-      peca(o.joelho, membro(0.068, 0.092, L2), M.pele, 0, 0, 0, C_FINO);
-      var pe = grupo(o.joelho, 0.075, -L2 - 0.045, 0); pesBase.push(pe); // pé descalço some sob a bota da armadura
-      peca(pe, esfera(0.115, 1.6, 0.68, 1.0), M.pele, 0, 0, 0, C_GROSSO);
+      peca(o.joelho, esfera(0.066), M.pele, 0, 0, 0, C_MEDIO);
+      peca(o.joelho, membro(0.066, 0.055, L2, true), M.pele, 0, 0, 0, C_MEDIO);
+      // pé descalço (some sob a bota da armadura): tornozelo, calcanhar, peito do pé e dedos
+      var pe = grupo(o.joelho, 0, -L2, 0); pesBase.push(pe);
+      peca(pe, esfera(0.057), M.pele, 0, 0, 0, C_MEDIO);
+      peca(pe, esfera(0.06, 1.1, 0.95, 1), M.pele, -0.018, -0.078, 0, C_MEDIO);
+      peca(pe, esfera(0.06, 1.5, 0.95, 0.98), M.pele, 0.045, -0.05, 0, C_MEDIO).rotation.z = -0.5;
+      peca(pe, esfera(0.08, 1.85, 0.62, 1.05), M.pele, 0.095, -0.09, 0, C_MEDIO);
+      peca(pe, esfera(0.06, 1.2, 0.72, 1.3), M.pele, 0.205, -0.097, 0, C_MEDIO);
       slot('armadura');
       peca(o.coxa, membro(0.09, 0.077, L1), M.placa, 0, 0, 0, C_GROSSO);
       peca(o.joelho, esfera(0.08, 1.08, 1, 1), M.aco, 0.012, 0, 0, C_FINO);
@@ -589,7 +616,7 @@ function KaelLib(T) {
     a.tex.forEach(function (t) { t.pintar(t.c.getContext('2d'), t.c.width, t.c.height, pl); t.t.needsUpdate = true; });
     M.aco.color.copy(cor(pl.aco)); M.friso.color.copy(cor(pl.friso)); M.frisoDuplo.color.copy(cor(pl.friso)); M.pano.color.copy(cor(pl.pano));
     M.couro.color.copy(cor(pl.couro)); M.lamina.color.copy(cor(pl.lamina)); M.pena.color.copy(cor(pl.pena)); M.capaLisa.color.copy(cor(pl.capa));
-    M.macLiso.color.copy(cor(pl.macacao)); M.macDuplo.color.copy(cor(pl.macacao)).multiplyScalar(0.6); M.pele.color.copy(cor(pl.pele)).multiplyScalar(0.8); M.orelha.color.copy(cor(pl.pele)).multiply(new T.Color(0.62, 0.45, 0.45)); M.rosto.color.setScalar(0.8); M.acoDuplo.color.copy(cor(pl.aco)); M.cabeloLiso.color.copy(cor(pl.cabelo));
+    M.macLiso.color.copy(cor(pl.macacao)); M.macDuplo.color.copy(cor(pl.macacao)).multiplyScalar(0.6); M.pele.color.copy(cor(pl.pele)).multiplyScalar(0.8); M.orelha.color.copy(cor(pl.pele)).multiply(new T.Color(0.62, 0.45, 0.45)); M.pescoco.color.copy(cor(pl.pele)).multiply(new T.Color(0.62, 0.52, 0.56)); M.rosto.color.setScalar(0.8); M.acoDuplo.color.copy(cor(pl.aco)); M.cabeloLiso.color.copy(cor(pl.cabelo));
     M.brilho.color.copy(cor(pl.brilho)); M.gema.color.copy(cor(pl.olhoClaro));
     a.rastro.material.color.copy(cor(pl.brilho)); a.brilhoEspada.material.color.copy(cor(pl.brilho)); a.brilhoGema.material.color.copy(cor(pl.olho));
   }
@@ -648,6 +675,7 @@ function KaelLib(T) {
     P.quadril.position.y = QY + J.sobe * 0.6;
     P.tronco.rotation.set(0, J.tor, J.inc);
     P.cabeca.rotation.set(0, -J.tor * 0.7, -J.inc * 0.6 + J.cab);
+    P.cabeloTras.rotation.z = -h.vento * 0.14 + Math.sin(r * 7 + 1) * 0.03 * h.vento + Math.sin(r * 1.7 + 0.6) * 0.01;
     P.cabeloLongo.rotation.z = -0.1 - h.vento * 0.8 + Math.sin(r * 7) * 0.06 * h.vento + Math.sin(r * 1.7) * 0.03;
     P.tabardo.rotation.z = -Math.max(J.cA, J.cB) * 0.6 + 0.04;
     P.bracoEspada.ombro.rotation.z = J.S; P.bracoEspada.cotovelo.rotation.z = J.E; P.espada.rotation.z = J.W; h.base.espada.rotation.z = J.W;

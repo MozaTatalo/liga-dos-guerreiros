@@ -27,3 +27,5 @@ tags: [decisao, registro]
 | 2026-11-13 | A cabeça de todo personagem deve estar correta mesmo sem cabelo: crânio de formato normal, orelhas e pele de cor uniforme | decidido |
 | 2026-11-13 | Um corpo base masculino e um feminino para todos os personagens. Entre personagens mudam só cor e poucos detalhes | decidido |
 | 2026-11-13 | Quais melhorias da [[Revisão do Modelo Base]] fazer e em que ordem | aguardando Italo #pendente |
+| 2026-11-13 | Revisão do modelo base: fazer itens 1, 2, 3, 4 e 6. Item 5 descartado: o macacão fica liso de propósito, é o modelo "nu" | decidido |
+| 2026-11-13 | O repositório GitHub `MozaTatalo/liga-dos-guerreiros` guarda a versão mais recente do projeto | decidido |

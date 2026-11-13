@@ -26,3 +26,4 @@ tags: [pedido, registro]
 - **2026-11-13** — Aprovou o perfil. Pediu a cabeça um pouco para trás no corpo, porque o personagem parecia meio corcunda.
 - **2026-11-13** — Aprovou o Kael. Pediu uma revisão geral do modelo (gráfico, estrutura). Regra nova: todos os personagens derivam do mesmo corpo. Um corpo masculino e um feminino, iguais dentro de cada sexo, mudando só cor e poucos detalhes. Ver [[Revisão do Modelo Base]].
 - **2026-11-13** — Adicionou o repositório https://github.com/MozaTatalo/liga-dos-guerreiros ao projeto e pediu para subir tudo nele, porque ia desligar o PC. #pedido #tecnologia
+- **2026-11-13** — Da [[Revisão do Modelo Base]] escolheu os itens 1, 2, 3, 4 e 6 por enquanto. Item 5 descartado: o macacão deve ficar realmente simples e liso, é o modelo "nu" e raramente será visto no jogo. Pediu também para subir tudo no GitHub (`MozaTatalo/liga-dos-guerreiros`), pois ia desligar o PC.
