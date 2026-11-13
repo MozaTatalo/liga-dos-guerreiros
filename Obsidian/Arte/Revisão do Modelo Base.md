@@ -6,7 +6,7 @@ atualizado: 2026-11-13
 
 Pedido do Italo (2026-11-13): olhar o modelo como um todo e apontar o que melhorar, lembrando que **todos os personagens derivam da mesma base**. Haverá **um corpo masculino e um corpo feminino**. Todos os homens usam o mesmo corpo e todas as mulheres o mesmo corpo. Entre personagens mudam cor e poucos detalhes.
 
-Revisão feita sobre o Kael rascunho 14 (`Testes\2.5D\src\kael.js`). **Escolha do Italo (2026-11-13):** itens 5, 6, 7, 8 e 10 desta nota (mãos, pés, juntas, sombra e contorno, cabelo) feitos no rascunho 15. Item 9 (macacão) **descartado**: o macacão fica liso de propósito, é o modelo "nu". Os demais seguem em aberto. #pendente
+Revisão feita sobre o Kael rascunho 14 (`Testes\2.5D\src\kael.js`). **Escolha do Italo (2026-11-13):** itens 5, 6, 7, 8 e 10 desta nota (mãos, pés, juntas, sombra e contorno, cabelo) feitos no rascunho 15. Depois ele preferiu **voltar mãos e pés (itens 5 e 6) ao formato simples anterior** (rascunho 16). Item 9 (macacão) **descartado**: o macacão fica liso de propósito, é o modelo "nu". Os demais seguem em aberto. #pendente
 
 ## Estrutura (o que vale para todos os personagens)
 1. **Separar "corpo base" de "personagem".** Hoje tudo está numa função só, escrita para o Kael. Proposta: um corpo base (masculino e feminino) e uma ficha por personagem com cabelo, rosto, paleta e arma de madeira. Criar Lyra, Oren e Brann vira preencher uma ficha.

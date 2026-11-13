@@ -618,16 +618,11 @@ function KaelLib(T) {
       peca(o.ombro, membro(0.058, 0.055, LU * 0.62), M.macLiso, 0, 0, 0, C_MEDIO);
       o.cotovelo = grupo(o.ombro, 0, -LU, 0);
       peca(o.cotovelo, esfera(0.046), M.pele, 0, 0, 0, C_MEDIO); // junta do mesmo raio do braço: sem emenda
-      peca(o.cotovelo, membro(0.046, 0.05, LF, true), M.pele, 0, 0, 0, C_MEDIO);
-      peca(o.cotovelo, esfera(0.05), M.pele, 0, -LF, 0, C_MEDIO); // pulso
-      o.mao = grupo(o.cotovelo, 0, -LF - 0.05, 0);
-      // punho fechado em volta do cabo: palma, quatro dedos dobrados e polegar por cima
-      peca(o.mao, esfera(0.058, 1.28, 1.0, 1.0), M.pele, 0, 0, 0, C_MEDIO);
-      [-0.045, -0.015, 0.015, 0.045].forEach(function (dx, di) {
-        var dedo = new T.TorusGeometry(0.046, 0.019 - (di === 0 ? 0.002 : 0), 7, 14, PI * 1.4); dedo.rotateZ(PI * 0.8); dedo.rotateY(PI / 2);
-        peca(o.mao, dedo, M.pele, dx, 0, 0, C_FINO);
-      });
-      peca(o.mao, esfera(0.025, 1.7, 1, 1), M.pele, 0.022, 0.03, z > 0 ? -0.05 : 0.05, C_FINO).rotation.y = z > 0 ? 0.35 : -0.35;
+      peca(o.cotovelo, membro(0.046, 0.062, LF, true), M.pele, 0, 0, 0, C_MEDIO);
+      o.mao = grupo(o.cotovelo, 0, -LF - 0.055, 0);
+      // mão simples e grande, como o Italo aprovou: uma forma só, com polegar
+      peca(o.mao, esfera(0.08, 0.9, 1.1, 0.95), M.pele, 0, -0.004, 0, C_MEDIO);
+      peca(o.mao, esfera(0.034, 1, 1.15, 1), M.pele, 0.05, 0.012, 0, C_FINO); // polegar
       slot('armadura');
       peca(o.ombro, membro(0.056, 0.053, LU), M.malha, 0, 0, 0, C_FINO);
       peca(o.cotovelo, esfera(0.062), M.aco, 0, 0, 0, C_FINO);
@@ -696,14 +691,10 @@ function KaelLib(T) {
       peca(o.coxa, membro(0.086, 0.079, L1 * 0.66), M.macLiso, 0, 0, 0, C_MEDIO);
       o.joelho = grupo(o.coxa, 0, -L1, 0);
       peca(o.joelho, esfera(0.066), M.pele, 0, 0, 0, C_MEDIO);
-      peca(o.joelho, membro(0.066, 0.055, L2, true), M.pele, 0, 0, 0, C_MEDIO);
-      // pé descalço (some sob a bota da armadura): tornozelo, calcanhar, peito do pé e dedos
-      var pe = grupo(o.joelho, 0, -L2, 0); pesBase.push(pe);
-      peca(pe, esfera(0.057), M.pele, 0, 0, 0, C_MEDIO);
-      peca(pe, esfera(0.06, 1.1, 0.95, 1), M.pele, -0.018, -0.078, 0, C_MEDIO);
-      peca(pe, esfera(0.06, 1.5, 0.95, 0.98), M.pele, 0.045, -0.05, 0, C_MEDIO).rotation.z = -0.5;
-      peca(pe, esfera(0.08, 1.85, 0.62, 1.05), M.pele, 0.095, -0.09, 0, C_MEDIO);
-      peca(pe, esfera(0.06, 1.2, 0.72, 1.3), M.pele, 0.205, -0.097, 0, C_MEDIO);
+      peca(o.joelho, membro(0.068, 0.092, L2, true), M.pele, 0, 0, 0, C_MEDIO);
+      // pé simples e grande, como o Italo aprovou (some sob a bota da armadura)
+      var pe = grupo(o.joelho, 0.075, -L2 - 0.045, 0); pesBase.push(pe);
+      peca(pe, esfera(0.115, 1.6, 0.68, 1.0), M.pele, 0, 0, 0, C_MEDIO);
       slot('armadura');
       peca(o.coxa, membro(0.09, 0.077, L1), M.placa, 0, 0, 0, C_GROSSO);
       peca(o.joelho, esfera(0.08, 1.08, 1, 1), M.aco, 0.012, 0, 0, C_FINO);
