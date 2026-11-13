@@ -56,7 +56,7 @@ func _player_panel(p: Hero, px: float) -> void:
 	Gfx.rect(self, px + 3, 9, 26, 28, "#24233f")
 	# retrato: recorte da cabeça do próprio boneco 3D (ao vivo, até pisca)
 	if p.view and p.view.vp:
-		draw_texture_rect_region(p.view.vp.get_texture(), Rect2(px + 3, 9, 26, 28), Rect2(113, 72, 84, 90))
+		draw_texture_rect_region(p.view.vp.get_texture(), Rect2(px + 3, 9, 26, 28), Rect2(136, 86, 101, 108))
 	Gfx.text(self, "%s · %s" % [d.name, d.cls], px + 34, 13, "#ffffff", 7)
 	Gfx.rect(self, px + 34, 19, 110, 7, "#330000"); Gfx.rect(self, px + 34, 19, 110 * p.hp / d.hp, 7, "#e0413a"); Gfx.rect(self, px + 34, 19, 110 * p.hp / d.hp, 2, "#ff8a80")
 	Gfx.text(self, "%d/%d" % [ceili(p.hp), d.hp], px + 89, 23, "#ffffff", 6, 1)

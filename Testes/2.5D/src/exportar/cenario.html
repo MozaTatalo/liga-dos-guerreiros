@@ -73,13 +73,32 @@ window.exportarCena = async function (PLATS, LARG) {
     galho(raiz, 2.6 * s, 0.22 * s, 3);
   }
   // chão de lajotas
-  var texChao = texturaCanvas(256, 256, function (g, w, h) {
-    g.fillStyle = '#23252f'; g.fillRect(0, 0, w, h);
+  // chão de lajotas pintado: pedras azul-arroxeadas com chanfro de luz, rachaduras, musgo nas juntas e manchas úmidas
+  var texChao = texturaCanvas(512, 512, function (g, w, h) {
+    g.fillStyle = '#15141f'; g.fillRect(0, 0, w, h);
     for (var j = 0; j < 6; j++) for (var i = -1; i < 6; i++) {
-      var v = 52 + Math.floor(rnd() * 26);
-      g.fillStyle = 'rgb(' + v + ',' + (v + 2) + ',' + (v + 12) + ')';
-      var x = i * 48 + (j % 2) * 24 + 3, y = j * 42.6 + 3;
-      g.beginPath(); g.moveTo(x + 8, y); g.arcTo(x + 42, y, x + 42, y + 37, 8); g.arcTo(x + 42, y + 37, x, y + 37, 8); g.arcTo(x, y + 37, x, y, 8); g.arcTo(x, y, x + 42, y, 8); g.fill();
+      var v = 58 + Math.floor(rnd() * 30), hue = rnd();
+      var r = Math.round(v * (0.92 + hue * 0.12)), gg = Math.round(v * 0.95), bb = Math.round(v * 1.18 + 8);
+      var x = i * 96 + (j % 2) * 48 + 5, y = j * 85.3 + 5, lw = 86, lh = 75;
+      function laje(dx, dy, cor) { g.fillStyle = cor; g.beginPath(); g.moveTo(x + dx + 14, y + dy); g.arcTo(x + dx + lw, y + dy, x + dx + lw, y + dy + lh, 14); g.arcTo(x + dx + lw, y + dy + lh, x + dx, y + dy + lh, 14); g.arcTo(x + dx, y + dy + lh, x + dx, y + dy, 14); g.arcTo(x + dx, y + dy, x + dx + lw, y + dy, 14); g.fill(); }
+      laje(2, 3, 'rgb(' + Math.round(r * 0.55) + ',' + Math.round(gg * 0.55) + ',' + Math.round(bb * 0.6) + ')');
+      laje(-1, -1, 'rgb(' + Math.min(255, r + 26) + ',' + Math.min(255, gg + 26) + ',' + Math.min(255, bb + 30) + ')');
+      laje(0, 0, 'rgb(' + r + ',' + gg + ',' + bb + ')');
+      var gr = g.createRadialGradient(x + lw * 0.35, y + lh * 0.3, 4, x + lw * 0.5, y + lh * 0.5, lw * 0.7);
+      gr.addColorStop(0, 'rgba(255,255,255,0.07)'); gr.addColorStop(1, 'rgba(0,0,0,0.12)');
+      g.fillStyle = gr; g.fillRect(x, y, lw, lh);
+      if (rnd() < 0.45) { // rachadura
+        g.strokeStyle = 'rgba(10,8,18,0.8)'; g.lineWidth = 1.6; g.beginPath();
+        var cx = x + 10 + rnd() * (lw - 20), cy = y + 6; g.moveTo(cx, cy);
+        for (var k = 0; k < 5; k++) { cx += (rnd() - 0.5) * 22; cy += lh / 5; g.lineTo(cx, cy); }
+        g.stroke();
+      }
+      if (rnd() < 0.3) { g.fillStyle = 'rgba(120,140,220,0.08)'; g.beginPath(); g.ellipse(x + lw * rnd(), y + lh * rnd(), 18 + rnd() * 16, 7 + rnd() * 5, 0, 0, 7); g.fill(); }
+    }
+    for (var m = 0; m < 260; m++) { // musgo nas juntas
+      var mx = rnd() * w, my = Math.round(rnd() * 6) * 85.3 + 2 + rnd() * 4;
+      g.fillStyle = rnd() < 0.5 ? 'rgba(52,96,82,0.75)' : 'rgba(70,120,90,0.6)';
+      g.beginPath(); g.arc(mx, my, 1.5 + rnd() * 3, 0, 7); g.fill();
     }
   });
   var X0 = -12, X1 = LARG + 12, MEIO = (X0 + X1) / 2, L = X1 - X0;
@@ -102,6 +121,8 @@ window.exportarCena = async function (PLATS, LARG) {
   for (var i = 0; X0 + i * VAO < X1; i++) {
     var x = X0 + i * VAO, quebrado = i % 4 === 2;
     pilar(x, -3.3, quebrado ? 2.0 + (i % 3) : ALT, quebrado);
+    if (!quebrado && i % 2 === 0) marca('estandarte', x, ALT + 0.4, -2.95);
+    if (i % 3 === 1) marca('corrente', x + VAO / 2 + 1.2, 0, 5.5);
     if (!quebrado && (i + 1) % 4 !== 2) {
       var arco = add(new T.ExtrudeGeometry(formaArco(VAO - 0.7, 0.4), { depth: 0.7, bevelEnabled: false }), matPedra, x + VAO / 2, ALT + 0.95, -3.65);
       arco.scale.y = 0.62;

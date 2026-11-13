@@ -4,11 +4,11 @@ tags: [inimigo]
 # Bestiário
 
 ## Lodo #inimigo
-Gosma de ectoplasma (verde-azulada), pula na direção do jogador. Fraco, aparece em grupo.
+Gosma de ectoplasma verde-azulada e translúcida, com olhos e ossinhos boiando dentro; treme e estica ao pular (3D), pula na direção do jogador. Fraco, aparece em grupo.
 ## Espectro (antigo Saqueador) #inimigo
 Aparição de manto rasgado, capuz vazio e olhos azuis, mãos de osso. Flutua até o jogador, ergue os braços (olhos ficam vermelhos) e golpeia. Modelo 3D do teste gótico.
 ## Morcego de Cinzas #inimigo
-Voador, persegue em ondas. Pouca vida, atrapalha combos.
+Morcego 3D de asas de membrana roxa, olhos vermelhos e brasas caindo das asas. Voador, persegue em ondas. Pouca vida, atrapalha combos.
 ## Espectro Conjurador (antigo Atirador) #inimigo
 Espectro de manto roxo e olhos violeta. Mantém distância em cima das plataformas e dispara projéteis.
 ## Espectro Ancião (antigo Colosso de Pedra) #chefe

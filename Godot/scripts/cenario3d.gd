@@ -11,6 +11,9 @@ const SHADER := preload("res://shaders/cenario.gdshader")
 const SH_CEU := preload("res://shaders/ceu.gdshader")
 const SH_BRILHO := preload("res://shaders/brilho.gdshader")
 const SH_NEVOA := preload("res://shaders/nevoa.gdshader")
+const SH_ESTANDARTE := preload("res://shaders/estandarte.gdshader")
+const SH_RAIO := preload("res://shaders/raio.gdshader")
+const SH_SOMBRA := preload("res://shaders/sombra.gdshader")
 const CENA := preload("res://assets/cenario/catedral.glb")
 const CORES := {
 	"pedra": Color("#4b4f62"), "pedraEsc": Color("#33364a"), "ferro": Color("#1c1d26"), "osso": Color("#bdb6a4"),
@@ -24,7 +27,8 @@ var cam: Camera3D
 var mat_ceu: ShaderMaterial
 var mats := []
 var nevoas := []
-
+var brasas := PackedVector3Array()
+var sombras := {}     # dono -> MeshInstance3D
 func _ready() -> void:
 	cam = Camera3D.new()
 	cam.fov = FOV
@@ -32,10 +36,10 @@ func _ready() -> void:
 	cam.position = Vector3(0, CENTRO_Y, _distancia())
 	add_child(cam)
 	cam.make_current()
+	_ambiente()
 	_ceu()
 	var cena: Node3D = CENA.instantiate()
 	add_child(cena)
-	var brasas := PackedVector3Array()
 	for m in cena.find_child("marcas", true, false).get_children():
 		var p: Vector3 = m.position
 		var nm := String(m.name)
@@ -45,13 +49,104 @@ func _ready() -> void:
 			_brilho(p + Vector3(0, -0.1, 0.01), Color("#ffd9a0"), 0.5, 0.95, true)
 			_brilho(p + Vector3(0, 0.08, -0.01), Color("#ff6a20"), 4.5, 0.16, true)
 		elif nm.begins_with("vitral"):
-			_brilho(p, Color("#6a4fd0") if nm.begins_with("vitralA") else Color("#c43a5a"), 6.5, 0.1, false)
+			var cv := Color("#7a52ff") if nm.begins_with("vitralA") else Color("#ff3a78")
+			_brilho(p, cv, 6.5, 0.14, false)
+			_raio(p, cv)
+		elif nm.begins_with("estandarte"):
+			_estandarte(p)
+		elif nm.begins_with("corrente"):
+			_corrente(p)
 		elif nm.begins_with("vela"):
 			_brilho(p, Color("#ffc070"), 0.4, 0.95, true)
 	_juntar(cena, brasas)
+	self.brasas = brasas
 	cena.queue_free()
 	_nevoa()
 	_cinzas()
+
+## Brilho (bloom) nas luzes e um pouco mais de cor e contraste, no clima de anime.
+func _ambiente() -> void:
+	var env := Environment.new()
+	env.background_mode = Environment.BG_CLEAR_COLOR
+	env.glow_enabled = true
+	env.glow_intensity = 0.9
+	env.glow_strength = 1.1
+	env.glow_bloom = 0.05
+	env.glow_hdr_threshold = 0.75
+	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SCREEN
+	env.set_glow_level(1, 1.0); env.set_glow_level(2, 1.0); env.set_glow_level(3, 0.6); env.set_glow_level(4, 0.3)
+	env.adjustment_enabled = true
+	env.adjustment_saturation = 1.22
+	env.adjustment_contrast = 1.08
+	env.adjustment_brightness = 1.04
+	var we := WorldEnvironment.new()
+	we.environment = env
+	add_child(we)
+
+## Feixe de luz do vitral até o chão, inclinado como luar entrando pela janela.
+func _raio(p: Vector3, c: Color) -> void:
+	var q := MeshInstance3D.new()
+	var qm := QuadMesh.new(); qm.size = Vector2(2.2, 9.0)
+	q.mesh = qm
+	var m := ShaderMaterial.new(); m.shader = SH_RAIO
+	m.set_shader_parameter("cor", Color(c.r, c.g, c.b, 0.16))
+	q.material_override = m
+	q.position = Vector3(p.x + 1.6, 2.4, p.z + 4.6)
+	q.rotation = Vector3(-0.55, 0.0, 0.32)
+	add_child(q)
+	# poça de luz colorida no chão
+	var poca := MeshInstance3D.new()
+	var pm := QuadMesh.new(); pm.size = Vector2(3.2, 2.2)
+	poca.mesh = pm
+	var mp := ShaderMaterial.new(); mp.shader = SH_BRILHO
+	mp.set_shader_parameter("cor", Color(c.r, c.g, c.b, 0.22)); mp.set_shader_parameter("forca", 1.0)
+	poca.material_override = mp
+	poca.position = Vector3(p.x + 2.6, 0.03, p.z + 8.2)
+	add_child(poca)
+
+## Estandarte rasgado da Ordem pendurado no pilar.
+func _estandarte(p: Vector3) -> void:
+	var q := MeshInstance3D.new()
+	var pm := PlaneMesh.new(); pm.size = Vector2(0.95, 3.0); pm.subdivide_depth = 12; pm.orientation = PlaneMesh.FACE_Z
+	q.mesh = pm
+	var m := ShaderMaterial.new(); m.shader = SH_ESTANDARTE
+	m.set_shader_parameter("fase", p.x * 0.9)
+	q.material_override = m
+	q.position = p + Vector3(0, -1.5, 0)
+	add_child(q)
+	var barra := MeshInstance3D.new()
+	var cm := CylinderMesh.new(); cm.top_radius = 0.035; cm.bottom_radius = 0.035; cm.height = 1.25
+	barra.mesh = cm; barra.rotation.z = PI / 2; barra.position = p + Vector3(0, 0.02, 0)
+	var mb := ShaderMaterial.new(); mb.shader = SHADER; mb.set_shader_parameter("cor", Color("#b8913f"))
+	barra.material_override = mb
+	add_child(barra)
+	for sx in [-0.62, 0.62]:
+		var b := MeshInstance3D.new(); var sm := SphereMesh.new(); sm.radius = 0.06; sm.height = 0.12
+		b.mesh = sm; b.material_override = mb; b.position = p + Vector3(sx, 0.02, 0); add_child(b)
+
+## Corrente com lanterna no primeiro plano, pendurada do alto da tela (moldura e profundidade).
+func _corrente(p: Vector3) -> void:
+	var mf := ShaderMaterial.new(); mf.shader = SHADER; mf.set_shader_parameter("cor", Color("#191826"))
+	mf.set_shader_parameter("forca_nevoa", 0.0)
+	var topo := 9.5
+	var fim := 6.6 + fmod(p.x * 0.37, 0.8)
+	var y := topo
+	var i := 0
+	while y > fim:
+		var elo := MeshInstance3D.new()
+		var tm := TorusMesh.new(); tm.inner_radius = 0.05; tm.outer_radius = 0.09; tm.rings = 12; tm.ring_segments = 6
+		elo.mesh = tm; elo.material_override = mf
+		elo.position = Vector3(p.x, y, p.z)
+		elo.rotation = Vector3(PI / 2, (PI / 2) * (i % 2), 0)
+		add_child(elo)
+		y -= 0.15; i += 1
+	var lant := MeshInstance3D.new()
+	var lm := CylinderMesh.new(); lm.top_radius = 0.12; lm.bottom_radius = 0.18; lm.height = 0.42; lm.radial_segments = 6
+	lant.mesh = lm; lant.material_override = mf; lant.position = Vector3(p.x, fim - 0.3, p.z)
+	add_child(lant)
+	var g := _brilho(Vector3(p.x, fim - 0.3, p.z + 0.05), Color("#ffb45a"), 0.55, 0.95, true)
+	g.get_parent()
+	_brilho(Vector3(p.x, fim - 0.3, p.z + 0.04), Color("#ff7a2a"), 2.4, 0.22, true)
 
 func _distancia() -> float:
 	return (GameData.H / 2.0 / PX) / tan(deg_to_rad(FOV / 2.0))
@@ -76,6 +171,9 @@ func _juntar(cena: Node3D, brasas: PackedVector3Array) -> void:
 		m.set_shader_parameter("cor", CORES.get(nm, Color.WHITE))
 		if texs.has(nm):
 			m.set_shader_parameter("tex", texs[nm]); m.set_shader_parameter("tem_tex", true)
+		if nm == "chao" or nm == "lado":
+			m.set_shader_parameter("forca_aro", 0.0)   # sem brilho de borda no chão (ficava lavado)
+			if nm == "chao": m.set_shader_parameter("cor", Color(0.78, 0.78, 0.82))
 		if nm == "longe":
 			m.set_shader_parameter("sem_luz", true)
 		elif nm == "vitral":
@@ -114,19 +212,17 @@ func _ceu() -> void:
 	cam.add_child(q)
 
 func _nevoa() -> void:
-	var r := RandomNumberGenerator.new(); r.seed = 7
-	var x := -6.0
-	while x < GameData.LEVEL_W / PX + 10:
+	var larg := GameData.LEVEL_W / PX + 40
+	for camada in [[-6.5, 2.4, Color(0.5, 0.45, 0.95, 0.28), 0.8, 0.05], [-1.5, 1.6, Color(0.6, 0.55, 1.0, 0.22), 1.1, 0.08], [2.8, 1.1, Color(0.62, 0.6, 1.0, 0.16), 1.4, 0.11]]:
 		var q := MeshInstance3D.new()
-		var qm := QuadMesh.new(); var s := r.randf_range(9, 15); qm.size = Vector2(s, s * 0.35)
+		var qm := QuadMesh.new(); qm.size = Vector2(larg, camada[1])
 		q.mesh = qm
 		var m := ShaderMaterial.new(); m.shader = SH_NEVOA
-		m.set_shader_parameter("cor", Color(0.52, 0.58, 0.77, r.randf_range(0.07, 0.12)))
+		m.set_shader_parameter("cor", camada[2]); m.set_shader_parameter("escala", camada[3]); m.set_shader_parameter("vel", camada[4])
 		q.material_override = m
-		q.position = Vector3(x, r.randf_range(0.5, 1.7), r.randf_range(-7, 2))
+		q.position = Vector3(larg / 2 - 20, camada[1] / 2 - 0.15, camada[0])
+		q.extra_cull_margin = 1000.0
 		add_child(q)
-		nevoas.append({"no": q, "v": r.randf_range(0.15, 0.45), "x0": q.position.x})
-		x += r.randf_range(4, 7)
 
 func _cinzas() -> void:
 	var p := CPUParticles3D.new()
@@ -159,6 +255,41 @@ func queue_redraw() -> void:
 	mat_ceu.set_shader_parameter("chefe", chefe)
 	for m in mats:
 		m.set_shader_parameter("tom", 1.0 - chefe * 0.25)
-	var t := Time.get_ticks_msec() / 1000.0
-	for n in nevoas:
-		n.no.position.x = n.x0 + fmod(t * n.v, 12.0) - 6.0
+
+## Sombra macia no chão (ou na plataforma) embaixo de quem pede. px/py em pixels do jogo (pés).
+func sombra(dono: Object, px: float, py: float, largura: float, vivo := true) -> void:
+	var q: MeshInstance3D = sombras.get(dono)
+	if not vivo:
+		if q: q.queue_free(); sombras.erase(dono)
+		return
+	if q == null:
+		q = MeshInstance3D.new()
+		var pm := PlaneMesh.new(); pm.size = Vector2.ONE
+		q.mesh = pm
+		var m := ShaderMaterial.new(); m.shader = SH_SOMBRA
+		q.material_override = m
+		add_child(q)
+		sombras[dono] = q
+	var chao := GameData.GROUND
+	for p in GameData.PLATS:
+		if px >= p.x and px <= p.x + p.w and py <= p.y + 2 and p.y < chao:
+			chao = p.y
+	var alt := maxf(0.0, chao - py)
+	var k := clampf(1.0 - alt / 90.0, 0.25, 1.0)
+	q.position = Vector3(px / PX, (GameData.GROUND - chao) / PX + 0.02, 0.0)
+	q.scale = Vector3(largura / PX * (0.6 + 0.4 * k), 1, largura / PX * 0.45)
+	(q.material_override as ShaderMaterial).set_shader_parameter("forca", 0.6 * k)
+
+## Braseiro mais próximo de um ponto (px) e a força da luz dele ali, para iluminar os bonecos.
+func luz_braseiro(px: float, py: float) -> Vector4:
+	var x := px / PX
+	var y := (GameData.GROUND - py) / PX + 0.7
+	var melhor := Vector4.ZERO
+	for b in brasas:
+		var d := Vector3(b.x - x, b.y - y, b.z - 0.0)
+		var l := d.length()
+		if l < 7.0:
+			var f := pow(1.0 - l / 7.0, 1.4) * 1.1
+			if f > melhor.w:
+				melhor = Vector4(d.x / l, d.y / l, d.z / l, f)
+	return melhor

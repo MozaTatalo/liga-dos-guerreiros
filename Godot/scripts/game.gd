@@ -51,7 +51,7 @@ func setup(indexes: Array, background) -> void:
 	ent_layer = Node2D.new(); add_child(ent_layer)
 	fx_layer = FxScript.new(); fx_layer.game = self; add_child(fx_layer)
 	camera = Camera2D.new(); add_child(camera); camera.make_current()
-	var hl := CanvasLayer.new(); add_child(hl)
+	var hl := CanvasLayer.new(); hl.layer = 2; add_child(hl)
 	hud = HudScript.new(); hud.game = self; hl.add_child(hud)
 	for i in indexes.size():
 		var p := Hero.new()
@@ -150,6 +150,13 @@ func add_fx(life: int, draw_fn: Callable) -> void:
 
 func callout(px: float, py: float, text: String, c) -> void:
 	add_fx(50, func(cv, k): Gfx.text(cv, text, px, py - k * 10, c, 9, 1, 1.0 if k < 0.8 else (1 - k) * 5))
+	fx[fx.size() - 1]["normal"] = true
+
+## Estrela de impacto e faíscas no ponto do golpe.
+func impacto(px: float, py: float, c, forte := false) -> void:
+	var tam := 9.0 if forte else 6.0
+	add_fx(10 if forte else 8, func(cv, k): Gfx.impacto(cv, px, py, c, k, tam))
+	sparks(px, py, c, 8 if forte else 5, 3.5 if forte else 2.5)
 
 func sparks(px: float, py: float, c, n: int, sp := 2.5) -> void:
 	for i in n:
@@ -159,7 +166,7 @@ func sparks(px: float, py: float, c, n: int, sp := 2.5) -> void:
 
 func dust(px: float, py: float, n := 4) -> void:
 	for i in n:
-		parts.append({"x": px + randf_range(-4, 4), "y": py, "vx": randf_range(-1, 1), "vy": randf_range(-1, -0.2), "life": randf_range(12, 22), "c": "#b9a888", "s": 2.0, "g": 0.0})
+		parts.append({"x": px + randf_range(-4, 4), "y": py, "vx": randf_range(-1, 1), "vy": randf_range(-1, -0.2), "life": randf_range(12, 22), "c": "#9a94c8", "s": 2.0, "g": 0.0})
 
 func ghost(p: Hero) -> void:
 	parts.append({"x": p.cx(), "y": p.y + 12, "vx": 0.0, "vy": 0.0, "life": 10.0, "c": p.d.body, "s": 7.0, "g": 0.0, "a": 0.35})
@@ -182,6 +189,7 @@ func damage_enemy(e: Enemy, dmg: float, dir: int, kbx: float, kby: float, heavy 
 	var crit := randf() < 0.1
 	var amount := int(roundf(dmg * randf_range(0.9, 1.1) * (1.5 if crit else 1.0)))
 	e.hp -= amount; e.flash_t = 6; e.active = true
+	impacto(e.x + e.w / 2 - dir * e.w * 0.25, e.y + e.h / 2, "#fff0b8" if (heavy or crit) else "#bfe4ff", heavy or crit)
 	if e.boss:
 		e.vx += dir * kbx * 0.12
 	else:

@@ -41,6 +41,7 @@ var J := {}
 var N := {}            # juntas por nome
 var rest_x := {}
 var mat_rosto: ShaderMaterial
+var mats := []           # materiais de cel-shading, para a luz dos braseiros
 var tex_aberto: Texture2D
 var piscar := 2.0
 var olho_fechado := 0.0
@@ -69,7 +70,7 @@ func _materiais(no: Node) -> void:
 	var mi := no as MeshInstance3D
 	if String(mi.name).begins_with("ct_"):
 		var esp := float(String(mi.name).split("_")[1]) / 10000.0
-		var mc := ShaderMaterial.new(); mc.shader = CONTORNO; mc.set_shader_parameter("esp", esp)
+		var mc := ShaderMaterial.new(); mc.shader = CONTORNO; mc.set_shader_parameter("esp", esp); mc.set_shader_parameter("escala", 2.4)
 		mi.material_override = mc
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		return
@@ -86,6 +87,8 @@ func _materiais(no: Node) -> void:
 	var g = GRAD_PELE if nm in PELE else (GRAD_CABELO if nm in CABELO else GRAD)
 	m.set_shader_parameter("degraus", g[0])
 	m.set_shader_parameter("n_degraus", g[1])
+	m.set_shader_parameter("forca_aro", 0.18)
+	mats.append(m)
 	mi.material_override = m
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	if nm == "rosto":
@@ -94,7 +97,14 @@ func _materiais(no: Node) -> void:
 
 # ---------- armas base de madeira das outras classes ----------
 func _mat(c: Color) -> ShaderMaterial:
-	var m := ShaderMaterial.new(); m.shader = TOON; m.set_shader_parameter("cor", c); return m
+	var m := ShaderMaterial.new(); m.shader = TOON; m.set_shader_parameter("cor", c)
+	m.set_shader_parameter("forca_aro", 0.18); mats.append(m); return m
+
+## Luz quente do braseiro mais perto (direção no mundo do jogo; x já espelhado pelo lado do herói).
+func luz_quente(dir: Vector3, forca: float) -> void:
+	for m in mats:
+		m.set_shader_parameter("luz_quente", dir)
+		m.set_shader_parameter("forca_quente", forca * 0.45)
 
 func _tubo(pts: PackedVector3Array, r0: float, r1: float, mat: ShaderMaterial, esp := 0.009) -> MeshInstance3D:
 	var st := SurfaceTool.new(); st.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -119,7 +129,7 @@ func _tubo(pts: PackedVector3Array, r0: float, r1: float, mat: ShaderMaterial, e
 	var mesh := st.commit()
 	var mi := MeshInstance3D.new(); mi.mesh = mesh; mi.material_override = mat
 	var ct := MeshInstance3D.new(); ct.mesh = mesh
-	var mc := ShaderMaterial.new(); mc.shader = CONTORNO; mc.set_shader_parameter("esp", esp); ct.material_override = mc
+	var mc := ShaderMaterial.new(); mc.shader = CONTORNO; mc.set_shader_parameter("esp", esp); mc.set_shader_parameter("escala", 2.4); ct.material_override = mc
 	mi.add_child(ct)
 	return mi
 

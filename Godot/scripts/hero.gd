@@ -33,6 +33,10 @@ var anim := 0
 var deny_t := 0
 var view: HeroView   # boneco 3D (corpo base) desenhado no lugar da arte provisória
 
+func _exit_tree() -> void:
+	if game and game.bg is Cenario3D:
+		game.bg.sombra(self, 0, 0, 0, false)
+
 func setup(g, def: Dictionary, inp: PlayerInput, index := 0) -> void:
 	game = g; d = def; input = inp; player_index = index
 	x = 60.0 + index * 20.0
@@ -299,6 +303,10 @@ func sync_node() -> void:
 	rotation = (-PI / 2 * clampf(dead_t / 20.0, 0, 1) * facing) if dead else 0.0
 	view.visible = not (invuln > 0 and state != "skill" and state != "dash" and not dead and invuln % 6 < 3)
 	_animar_boneco()
+	if game and game.bg is Cenario3D:
+		game.bg.sombra(self, cx(), y + h, 22.0)
+		var lb: Vector4 = game.bg.luz_braseiro(cx(), y + h)
+		view.boneco.luz_quente(Vector3(lb.x * facing, lb.y, lb.z), lb.w)
 	queue_redraw()
 
 ## Traduz o estado do herói para a pose do boneco 3D.

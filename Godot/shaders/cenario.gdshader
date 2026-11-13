@@ -9,16 +9,18 @@ uniform vec4 cor : source_color = vec4(1.0);
 uniform bool sem_luz = false;      // silhuetas distantes e vitrais
 uniform float brilho_proprio = 1.0;
 uniform float forca_nevoa = 1.0;
-uniform vec3 nevoa : source_color = vec3(0.106, 0.129, 0.212);
+uniform vec3 nevoa : source_color = vec3(0.13, 0.12, 0.26);
 uniform float nevoa_perto = 16.0;
 uniform float nevoa_longe = 78.0;
-uniform vec3 ceu : source_color = vec3(0.435, 0.498, 0.722);
-uniform vec3 chao : source_color = vec3(0.082, 0.071, 0.11);
-uniform vec3 cor_lua : source_color = vec3(0.663, 0.737, 1.0);
+uniform vec3 ceu : source_color = vec3(0.45, 0.46, 0.86);
+uniform vec3 chao : source_color = vec3(0.12, 0.07, 0.16);
+uniform vec3 cor_lua : source_color = vec3(0.62, 0.68, 1.0);
+uniform vec3 cor_aro : source_color = vec3(0.6, 0.55, 1.0);
+uniform float forca_aro = 0.55;
 uniform vec3 dir_lua = vec3(-0.35, 0.75, -0.55);
 uniform vec3 cor_frente : source_color = vec3(0.788, 0.761, 0.847);
 uniform vec3 dir_frente = vec3(0.35, 0.45, 1.0);
-uniform vec3 cor_brasa : source_color = vec3(1.0, 0.541, 0.235);
+uniform vec3 cor_brasa : source_color = vec3(1.0, 0.5, 0.18);
 uniform vec3 brasas[24];
 uniform int n_brasas = 0;
 uniform float tom = 1.0;           // escurece a área do chefe
@@ -49,9 +51,12 @@ void fragment() {
 			if (d < 10.0) {
 				float tremor = 0.85 + 0.15 * sin(TIME * 9.0 + float(i) * 1.7) * sin(TIME * 5.3 + float(i));
 				float at = pow(1.0 - d / 10.0, 1.6) * tremor;
-				luz += cor_brasa * 1.5 * at * clamp(dot(nw, dl / d) * 0.7 + 0.3, 0.0, 1.0);
+				luz += cor_brasa * 1.9 * at * clamp(dot(nw, dl / d) * 0.7 + 0.3, 0.0, 1.0);
 			}
 		}
+		// contorno de luz da lua nas bordas (o "brilho de anime" nas silhuetas)
+		float aro = pow(1.0 - clamp(dot(n, normalize(-VERTEX)), 0.0, 1.0), 3.0);
+		luz += cor_aro * step(0.35, aro) * forca_aro * clamp(nw.y * 0.5 + 0.6, 0.0, 1.0);
 		c = base.rgb * luz * tom;
 	}
 	float f = clamp((-VERTEX.z - nevoa_perto) / (nevoa_longe - nevoa_perto), 0.0, 1.0) * forca_nevoa;

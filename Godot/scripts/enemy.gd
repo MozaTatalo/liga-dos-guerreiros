@@ -29,7 +29,7 @@ var still := false
 var anim := 0.0
 var air := false
 var landed := false
-var esp: Espectro3D   # corpo 3D (espectro) dos inimigos que já vieram do teste gótico
+var esp: Inimigo3D   # corpo 3D do inimigo (espectro, lodo ou morcego), vive no Cenario3D
 
 func setup(g, k: String, px: float, s: int, plat_y = null) -> void:
 	game = g; kind = k; sec = s; x = px
@@ -45,9 +45,11 @@ func setup(g, k: String, px: float, s: int, plat_y = null) -> void:
 		y = GameData.GROUND - h
 	t = randi_range(0, 59)
 	anim = randf_range(0, 100)
-	if Espectro3D.TIPOS.has(k) and g.bg is Cenario3D:
-		esp = Espectro3D.new(k)
-		g.bg.add_child(esp)
+	if g.bg is Cenario3D:
+		if Espectro3D.TIPOS.has(k): esp = Espectro3D.new(k)
+		elif k == "lodo": esp = Lodo3D.new()
+		elif k == "morcego": esp = Morcego3D.new()
+		if esp: g.bg.add_child(esp)
 
 func tick() -> void:
 	var p: Hero = game.nearest_player(x + w / 2)
@@ -185,12 +187,18 @@ func contact_damage() -> float:
 func _exit_tree() -> void:
 	if is_instance_valid(esp):
 		esp.morrer()
+	if game and game.bg is Cenario3D:
+		game.bg.sombra(self, 0, 0, 0, false)
 
 func _sync_esp() -> void:
 	var PX := Cenario3D.PX
-	esp.position = Vector3((x + w / 2) / PX, (GameData.GROUND - (y + h)) / PX, 0.0)
+	var pe_y := (y + h / 2) if fly else (y + h)
+	esp.position = Vector3((x + w / 2) / PX, (GameData.GROUND - pe_y) / PX, 0.0)
 	esp.lado = dir
 	esp.vx = vx
+	esp.vy = vy
+	esp.no_chao = on_ground
+	game.bg.sombra(self, x + w / 2, y + h, w * (3.2 if boss else 1.7))
 	esp.furia = boss and hp < maxhp * 0.5
 	if flash_t > 0:
 		esp.flash = 0.05
@@ -199,6 +207,7 @@ func _sync_esp() -> void:
 	match kind:
 		"saqueador": prep = state == "windup"
 		"atirador": prep = state == "aim"
+		"morcego": prep = state == "dive" or state == "swoop"
 		"boss": prep = (state == "charge" and t < 35) or (state == "slam" and t < 20)
 	esp.preparo += ((1.0 if prep else 0.0) - esp.preparo) * 0.25
 	esp.posar(1.0 / 60.0)

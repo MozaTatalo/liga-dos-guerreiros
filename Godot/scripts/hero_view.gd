@@ -4,10 +4,10 @@ extends Node2D
 ## (câmera ortográfica de lado, 3/4 virado para a tela) e desenhado como um sprite.
 ## A origem deste nó fica nos pés do personagem.
 
-const PX := 26.0        # pixels do jogo por unidade do modelo (o boneco tem ~1,5 de altura = ~38 px)
+const PX := 31.0        # pixels do jogo por unidade do modelo (o boneco tem ~1,5 de altura = ~46 px; herói em destaque, como nos jogos de ação anime)
 const CAMPO := 2.8      # tamanho da área renderizada, em unidades do modelo
 const CENTRO_Y := 0.85  # altura do centro da câmera
-const RES := 320        # resolução do SubViewport
+const RES := 384        # resolução do SubViewport
 
 var boneco: Boneco3D
 var vp: SubViewport

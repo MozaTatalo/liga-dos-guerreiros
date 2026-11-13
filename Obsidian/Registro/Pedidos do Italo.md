@@ -35,3 +35,4 @@ tags: [pedido, registro]
 - **2026-11-13** — Gostou do rascunho 19. Pediu o corpo feminino só um pouquinho mais largo.
 - **2026-11-13** — Pediu para levar os bonecos novos (corpo masculino e feminino) para o jogo no Godot e para trazer o jogo para jogar direto no chat. #pedido #tecnologia
 - **2026-11-13** — Adorou os bonecos no jogo, mas achou o mapa feio. Pediu para trazer para o jogo o mapa e o inimigo (espectro) do teste gótico. #pedido #mapa #inimigo
+- **2026-11-13** — Gostou do mapa gótico. Pediu para deixar todos os personagens, inimigos e mapas bem mais bonitos, "com carinho", no estilo visual dos jogos de ação anime do gênero (só o estilo, nada copiado). #pedido #arte
