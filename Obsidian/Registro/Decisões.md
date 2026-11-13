@@ -35,3 +35,4 @@ tags: [decisao, registro]
 | 2026-11-13 | Corpo feminino: mesmo esqueleto e animações do masculino. Muda só a silhueta: ombros um pouco mais estreitos, cintura mais marcada, quadril um pouco mais largo, mãos e pés 10% menores | aguardando reação do Italo #pendente |
 | 2026-11-13 | Masculino: ombros para fora, braços afastados, parado com as pernas abertas. Feminino: ombros para dentro, braços junto ao corpo, parada com as pernas juntas | decidido |
 | 2026-11-13 | Roupa base feminina: top sem manga e short, com a barriga à mostra. Busto discreto, uma curva suave no estilo chibi. Masculino segue de macacão | aguardando reação do Italo #pendente |
+| 2026-11-13 | No Godot, os heróis são os bonecos 3D do `kael.js` exportados em glTF, renderizados num SubViewport e desenhados como sprite no jogo 2D (inimigos e cenário seguem 2D por enquanto). Kael e Oren usam o corpo masculino, Lyra o feminino, cada um com a arma base de madeira da classe e uma paleta | decidido |

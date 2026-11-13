@@ -3,6 +3,9 @@ extends Node2D
 
 var game
 
+func _ready() -> void:
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+
 func _draw() -> void:
 	var W := GameData.W
 	var H := GameData.H
@@ -51,7 +54,9 @@ func _player_panel(p: Hero, px: float) -> void:
 	var d := p.d
 	Gfx.rect(self, px, 6, 150, 34, "#0a0a19", 0.75); Gfx.rect(self, px, 6, 150, 1, d.trim)
 	Gfx.rect(self, px + 3, 9, 26, 28, "#24233f")
-	Gfx.hero(self, d, {"state": "idle", "anim": 0, "on_ground": true}, Transform2D(0.0, Vector2(px + 16, 38)))
+	# retrato: recorte da cabeça do próprio boneco 3D (ao vivo, até pisca)
+	if p.view and p.view.vp:
+		draw_texture_rect_region(p.view.vp.get_texture(), Rect2(px + 3, 9, 26, 28), Rect2(113, 72, 84, 90))
 	Gfx.text(self, "%s · %s" % [d.name, d.cls], px + 34, 13, "#ffffff", 7)
 	Gfx.rect(self, px + 34, 19, 110, 7, "#330000"); Gfx.rect(self, px + 34, 19, 110 * p.hp / d.hp, 7, "#e0413a"); Gfx.rect(self, px + 34, 19, 110 * p.hp / d.hp, 2, "#ff8a80")
 	Gfx.text(self, "%d/%d" % [ceili(p.hp), d.hp], px + 89, 23, "#ffffff", 6, 1)

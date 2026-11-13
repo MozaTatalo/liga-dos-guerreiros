@@ -31,12 +31,15 @@ var dead := false
 var dead_t := 0
 var anim := 0
 var deny_t := 0
+var view: HeroView   # boneco 3D (corpo base) desenhado no lugar da arte provisória
 
 func setup(g, def: Dictionary, inp: PlayerInput, index := 0) -> void:
 	game = g; d = def; input = inp; player_index = index
 	x = 60.0 + index * 20.0
 	y = GameData.GROUND - h
 	hp = d.hp; mp = d.mp
+	view = HeroView.new(d)
+	add_child(view)
 
 func cx() -> float:
 	return x + w / 2.0
@@ -286,8 +289,6 @@ func chain_lightning() -> void:
 func _draw() -> void:
 	if invuln > 0 and state != "skill" and state != "dash" and not dead and invuln % 6 < 3:
 		return
-	var s := {"state": state, "t": state_t, "step": step, "skill": skill, "anim": anim, "on_ground": on_ground}
-	Gfx.hero(self, d, s, Transform2D(0.0, Vector2(facing, 1), 0.0, Vector2.ZERO))
 	if state == "skill" and d.id == "guardiao" and skill == 1:
 		draw_set_transform(Vector2(0, -12), 0.0, Vector2(1, 0.4))
 		draw_arc(Vector2.ZERO, 30, state_t * 0.7, state_t * 0.7 + 4, 16, Gfx.col("#9fd3ff", 0.6), 2.0)
@@ -296,4 +297,40 @@ func _draw() -> void:
 func sync_node() -> void:
 	position = Vector2(roundf(cx()), roundf(y + h))
 	rotation = (-PI / 2 * clampf(dead_t / 20.0, 0, 1) * facing) if dead else 0.0
+	view.visible = not (invuln > 0 and state != "skill" and state != "dash" and not dead and invuln % 6 < 3)
+	_animar_boneco()
 	queue_redraw()
+
+## Traduz o estado do herói para a pose do boneco 3D.
+func _animar_boneco() -> void:
+	var b := view.boneco
+	view.virado = facing
+	b.vento = clampf(absf(vx) / 2.5, 0.0, 1.0)
+	b.vy = -vy
+	if dead or state == "hurt":
+		b.estado = "dor"
+	elif state == "attack":
+		b.estado = "atk"; b.passo = step
+		var hit: float = GameData.ATK_HIT[step]
+		var dur: float = GameData.ATK_DUR[step]
+		if state_t <= hit:
+			b.t = state_t / hit * b.ACERTO[step]
+		else:
+			b.t = b.ACERTO[step] + (state_t - hit) / maxf(1.0, dur - hit) * (b.DUR[step] - b.ACERTO[step])
+	elif state == "skill":
+		var p := 2
+		if d.id == "guardiao":
+			p = [0, (state_t / 9) % 2, 2][skill]
+		var sdur: float = d.skills[skill].dur
+		b.estado = "atk"; b.passo = p
+		var tt := float(state_t % 9) / 9.0 if (d.id == "guardiao" and skill == 1) else state_t / sdur
+		b.t = tt * b.DUR[p]
+	elif state == "dash":
+		b.estado = "run"
+	elif not on_ground:
+		b.estado = "ar"
+	elif state == "run":
+		b.estado = "run"
+	else:
+		b.estado = "idle"
+	view.animar(1.0 / 60.0)
