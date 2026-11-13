@@ -32,3 +32,4 @@ tags: [pedido, registro]
 - **2026-11-13** — Apontou uma faixa de opacidade na testa, embaixo do cabelo. Pediu para remover.
 - **2026-11-13** — Mandou duas referências de proporção (uma feminina, uma masculina, usadas só para proporção). Quer o corpo bem mais estreito: ombros bem próximos do corpo e pernas mais juntas. Pediu já os dois modelos, masculino e feminino, lado a lado.
 - **2026-11-13** — Quer mais diferença entre homem e mulher: masculino com ombros para fora e pose de pernas abertas, feminino com ombros para dentro e pernas juntas. Roupa base feminina diferente, com top, e com seios.
+- **2026-11-13** — Gostou do rascunho 19. Pediu o corpo feminino só um pouquinho mais largo.
