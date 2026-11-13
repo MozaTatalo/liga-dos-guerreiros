@@ -453,8 +453,9 @@ function KaelLib(T) {
     geo.setAttribute('uv', new T.Float32BufferAttribute(uv, 2)); return geo;
   }
 
-  function criar() {
-    var a = { raiz: new T.Group(), m: {}, tex: [], piscar: 2, olhoFechado: 0, slots: { armadura: [], manto: [], espada: [], escudo: [], cabelo: [] }, equip: { armadura: true, manto: true, espada: true, escudo: true, cabelo: true } }, M = a.m, P = a.p = {};
+  function criar(opc) { // opc.corpo: 'm' (padrão) ou 'f'. Mesmo esqueleto e animações, muda só a silhueta
+    var fem = !!(opc && opc.corpo === 'f'), kM = fem ? 0.9 : 1;
+    var a = { corpo: fem ? 'f' : 'm', raiz: new T.Group(), m: {}, tex: [], piscar: 2, olhoFechado: 0, slots: { armadura: [], manto: [], espada: [], escudo: [], cabelo: [] }, equip: { armadura: true, manto: true, espada: true, escudo: true, cabelo: true } }, M = a.m, P = a.p = {};
     function slot(n) { slotAtual = n ? a.slots[n] : null; }
     slot(null);
     function tex(w, h, pintar, extra) {
@@ -492,7 +493,7 @@ function KaelLib(T) {
 
     // ----- quadril -----
     P.quadril = grupo(a.raiz, 0, QY, 0);
-    peca(P.quadril, esfera(0.15, 0.7, 0.72, 1.16), M.macLiso, 0, -0.035, 0, C_MEDIO);
+    peca(P.quadril, esfera(0.15, 0.66, 0.72, fem ? 0.9 : 0.84), M.macLiso, 0, -0.035, 0, C_MEDIO);
     slot('armadura');
     var saia = new T.CylinderGeometry(0.16, 0.265, 0.34, 24, 1, true); saia.scale(0.9, 1, 1.2);
     peca(P.quadril, saia, M.saia, 0, -0.085, 0).scale.set(0.95, 0.62, 0.95);
@@ -518,8 +519,8 @@ function KaelLib(T) {
     slot(null);
 
     // ----- tronco -----
-    var perfil = [[0.136, 0], [0.138, 0.07], [0.128, 0.18], [0.14, 0.3], [0.166, 0.4], [0.17, 0.465], [0.158, 0.497], [0.08, 0.512], [0.066, 0.53], [0.062, NK]].map(function (p) { return new T.Vector2(p[0], p[1]); });
-    var geoTronco = new T.LatheGeometry(perfil, 28); geoTronco.scale(0.84, 1, 1.3);
+    var perfil = (fem ? [[0.142, 0], [0.144, 0.07], [0.116, 0.21], [0.126, 0.31], [0.146, 0.4], [0.15, 0.465], [0.14, 0.497], [0.076, 0.512], [0.064, 0.53], [0.06, NK]] : [[0.136, 0], [0.138, 0.07], [0.128, 0.18], [0.14, 0.3], [0.166, 0.4], [0.17, 0.465], [0.158, 0.497], [0.08, 0.512], [0.066, 0.53], [0.062, NK]]).map(function (p) { return new T.Vector2(p[0], p[1]); });
+    var geoTronco = new T.LatheGeometry(perfil, 28); geoTronco.scale(0.8, 1, 0.94); // tronco estreito
     peca(TG, geoTronco, M.macLiso, 0, 0, 0, C_GROSSO);
     var golaBase = new T.CylinderGeometry(0.088, 0.07, 0.07, 16, 1, true);
     peca(TG, golaBase, M.macDuplo, -0.006, NK - 0.04, 0);
@@ -601,7 +602,7 @@ function KaelLib(T) {
 
     slot('armadura');
     // ----- ombreiras: a do escudo é maior e tem crista -----
-    [[0.265, 1.0], [-0.265, 1.28]].forEach(function (o) {
+    [[0.2, 1.0], [-0.2, 1.28]].forEach(function (o) {
       var z = o[0], k = o[1], g = grupo(TG, 0, 0.475, z); g.rotation.x = z > 0 ? 0.4 : -0.4; g.scale.set(k * 0.95, k * 1.3, k * 0.95);
       for (var c = 0; c < 3; c++) {
         var og = new T.SphereGeometry(0.14 - c * 0.022, 16, 8, 0, PI * 2, 0, PI / 2); og.scale(1.08, 0.8, 1.05);
@@ -621,15 +622,15 @@ function KaelLib(T) {
       var o = {};
       o.ombro = grupo(P.tronco, 0, 0.42 * TS, z * TW);
       // base lisa: manga curta do macacão, braço e mão de pele
-      peca(o.ombro, esfera(0.062, 1, 1.05, 1), M.macLiso, 0, 0.004, 0, C_MEDIO);
-      peca(o.ombro, membro(0.047, 0.046, LU, true), M.pele, 0, 0, 0, C_MEDIO);
-      peca(o.ombro, membro(0.058, 0.055, LU * 0.62), M.macLiso, 0, 0, 0, C_MEDIO);
+      peca(o.ombro, esfera(0.054, 1, 1.05, 1), M.macLiso, 0, 0.004, 0, C_MEDIO);
+      peca(o.ombro, membro(0.041, 0.04, LU, true), M.pele, 0, 0, 0, C_MEDIO);
+      peca(o.ombro, membro(0.051, 0.048, LU * 0.62), M.macLiso, 0, 0, 0, C_MEDIO);
       o.cotovelo = grupo(o.ombro, 0, -LU, 0);
-      peca(o.cotovelo, esfera(0.046), M.pele, 0, 0, 0, C_MEDIO); // junta do mesmo raio do braço: sem emenda
-      peca(o.cotovelo, membro(0.046, 0.062, LF, true), M.pele, 0, 0, 0, C_MEDIO);
+      peca(o.cotovelo, esfera(0.04), M.pele, 0, 0, 0, C_MEDIO); // junta do mesmo raio do braço: sem emenda
+      peca(o.cotovelo, membro(0.04, 0.056, LF, true), M.pele, 0, 0, 0, C_MEDIO);
       o.mao = grupo(o.cotovelo, 0, -LF - 0.055, 0);
       // mão simples e grande, como o Italo aprovou: uma forma só, com polegar
-      peca(o.mao, esfera(0.08, 0.9, 1.1, 0.95), M.pele, 0, -0.004, 0, C_MEDIO);
+      peca(o.mao, esfera(0.08 * kM, 0.9, 1.1, 0.95), M.pele, 0, -0.004, 0, C_MEDIO);
       peca(o.mao, esfera(0.034, 1, 1.15, 1), M.pele, 0.05, 0.012, 0, C_FINO); // polegar
       slot('armadura');
       peca(o.ombro, membro(0.056, 0.053, LU), M.malha, 0, 0, 0, C_FINO);
@@ -644,7 +645,7 @@ function KaelLib(T) {
       slot(null);
       return o;
     }
-    P.bracoEspada = braco(0.262); P.bracoEscudo = braco(-0.262);
+    P.bracoEspada = braco(fem ? 0.172 : 0.19); P.bracoEscudo = braco(fem ? -0.172 : -0.19);
 
     // ----- espada longa com runas -----
     var E = P.espada = grupo(P.bracoEspada.mao, 0, 0, 0); a.slots.espada.push(E);
@@ -694,15 +695,15 @@ function KaelLib(T) {
       var o = {};
       o.coxa = grupo(P.quadril, 0, -0.06, z);
       // base lisa: short do macacão, perna e pé de pele
-      peca(o.coxa, membro(0.076, 0.066, L1, true), M.pele, 0, 0, 0, C_MEDIO);
-      peca(o.coxa, esfera(0.088), M.macLiso, 0, 0, 0, C_MEDIO); // raiz da coxa, une a perna ao quadril
-      peca(o.coxa, membro(0.086, 0.079, L1 * 0.66), M.macLiso, 0, 0, 0, C_MEDIO);
+      peca(o.coxa, membro(0.066, 0.058, L1, true), M.pele, 0, 0, 0, C_MEDIO);
+      peca(o.coxa, esfera(0.077), M.macLiso, 0, 0, 0, C_MEDIO); // raiz da coxa, une a perna ao quadril
+      peca(o.coxa, membro(0.075, 0.069, L1 * 0.66), M.macLiso, 0, 0, 0, C_MEDIO);
       o.joelho = grupo(o.coxa, 0, -L1, 0);
-      peca(o.joelho, esfera(0.066), M.pele, 0, 0, 0, C_MEDIO);
-      peca(o.joelho, membro(0.068, 0.092, L2, true), M.pele, 0, 0, 0, C_MEDIO);
+      peca(o.joelho, esfera(0.058), M.pele, 0, 0, 0, C_MEDIO);
+      peca(o.joelho, membro(0.058, 0.078, L2, true), M.pele, 0, 0, 0, C_MEDIO);
       // pé simples e grande, como o Italo aprovou (some sob a bota da armadura)
       var pe = grupo(o.joelho, 0.075, -L2 - 0.045, 0); pesBase.push(pe);
-      peca(pe, esfera(0.115, 1.6, 0.68, 1.0), M.pele, 0, 0, 0, C_MEDIO);
+      peca(pe, esfera(0.115 * kM, 1.55, 0.68, 0.72), M.pele, 0, fem ? -0.008 : 0, 0, C_MEDIO);
       slot('armadura');
       peca(o.coxa, membro(0.09, 0.077, L1), M.placa, 0, 0, 0, C_GROSSO);
       peca(o.joelho, esfera(0.08, 1.08, 1, 1), M.aco, 0.012, 0, 0, C_FINO);
@@ -719,7 +720,7 @@ function KaelLib(T) {
       slot(null);
       return o;
     }
-    P.pernaA = perna(0.105); P.pernaB = perna(-0.105);
+    P.pernaA = perna(0.08); P.pernaB = perna(-0.08);
 
     // ----- capa -----
     var gcapa = new T.PlaneGeometry(1, 1, 8, 14), pp = gcapa.attributes.position;

@@ -31,3 +31,5 @@ tags: [decisao, registro]
 | 2026-11-13 | O repositório GitHub `MozaTatalo/liga-dos-guerreiros` guarda a versão mais recente do projeto | decidido |
 | 2026-11-13 | Mãos e pés do modelo base ficam simples: mão em forma única com polegar e pé arredondado, sem dedos nem tornozelo modelados | decidido |
 | 2026-11-13 | Cabelo dos personagens feito de muitas mechas finas em camadas, com fios desenhados e contorno fino, rente à cabeça | decidido |
+| 2026-11-13 | Corpo base estreito: ombros quase na largura da cabeça, tronco fino, pernas juntas e membros finos | decidido |
+| 2026-11-13 | Corpo feminino: mesmo esqueleto e animações do masculino. Muda só a silhueta: ombros um pouco mais estreitos, cintura mais marcada, quadril um pouco mais largo, mãos e pés 10% menores | aguardando reação do Italo #pendente |

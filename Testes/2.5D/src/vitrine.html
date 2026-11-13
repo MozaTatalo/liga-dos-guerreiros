@@ -80,6 +80,11 @@ button[aria-pressed="true"] { background: var(--carmesim); border-color: var(--c
       <button type="button" data-vista="busto" aria-pressed="false">Busto</button>
       <button type="button" data-vista="corpo" aria-pressed="true">Corpo inteiro</button>
     </div></div>
+    <div class="grupo"><span>Corpo</span><div>
+      <button type="button" data-corpo="dois" aria-pressed="true">Os dois</button>
+      <button type="button" data-corpo="m" aria-pressed="false">Masculino</button>
+      <button type="button" data-corpo="f" aria-pressed="false">Feminino</button>
+    </div></div>
     <div class="grupo"><span>Cores</span><div>
       <button type="button" data-paleta="0" aria-pressed="true">Aço negro e carmesim</button>
       <button type="button" data-paleta="1" aria-pressed="false">Prata e azul-noite</button>
@@ -94,6 +99,7 @@ button[aria-pressed="true"] { background: var(--carmesim); border-color: var(--c
       <button type="button" id="eq-nada">Modelo base</button>
       <button type="button" id="eq-tudo">Vestir tudo</button>
       <button type="button" id="eq-cabelo" aria-pressed="true">Cabelo</button>
+      <button type="button" id="eq-armas" aria-pressed="true">Armas</button>
     </div></div>
     <div class="grupo"><span>Animação</span><div>
       <button type="button" data-anim="idle" aria-pressed="true">Parado</button>
@@ -102,7 +108,7 @@ button[aria-pressed="true"] { background: var(--carmesim); border-color: var(--c
     </div></div>
   </div>
 
-  <p class="dica">Arraste para girar · role para aproximar</p>
+  <p class="dica">Masculino à esquerda, feminino à direita · arraste para girar · role para aproximar</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -172,28 +178,35 @@ button[aria-pressed="true"] { background: var(--carmesim); border-color: var(--c
   var cinzas = new T.Points(geoP, new T.PointsMaterial({ color: cor(0xffb070), size: 0.035, transparent: true, opacity: 0.8, depthWrite: false, blending: T.AdditiveBlending })); scene.add(cinzas);
 
   // Kael
-  var Kael = KaelLib(T), k = Kael.criar(); scene.add(k.raiz);
-  function vestir(nome, on) { Kael.equipar(k, nome, on); document.querySelector('[data-equip="' + nome + '"]').setAttribute('aria-pressed', String(on)); }
+  var Kael = KaelLib(T), k = Kael.criar(), kf = Kael.criar({ corpo: 'f' }), MODS = [k, kf], corpoVisto = 'dois';
+  scene.add(k.raiz); scene.add(kf.raiz);
+  function arrumar() { k.raiz.visible = corpoVisto !== 'f'; kf.raiz.visible = corpoVisto !== 'm'; k.raiz.position.x = corpoVisto === 'dois' ? -0.42 : 0; kf.raiz.position.x = corpoVisto === 'dois' ? 0.42 : 0; }
+  arrumar();
+  document.querySelectorAll('[data-corpo]').forEach(function (b) { b.addEventListener('click', function () { corpoVisto = b.getAttribute('data-corpo'); marcar('data-corpo', corpoVisto); arrumar(); }); });
+  var armas = true;
+  function aplicarArmas() { MODS.forEach(function (m) { ['espada', 'escudo'].forEach(function (n) { m.base[n].visible = armas && !m.equip[n]; m.slots[n].forEach(function (o) { o.visible = armas && m.equip[n]; }); }); }); }
+  function vestir(nome, on) { MODS.forEach(function (m) { Kael.equipar(m, nome, on); }); aplicarArmas(); document.querySelector('[data-equip="' + nome + '"]').setAttribute('aria-pressed', String(on)); }
   var PECAS = ['armadura', 'manto', 'espada', 'escudo'];
   PECAS.forEach(function (n) { vestir(n, false); });
   document.querySelectorAll('[data-equip]').forEach(function (b) { b.addEventListener('click', function () { var n = b.getAttribute('data-equip'); vestir(n, !k.equip[n]); }); });
   document.getElementById('eq-nada').addEventListener('click', function () { PECAS.forEach(function (n) { vestir(n, false); }); });
-  document.getElementById('eq-cabelo').addEventListener('click', function () { var on = !k.equip.cabelo; Kael.equipar(k, 'cabelo', on); this.setAttribute('aria-pressed', String(on)); });
+  document.getElementById('eq-cabelo').addEventListener('click', function () { var on = !k.equip.cabelo; MODS.forEach(function (m) { Kael.equipar(m, 'cabelo', on); }); this.setAttribute('aria-pressed', String(on)); });
+  document.getElementById('eq-armas').addEventListener('click', function () { armas = !armas; this.setAttribute('aria-pressed', String(armas)); aplicarArmas(); });
   document.getElementById('eq-tudo').addEventListener('click', function () { PECAS.forEach(function (n) { vestir(n, true); }); });
   var VISTAS = { rosto: { y: 1.24, d: 1.7 }, busto: { y: 1.05, d: 2.6 }, corpo: { y: 0.78, d: 4.9 } };
   var giro = -PI / 2 + 0.5, giroAlvo = giro, elev = 0.08, elevAlvo = 0.08, alvo = { y: 0.78, d: 4.9 }, atual = { y: 0.78, d: 4.9 };
   var anim = 'idle', arrastando = false, px = 0, py = 0, auto = true;
   function marcar(attr, val) { document.querySelectorAll('[' + attr + ']').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute(attr) === String(val))); }); }
   document.querySelectorAll('[data-vista]').forEach(function (b) { b.addEventListener('click', function () { var v = VISTAS[b.getAttribute('data-vista')]; alvo.y = v.y; alvo.d = v.d; marcar('data-vista', b.getAttribute('data-vista')); if (b.getAttribute('data-vista') !== 'corpo') { giroAlvo = -PI / 2 + 0.45; elevAlvo = 0.02; auto = false; } }); });
-  document.querySelectorAll('[data-paleta]').forEach(function (b) { b.addEventListener('click', function () { Kael.paleta(k, +b.getAttribute('data-paleta')); marcar('data-paleta', b.getAttribute('data-paleta')); }); });
-  document.querySelectorAll('[data-anim]').forEach(function (b) { b.addEventListener('click', function () { anim = b.getAttribute('data-anim'); marcar('data-anim', anim); if (anim === 'atk') { k.estado = 'atk'; k.passo = 0; k.t = 0; novoRastro(); } }); });
+  document.querySelectorAll('[data-paleta]').forEach(function (b) { b.addEventListener('click', function () { MODS.forEach(function (m) { Kael.paleta(m, +b.getAttribute('data-paleta')); }); marcar('data-paleta', b.getAttribute('data-paleta')); }); });
+  document.querySelectorAll('[data-anim]').forEach(function (b) { b.addEventListener('click', function () { anim = b.getAttribute('data-anim'); marcar('data-anim', anim); if (anim === 'atk') { MODS.forEach(function (m) { m.estado = 'atk'; m.passo = 0; m.t = 0; }); novoRastro(); } }); });
   palco.addEventListener('pointerdown', function (e) { if (e.target.closest('button')) return; arrastando = true; auto = false; px = e.clientX; py = e.clientY; palco.setPointerCapture(e.pointerId); });
   palco.addEventListener('pointermove', function (e) { if (!arrastando) return; giroAlvo += (e.clientX - px) * 0.01; elevAlvo = Math.max(-0.25, Math.min(0.7, elevAlvo + (e.clientY - py) * 0.005)); px = e.clientX; py = e.clientY; });
   ['pointerup', 'pointercancel'].forEach(function (ev) { palco.addEventListener(ev, function () { arrastando = false; }); });
   palco.addEventListener('wheel', function (e) { e.preventDefault(); alvo.d = Math.max(0.9, Math.min(8, alvo.d * (e.deltaY > 0 ? 1.1 : 0.9))); }, { passive: false });
   function novoRastro() {
     var a = Kael.ARCO[k.passo], ini = a[0] - PI / 2, fim = a[1] - PI / 2;
-    k.rastro.geometry.dispose(); k.rastro.geometry = new T.RingGeometry(0.9, k.passo === 2 ? 2.05 : 1.85, 28, 1, Math.min(ini, fim), Math.abs(fim - ini));
+    MODS.forEach(function (m) { m.rastro.geometry.dispose(); m.rastro.geometry = new T.RingGeometry(0.9, k.passo === 2 ? 2.05 : 1.85, 28, 1, Math.min(ini, fim), Math.abs(fim - ini)); });
   }
   function ajustar() { var w = palco.clientWidth || 800, h = palco.clientHeight || 450; renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w / h < 1 ? 38 : 26; camera.updateProjectionMatrix(); }
   window.addEventListener('resize', ajustar); ajustar();
@@ -202,18 +215,21 @@ button[aria-pressed="true"] { background: var(--carmesim); border-color: var(--c
   function quadro(agora) {
     requestAnimationFrame(quadro);
     var dt = Math.min(0.033, (agora - antes) / 1000); antes = agora; tempo += dt;
-    k.relogio += dt;
+    var ventoAlvo = anim === 'run' ? 0.75 : anim === 'atk' ? 0.5 : 0.06 + Math.sin(tempo * 0.7) * 0.05, virou = false;
     if (anim === 'atk') {
-      k.estado = 'atk'; k.t += dt;
-      if (k.t >= Kael.DUR[k.passo] + (k.passo === 2 ? 0.5 : 0.04)) { k.passo = (k.passo + 1) % 3; k.t = 0; novoRastro(); }
-    } else k.estado = anim;
-    var ventoAlvo = anim === 'run' ? 0.75 : anim === 'atk' ? 0.5 : 0.06 + Math.sin(tempo * 0.7) * 0.05;
-    k.vento += (ventoAlvo - k.vento) * Math.min(1, dt * 5);
-    Kael.posar(k, dt);
+      k.t += dt;
+      if (k.t >= Kael.DUR[k.passo] + (k.passo === 2 ? 0.5 : 0.04)) { k.passo = (k.passo + 1) % 3; k.t = 0; virou = true; }
+    }
+    MODS.forEach(function (m) {
+      m.relogio += dt; m.estado = anim; m.t = k.t; m.passo = k.passo;
+      m.vento += (ventoAlvo - m.vento) * Math.min(1, dt * 5);
+    });
+    if (virou) novoRastro();
+    MODS.forEach(function (m) { Kael.posar(m, dt); });
     if (auto) giroAlvo += dt * 0.25;
     giro += (giroAlvo - giro) * Math.min(1, dt * 8); elev += (elevAlvo - elev) * Math.min(1, dt * 8);
     atual.y += (alvo.y - atual.y) * Math.min(1, dt * 5); atual.d += (alvo.d - atual.d) * Math.min(1, dt * 5);
-    k.raiz.rotation.y = giro;
+    MODS.forEach(function (m) { m.raiz.rotation.y = giro; });
     camera.position.set(0, atual.y + Math.sin(elev) * atual.d, Math.cos(elev) * atual.d); camera.lookAt(0, atual.y, 0);
     var fl = 0.85 + Math.sin(tempo * 11) * 0.08 + Math.sin(tempo * 23) * 0.07;
     fogo.intensity = 0.9 * fl; chama.scale.set(1.2 * fl, 1.5 * fl, 1); chama2.scale.set(0.5 * fl, 0.7 * fl, 1);

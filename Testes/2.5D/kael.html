@@ -80,6 +80,11 @@ button[aria-pressed="true"] { background: var(--carmesim); border-color: var(--c
       <button type="button" data-vista="busto" aria-pressed="false">Busto</button>
       <button type="button" data-vista="corpo" aria-pressed="true">Corpo inteiro</button>
     </div></div>
+    <div class="grupo"><span>Corpo</span><div>
+      <button type="button" data-corpo="dois" aria-pressed="true">Os dois</button>
+      <button type="button" data-corpo="m" aria-pressed="false">Masculino</button>
+      <button type="button" data-corpo="f" aria-pressed="false">Feminino</button>
+    </div></div>
     <div class="grupo"><span>Cores</span><div>
       <button type="button" data-paleta="0" aria-pressed="true">Aço negro e carmesim</button>
       <button type="button" data-paleta="1" aria-pressed="false">Prata e azul-noite</button>
@@ -94,6 +99,7 @@ button[aria-pressed="true"] { background: var(--carmesim); border-color: var(--c
       <button type="button" id="eq-nada">Modelo base</button>
       <button type="button" id="eq-tudo">Vestir tudo</button>
       <button type="button" id="eq-cabelo" aria-pressed="true">Cabelo</button>
+      <button type="button" id="eq-armas" aria-pressed="true">Armas</button>
     </div></div>
     <div class="grupo"><span>Animação</span><div>
       <button type="button" data-anim="idle" aria-pressed="true">Parado</button>
@@ -102,7 +108,7 @@ button[aria-pressed="true"] { background: var(--carmesim); border-color: var(--c
     </div></div>
   </div>
 
-  <p class="dica">Arraste para girar · role para aproximar</p>
+  <p class="dica">Masculino à esquerda, feminino à direita · arraste para girar · role para aproximar</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -437,8 +443,9 @@ function KaelLib(T) {
     geo.setAttribute('uv', new T.Float32BufferAttribute(uv, 2)); return geo;
   }
 
-  function criar() {
-    var a = { raiz: new T.Group(), m: {}, tex: [], piscar: 2, olhoFechado: 0, slots: { armadura: [], manto: [], espada: [], escudo: [], cabelo: [] }, equip: { armadura: true, manto: true, espada: true, escudo: true, cabelo: true } }, M = a.m, P = a.p = {};
+  function criar(opc) { // opc.corpo: 'm' (padrão) ou 'f'. Mesmo esqueleto e animações, muda só a silhueta
+    var fem = !!(opc && opc.corpo === 'f'), kM = fem ? 0.9 : 1;
+    var a = { corpo: fem ? 'f' : 'm', raiz: new T.Group(), m: {}, tex: [], piscar: 2, olhoFechado: 0, slots: { armadura: [], manto: [], espada: [], escudo: [], cabelo: [] }, equip: { armadura: true, manto: true, espada: true, escudo: true, cabelo: true } }, M = a.m, P = a.p = {};
     function slot(n) { slotAtual = n ? a.slots[n] : null; }
     slot(null);
     function tex(w, h, pintar, extra) {
@@ -476,7 +483,7 @@ function KaelLib(T) {
 
     // ----- quadril -----
     P.quadril = grupo(a.raiz, 0, QY, 0);
-    peca(P.quadril, esfera(0.15, 0.7, 0.72, 1.16), M.macLiso, 0, -0.035, 0, C_MEDIO);
+    peca(P.quadril, esfera(0.15, 0.66, 0.72, fem ? 0.9 : 0.84), M.macLiso, 0, -0.035, 0, C_MEDIO);
     slot('armadura');
     var saia = new T.CylinderGeometry(0.16, 0.265, 0.34, 24, 1, true); saia.scale(0.9, 1, 1.2);
     peca(P.quadril, saia, M.saia, 0, -0.085, 0).scale.set(0.95, 0.62, 0.95);
@@ -502,8 +509,8 @@ function KaelLib(T) {
     slot(null);
 
     // ----- tronco -----
-    var perfil = [[0.136, 0], [0.138, 0.07], [0.128, 0.18], [0.14, 0.3], [0.166, 0.4], [0.17, 0.465], [0.158, 0.497], [0.08, 0.512], [0.066, 0.53], [0.062, NK]].map(function (p) { return new T.Vector2(p[0], p[1]); });
-    var geoTronco = new T.LatheGeometry(perfil, 28); geoTronco.scale(0.84, 1, 1.3);
+    var perfil = (fem ? [[0.142, 0], [0.144, 0.07], [0.116, 0.21], [0.126, 0.31], [0.146, 0.4], [0.15, 0.465], [0.14, 0.497], [0.076, 0.512], [0.064, 0.53], [0.06, NK]] : [[0.136, 0], [0.138, 0.07], [0.128, 0.18], [0.14, 0.3], [0.166, 0.4], [0.17, 0.465], [0.158, 0.497], [0.08, 0.512], [0.066, 0.53], [0.062, NK]]).map(function (p) { return new T.Vector2(p[0], p[1]); });
+    var geoTronco = new T.LatheGeometry(perfil, 28); geoTronco.scale(0.8, 1, 0.94); // tronco estreito
     peca(TG, geoTronco, M.macLiso, 0, 0, 0, C_GROSSO);
     var golaBase = new T.CylinderGeometry(0.088, 0.07, 0.07, 16, 1, true);
     peca(TG, golaBase, M.macDuplo, -0.006, NK - 0.04, 0);
@@ -585,7 +592,7 @@ function KaelLib(T) {
 
     slot('armadura');
     // ----- ombreiras: a do escudo é maior e tem crista -----
-    [[0.265, 1.0], [-0.265, 1.28]].forEach(function (o) {
+    [[0.2, 1.0], [-0.2, 1.28]].forEach(function (o) {
       var z = o[0], k = o[1], g = grupo(TG, 0, 0.475, z); g.rotation.x = z > 0 ? 0.4 : -0.4; g.scale.set(k * 0.95, k * 1.3, k * 0.95);
       for (var c = 0; c < 3; c++) {
         var og = new T.SphereGeometry(0.14 - c * 0.022, 16, 8, 0, PI * 2, 0, PI / 2); og.scale(1.08, 0.8, 1.05);
@@ -605,15 +612,15 @@ function KaelLib(T) {
       var o = {};
       o.ombro = grupo(P.tronco, 0, 0.42 * TS, z * TW);
       // base lisa: manga curta do macacão, braço e mão de pele
-      peca(o.ombro, esfera(0.062, 1, 1.05, 1), M.macLiso, 0, 0.004, 0, C_MEDIO);
-      peca(o.ombro, membro(0.047, 0.046, LU, true), M.pele, 0, 0, 0, C_MEDIO);
-      peca(o.ombro, membro(0.058, 0.055, LU * 0.62), M.macLiso, 0, 0, 0, C_MEDIO);
+      peca(o.ombro, esfera(0.054, 1, 1.05, 1), M.macLiso, 0, 0.004, 0, C_MEDIO);
+      peca(o.ombro, membro(0.041, 0.04, LU, true), M.pele, 0, 0, 0, C_MEDIO);
+      peca(o.ombro, membro(0.051, 0.048, LU * 0.62), M.macLiso, 0, 0, 0, C_MEDIO);
       o.cotovelo = grupo(o.ombro, 0, -LU, 0);
-      peca(o.cotovelo, esfera(0.046), M.pele, 0, 0, 0, C_MEDIO); // junta do mesmo raio do braço: sem emenda
-      peca(o.cotovelo, membro(0.046, 0.062, LF, true), M.pele, 0, 0, 0, C_MEDIO);
+      peca(o.cotovelo, esfera(0.04), M.pele, 0, 0, 0, C_MEDIO); // junta do mesmo raio do braço: sem emenda
+      peca(o.cotovelo, membro(0.04, 0.056, LF, true), M.pele, 0, 0, 0, C_MEDIO);
       o.mao = grupo(o.cotovelo, 0, -LF - 0.055, 0);
       // mão simples e grande, como o Italo aprovou: uma forma só, com polegar
-      peca(o.mao, esfera(0.08, 0.9, 1.1, 0.95), M.pele, 0, -0.004, 0, C_MEDIO);
+      peca(o.mao, esfera(0.08 * kM, 0.9, 1.1, 0.95), M.pele, 0, -0.004, 0, C_MEDIO);
       peca(o.mao, esfera(0.034, 1, 1.15, 1), M.pele, 0.05, 0.012, 0, C_FINO); // polegar
       slot('armadura');
       peca(o.ombro, membro(0.056, 0.053, LU), M.malha, 0, 0, 0, C_FINO);
@@ -628,7 +635,7 @@ function KaelLib(T) {
       slot(null);
       return o;
     }
-    P.bracoEspada = braco(0.262); P.bracoEscudo = braco(-0.262);
+    P.bracoEspada = braco(fem ? 0.172 : 0.19); P.bracoEscudo = braco(fem ? -0.172 : -0.19);
 
     // ----- espada longa com runas -----
     var E = P.espada = grupo(P.bracoEspada.mao, 0, 0, 0); a.slots.espada.push(E);
@@ -678,15 +685,15 @@ function KaelLib(T) {
       var o = {};
       o.coxa = grupo(P.quadril, 0, -0.06, z);
       // base lisa: short do macacão, perna e pé de pele
-      peca(o.coxa, membro(0.076, 0.066, L1, true), M.pele, 0, 0, 0, C_MEDIO);
-      peca(o.coxa, esfera(0.088), M.macLiso, 0, 0, 0, C_MEDIO); // raiz da coxa, une a perna ao quadril
-      peca(o.coxa, membro(0.086, 0.079, L1 * 0.66), M.macLiso, 0, 0, 0, C_MEDIO);
+      peca(o.coxa, membro(0.066, 0.058, L1, true), M.pele, 0, 0, 0, C_MEDIO);
+      peca(o.coxa, esfera(0.077), M.macLiso, 0, 0, 0, C_MEDIO); // raiz da coxa, une a perna ao quadril
+      peca(o.coxa, membro(0.075, 0.069, L1 * 0.66), M.macLiso, 0, 0, 0, C_MEDIO);
       o.joelho = grupo(o.coxa, 0, -L1, 0);
-      peca(o.joelho, esfera(0.066), M.pele, 0, 0, 0, C_MEDIO);
-      peca(o.joelho, membro(0.068, 0.092, L2, true), M.pele, 0, 0, 0, C_MEDIO);
+      peca(o.joelho, esfera(0.058), M.pele, 0, 0, 0, C_MEDIO);
+      peca(o.joelho, membro(0.058, 0.078, L2, true), M.pele, 0, 0, 0, C_MEDIO);
       // pé simples e grande, como o Italo aprovou (some sob a bota da armadura)
       var pe = grupo(o.joelho, 0.075, -L2 - 0.045, 0); pesBase.push(pe);
-      peca(pe, esfera(0.115, 1.6, 0.68, 1.0), M.pele, 0, 0, 0, C_MEDIO);
+      peca(pe, esfera(0.115 * kM, 1.55, 0.68, 0.72), M.pele, 0, fem ? -0.008 : 0, 0, C_MEDIO);
       slot('armadura');
       peca(o.coxa, membro(0.09, 0.077, L1), M.placa, 0, 0, 0, C_GROSSO);
       peca(o.joelho, esfera(0.08, 1.08, 1, 1), M.aco, 0.012, 0, 0, C_FINO);
@@ -703,7 +710,7 @@ function KaelLib(T) {
       slot(null);
       return o;
     }
-    P.pernaA = perna(0.105); P.pernaB = perna(-0.105);
+    P.pernaA = perna(0.08); P.pernaB = perna(-0.08);
 
     // ----- capa -----
     var gcapa = new T.PlaneGeometry(1, 1, 8, 14), pp = gcapa.attributes.position;
@@ -869,28 +876,35 @@ function KaelLib(T) {
   var cinzas = new T.Points(geoP, new T.PointsMaterial({ color: cor(0xffb070), size: 0.035, transparent: true, opacity: 0.8, depthWrite: false, blending: T.AdditiveBlending })); scene.add(cinzas);
 
   // Kael
-  var Kael = KaelLib(T), k = Kael.criar(); scene.add(k.raiz);
-  function vestir(nome, on) { Kael.equipar(k, nome, on); document.querySelector('[data-equip="' + nome + '"]').setAttribute('aria-pressed', String(on)); }
+  var Kael = KaelLib(T), k = Kael.criar(), kf = Kael.criar({ corpo: 'f' }), MODS = [k, kf], corpoVisto = 'dois';
+  scene.add(k.raiz); scene.add(kf.raiz);
+  function arrumar() { k.raiz.visible = corpoVisto !== 'f'; kf.raiz.visible = corpoVisto !== 'm'; k.raiz.position.x = corpoVisto === 'dois' ? -0.42 : 0; kf.raiz.position.x = corpoVisto === 'dois' ? 0.42 : 0; }
+  arrumar();
+  document.querySelectorAll('[data-corpo]').forEach(function (b) { b.addEventListener('click', function () { corpoVisto = b.getAttribute('data-corpo'); marcar('data-corpo', corpoVisto); arrumar(); }); });
+  var armas = true;
+  function aplicarArmas() { MODS.forEach(function (m) { ['espada', 'escudo'].forEach(function (n) { m.base[n].visible = armas && !m.equip[n]; m.slots[n].forEach(function (o) { o.visible = armas && m.equip[n]; }); }); }); }
+  function vestir(nome, on) { MODS.forEach(function (m) { Kael.equipar(m, nome, on); }); aplicarArmas(); document.querySelector('[data-equip="' + nome + '"]').setAttribute('aria-pressed', String(on)); }
   var PECAS = ['armadura', 'manto', 'espada', 'escudo'];
   PECAS.forEach(function (n) { vestir(n, false); });
   document.querySelectorAll('[data-equip]').forEach(function (b) { b.addEventListener('click', function () { var n = b.getAttribute('data-equip'); vestir(n, !k.equip[n]); }); });
   document.getElementById('eq-nada').addEventListener('click', function () { PECAS.forEach(function (n) { vestir(n, false); }); });
-  document.getElementById('eq-cabelo').addEventListener('click', function () { var on = !k.equip.cabelo; Kael.equipar(k, 'cabelo', on); this.setAttribute('aria-pressed', String(on)); });
+  document.getElementById('eq-cabelo').addEventListener('click', function () { var on = !k.equip.cabelo; MODS.forEach(function (m) { Kael.equipar(m, 'cabelo', on); }); this.setAttribute('aria-pressed', String(on)); });
+  document.getElementById('eq-armas').addEventListener('click', function () { armas = !armas; this.setAttribute('aria-pressed', String(armas)); aplicarArmas(); });
   document.getElementById('eq-tudo').addEventListener('click', function () { PECAS.forEach(function (n) { vestir(n, true); }); });
   var VISTAS = { rosto: { y: 1.24, d: 1.7 }, busto: { y: 1.05, d: 2.6 }, corpo: { y: 0.78, d: 4.9 } };
   var giro = -PI / 2 + 0.5, giroAlvo = giro, elev = 0.08, elevAlvo = 0.08, alvo = { y: 0.78, d: 4.9 }, atual = { y: 0.78, d: 4.9 };
   var anim = 'idle', arrastando = false, px = 0, py = 0, auto = true;
   function marcar(attr, val) { document.querySelectorAll('[' + attr + ']').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute(attr) === String(val))); }); }
   document.querySelectorAll('[data-vista]').forEach(function (b) { b.addEventListener('click', function () { var v = VISTAS[b.getAttribute('data-vista')]; alvo.y = v.y; alvo.d = v.d; marcar('data-vista', b.getAttribute('data-vista')); if (b.getAttribute('data-vista') !== 'corpo') { giroAlvo = -PI / 2 + 0.45; elevAlvo = 0.02; auto = false; } }); });
-  document.querySelectorAll('[data-paleta]').forEach(function (b) { b.addEventListener('click', function () { Kael.paleta(k, +b.getAttribute('data-paleta')); marcar('data-paleta', b.getAttribute('data-paleta')); }); });
-  document.querySelectorAll('[data-anim]').forEach(function (b) { b.addEventListener('click', function () { anim = b.getAttribute('data-anim'); marcar('data-anim', anim); if (anim === 'atk') { k.estado = 'atk'; k.passo = 0; k.t = 0; novoRastro(); } }); });
+  document.querySelectorAll('[data-paleta]').forEach(function (b) { b.addEventListener('click', function () { MODS.forEach(function (m) { Kael.paleta(m, +b.getAttribute('data-paleta')); }); marcar('data-paleta', b.getAttribute('data-paleta')); }); });
+  document.querySelectorAll('[data-anim]').forEach(function (b) { b.addEventListener('click', function () { anim = b.getAttribute('data-anim'); marcar('data-anim', anim); if (anim === 'atk') { MODS.forEach(function (m) { m.estado = 'atk'; m.passo = 0; m.t = 0; }); novoRastro(); } }); });
   palco.addEventListener('pointerdown', function (e) { if (e.target.closest('button')) return; arrastando = true; auto = false; px = e.clientX; py = e.clientY; palco.setPointerCapture(e.pointerId); });
   palco.addEventListener('pointermove', function (e) { if (!arrastando) return; giroAlvo += (e.clientX - px) * 0.01; elevAlvo = Math.max(-0.25, Math.min(0.7, elevAlvo + (e.clientY - py) * 0.005)); px = e.clientX; py = e.clientY; });
   ['pointerup', 'pointercancel'].forEach(function (ev) { palco.addEventListener(ev, function () { arrastando = false; }); });
   palco.addEventListener('wheel', function (e) { e.preventDefault(); alvo.d = Math.max(0.9, Math.min(8, alvo.d * (e.deltaY > 0 ? 1.1 : 0.9))); }, { passive: false });
   function novoRastro() {
     var a = Kael.ARCO[k.passo], ini = a[0] - PI / 2, fim = a[1] - PI / 2;
-    k.rastro.geometry.dispose(); k.rastro.geometry = new T.RingGeometry(0.9, k.passo === 2 ? 2.05 : 1.85, 28, 1, Math.min(ini, fim), Math.abs(fim - ini));
+    MODS.forEach(function (m) { m.rastro.geometry.dispose(); m.rastro.geometry = new T.RingGeometry(0.9, k.passo === 2 ? 2.05 : 1.85, 28, 1, Math.min(ini, fim), Math.abs(fim - ini)); });
   }
   function ajustar() { var w = palco.clientWidth || 800, h = palco.clientHeight || 450; renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w / h < 1 ? 38 : 26; camera.updateProjectionMatrix(); }
   window.addEventListener('resize', ajustar); ajustar();
@@ -899,18 +913,21 @@ function KaelLib(T) {
   function quadro(agora) {
     requestAnimationFrame(quadro);
     var dt = Math.min(0.033, (agora - antes) / 1000); antes = agora; tempo += dt;
-    k.relogio += dt;
+    var ventoAlvo = anim === 'run' ? 0.75 : anim === 'atk' ? 0.5 : 0.06 + Math.sin(tempo * 0.7) * 0.05, virou = false;
     if (anim === 'atk') {
-      k.estado = 'atk'; k.t += dt;
-      if (k.t >= Kael.DUR[k.passo] + (k.passo === 2 ? 0.5 : 0.04)) { k.passo = (k.passo + 1) % 3; k.t = 0; novoRastro(); }
-    } else k.estado = anim;
-    var ventoAlvo = anim === 'run' ? 0.75 : anim === 'atk' ? 0.5 : 0.06 + Math.sin(tempo * 0.7) * 0.05;
-    k.vento += (ventoAlvo - k.vento) * Math.min(1, dt * 5);
-    Kael.posar(k, dt);
+      k.t += dt;
+      if (k.t >= Kael.DUR[k.passo] + (k.passo === 2 ? 0.5 : 0.04)) { k.passo = (k.passo + 1) % 3; k.t = 0; virou = true; }
+    }
+    MODS.forEach(function (m) {
+      m.relogio += dt; m.estado = anim; m.t = k.t; m.passo = k.passo;
+      m.vento += (ventoAlvo - m.vento) * Math.min(1, dt * 5);
+    });
+    if (virou) novoRastro();
+    MODS.forEach(function (m) { Kael.posar(m, dt); });
     if (auto) giroAlvo += dt * 0.25;
     giro += (giroAlvo - giro) * Math.min(1, dt * 8); elev += (elevAlvo - elev) * Math.min(1, dt * 8);
     atual.y += (alvo.y - atual.y) * Math.min(1, dt * 5); atual.d += (alvo.d - atual.d) * Math.min(1, dt * 5);
-    k.raiz.rotation.y = giro;
+    MODS.forEach(function (m) { m.raiz.rotation.y = giro; });
     camera.position.set(0, atual.y + Math.sin(elev) * atual.d, Math.cos(elev) * atual.d); camera.lookAt(0, atual.y, 0);
     var fl = 0.85 + Math.sin(tempo * 11) * 0.08 + Math.sin(tempo * 23) * 0.07;
     fogo.intensity = 0.9 * fl; chama.scale.set(1.2 * fl, 1.5 * fl, 1); chama2.scale.set(0.5 * fl, 0.7 * fl, 1);

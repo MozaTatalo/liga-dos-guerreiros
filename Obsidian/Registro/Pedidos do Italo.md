@@ -30,3 +30,4 @@ tags: [pedido, registro]
 - **2026-11-13** — Viu o rascunho 15 e preferiu as mãos e os pés como estavam antes (formas simples e grandes).
 - **2026-11-13** — Pediu para melhorar o cabelo e "literalmente tornar ele um cabelo": mechas, fios e volume natural, não um bloco.
 - **2026-11-13** — Apontou uma faixa de opacidade na testa, embaixo do cabelo. Pediu para remover.
+- **2026-11-13** — Mandou duas referências de proporção (uma feminina, uma masculina, usadas só para proporção). Quer o corpo bem mais estreito: ombros bem próximos do corpo e pernas mais juntas. Pediu já os dois modelos, masculino e feminino, lado a lado.
