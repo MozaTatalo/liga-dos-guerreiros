@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teste 2.5D do Kael</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Sora:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout: palco 3D em tela cheia, com uma faixa de modos no topo e legenda no canto inferior esquerdo. */
+  --tinta: #0f1420;
+  --painel: rgba(15, 20, 32, 0.82);
+  --linha: rgba(255, 255, 255, 0.16);
+  --texto: #eef1f7;
+  --texto-fraco: #aab3c5;
+  --ouro: #f2c14e;
+  --fonte-titulo: "Chakra Petch", "Trebuchet MS", sans-serif;
+  --fonte-corpo: "Sora", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--tinta); color: var(--texto); font-family: var(--fonte-corpo); overflow: hidden; }
+#palco { position: relative; width: 100%; height: 100%; outline: none; }
+#palco canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#cv-px { image-rendering: pixelated; image-rendering: crisp-edges; }
+.oculto { visibility: hidden; }
+
+.topo { position: absolute; top: 12px; left: 16px; right: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.topo button {
+  font: 600 14px/1 var(--fonte-titulo); letter-spacing: 0.02em; color: var(--texto);
+  background: var(--painel); border: 1px solid var(--linha); border-radius: 6px;
+  padding: 10px 14px; cursor: pointer; display: flex; gap: 8px; align-items: center;
+}
+.topo button kbd { font: 700 11px/1 var(--fonte-titulo); color: var(--tinta); background: var(--texto-fraco); border-radius: 3px; padding: 3px 5px; }
+.topo button:hover { border-color: var(--texto-fraco); }
+.topo button:focus-visible { outline: 2px solid var(--ouro); outline-offset: 2px; }
+.topo button[aria-pressed="true"] { background: var(--ouro); color: var(--tinta); border-color: var(--ouro); }
+.topo button[aria-pressed="true"] kbd { background: var(--tinta); color: var(--ouro); }
+.topo .espaco { flex: 1; }
+
+.legenda { position: absolute; left: 16px; bottom: 16px; width: min(440px, calc(100% - 32px)); background: var(--painel); border: 1px solid var(--linha); border-left: 3px solid var(--ouro); border-radius: 6px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.legenda h1 { font: 700 20px/1.15 var(--fonte-titulo); margin: 0; text-wrap: balance; }
+.legenda p { font-size: 13.5px; line-height: 1.5; margin: 0; color: var(--texto); }
+.legenda .nota { color: var(--texto-fraco); font-size: 12px; }
+.legenda .teclas { color: var(--texto-fraco); font-size: 12px; border-top: 1px solid var(--linha); padding-top: 8px; }
+.legenda .teclas b { color: var(--texto); font-weight: 600; }
+
+#combo { position: absolute; right: 20px; top: 70px; font: 700 34px/1 var(--fonte-titulo); color: var(--ouro); text-shadow: 0 2px 0 var(--tinta), 0 0 12px rgba(0,0,0,0.6); opacity: 0; transition: opacity 0.2s; font-variant-numeric: tabular-nums; }
+#combo small { display: block; font-size: 13px; color: var(--texto); letter-spacing: 0.12em; text-align: right; }
+
+.toque { position: absolute; right: 16px; bottom: 16px; display: none; gap: 10px; }
+.toque button { width: 58px; height: 58px; border-radius: 50%; border: 1px solid var(--linha); background: var(--painel); color: var(--texto); font: 700 13px var(--fonte-titulo); touch-action: none; user-select: none; }
+@media (pointer: coarse) { .toque { display: flex; } .legenda .teclas { display: none; } .legenda { bottom: 88px; } }
+@media (max-width: 520px) { .legenda p.extra { display: none; } .topo button { padding: 9px 10px; font-size: 13px; } }
+</style>
+</head>
+<body>
+<div id="palco" tabindex="0">
+  <canvas id="cv-hd"></canvas>
+  <canvas id="cv-px" class="oculto"></canvas>
+
+  <div class="topo">
+    <button type="button" data-modo="0" aria-pressed="true"><kbd>1</kbd>3D em tempo real</button>
+    <button type="button" data-modo="1" aria-pressed="false"><kbd>2</kbd>3D que vira pixel art</button>
+    <button type="button" data-modo="2" aria-pressed="false"><kbd>3</kbd>Sprite 2D em cenário 3D</button>
+    <span class="espaco"></span>
+    <button type="button" id="bt-cam" aria-pressed="false"><kbd>C</kbd>Girar câmera</button>
+  </div>
+
+  <div id="combo">0<small>GOLPES</small></div>
+
+  <div class="legenda">
+    <h1 id="lg-titulo"></h1>
+    <p id="lg-texto"></p>
+    <p class="nota extra">Boneco de blocos feito só para este teste. Não é a arte final.</p>
+    <p class="teclas"><b>Setas</b> andar · <b>Espaço ou X</b> pular (2x) · <b>Z</b> atacar (combo de 3) · <b>1 2 3</b> trocar estilo · <b>C</b> girar câmera. Clique na tela se as teclas não responderem.</p>
+  </div>
+
+  <div class="toque">
+    <button type="button" data-tecla="left">◀</button>
+    <button type="button" data-tecla="right">▶</button>
+    <button type="button" data-tecla="jump">Pulo</button>
+    <button type="button" data-tecla="atk">Golpe</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  var palco = document.getElementById('palco');
+  var cvHD = document.getElementById('cv-hd');
+  var cvPX = document.getElementById('cv-px');
+  if (!window.THREE) {
+    document.getElementById('lg-titulo').textContent = 'Não foi possível carregar o 3D';
+    document.getElementById('lg-texto').textContent = 'Este teste precisa de internet para baixar a biblioteca three.js. Verifique a conexão e recarregue a página.';
+    return;
+  }
+  var T = THREE;
+  var poucoMovimento = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- Renderizadores ----------
+  var rHD = new T.WebGLRenderer({ canvas: cvHD, antialias: true });
+  var rPX = new T.WebGLRenderer({ canvas: cvPX, antialias: false });
+  [rHD, rPX].forEach(function (r) {
+    r.outputEncoding = T.sRGBEncoding;
+    r.shadowMap.enabled = true;
+    r.shadowMap.type = T.PCFSoftShadowMap;
+  });
+  rPX.shadowMap.type = T.BasicShadowMap;
+  var PX_ALTURA = 216;
+
+  var scene = new T.Scene();
+  var COR_NEVOA = 0xa9c4d6;
+  scene.fog = new T.Fog(COR_NEVOA, 22, 75); scene.fog.color.convertSRGBToLinear();
+
+  function texturaCanvas(w, h, desenhar) {
+    var c = document.createElement('canvas'); c.width = w; c.height = h;
+    desenhar(c.getContext('2d'), w, h);
+    var t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; return t;
+  }
+  scene.background = texturaCanvas(4, 256, function (g, w, h) {
+    var gr = g.createLinearGradient(0, 0, 0, h);
+    gr.addColorStop(0, '#3f6fa8'); gr.addColorStop(0.55, '#8fb6d4'); gr.addColorStop(1, '#e9d9b8');
+    g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  });
+
+  var camera = new T.PerspectiveCamera(28, 16 / 9, 0.5, 200);
+  var CAMADAS_PERSONAGEM = [1, 2, 3, 4];
+
+  var hemi = new T.HemisphereLight(0xcfe0ff, 0x5a4a3a, 0.75);
+  var sol = new T.DirectionalLight(0xffe6bd, 0.95);
+  sol.castShadow = true;
+  sol.shadow.mapSize.set(2048, 2048);
+  sol.shadow.camera.left = -16; sol.shadow.camera.right = 16;
+  sol.shadow.camera.top = 14; sol.shadow.camera.bottom = -6;
+  sol.shadow.camera.near = 1; sol.shadow.camera.far = 50;
+  sol.shadow.bias = -0.0008;
+  hemi.layers.enableAll(); sol.layers.enableAll();
+  scene.add(hemi, sol, sol.target);
+
+  // ---------- Materiais ----------
+  var degraus = new T.DataTexture(new Uint8Array([110, 110, 110, 255, 185, 185, 185, 255, 255, 255, 255, 255]), 3, 1, T.RGBAFormat);
+  degraus.minFilter = degraus.magFilter = T.NearestFilter; degraus.needsUpdate = true;
+  function toon(cor) { return new T.MeshToonMaterial({ color: new T.Color(cor).convertSRGBToLinear(), gradientMap: degraus }); }
+  var matContorno = new T.MeshBasicMaterial({ color: 0x1a1420, side: T.BackSide });
+
+  // ---------- Cenário ----------
+  var NIVEL_MIN = 0, NIVEL_MAX = 46;
+  var plataformas = [ { x0: 9, x1: 13.5, y: 1.7 }, { x0: 16, x1: 20.5, y: 3.1 }, { x0: 30, x1: 35, y: 1.9 } ];
+
+  (function montarCenario() {
+    var texChao = texturaCanvas(256, 256, function (g, w, h) {
+      g.fillStyle = '#8b8f86'; g.fillRect(0, 0, w, h);
+      for (var i = 0; i < 4; i++) for (var j = 0; j < 4; j++) {
+        var v = 128 + ((i * 7 + j * 13) % 5) * 7;
+        g.fillStyle = 'rgb(' + v + ',' + (v + 4) + ',' + (v - 6) + ')';
+        g.fillRect(i * 64 + 3, j * 64 + 3, 58, 58);
+      }
+      g.fillStyle = 'rgba(96,128,70,0.5)';
+      for (var k = 0; k < 40; k++) g.fillRect((k * 53) % 256, (k * 97) % 256, 5, 3);
+    });
+    texChao.wrapS = texChao.wrapT = T.RepeatWrapping; texChao.repeat.set(30, 3);
+    var chao = new T.Mesh(new T.BoxGeometry(80, 1.2, 7), [
+      toon(0x6d6a63), toon(0x6d6a63), new T.MeshToonMaterial({ map: texChao, gradientMap: degraus }),
+      toon(0x6d6a63), toon(0x5c5a55), toon(0x6d6a63)
+    ]);
+    chao.position.set(23, -0.6, -1); chao.receiveShadow = true; scene.add(chao);
+    var terra = new T.Mesh(new T.BoxGeometry(160, 0.5, 80), toon(0x6f8f5a));
+    terra.position.set(23, -1.0, -42); terra.receiveShadow = true; scene.add(terra);
+
+    plataformas.forEach(function (p) {
+      var m = new T.Mesh(new T.BoxGeometry(p.x1 - p.x0, 0.32, 2.2), toon(0x9a8f7c));
+      m.position.set((p.x0 + p.x1) / 2, p.y - 0.16, 0); m.castShadow = m.receiveShadow = true; scene.add(m);
+      [p.x0 + 0.25, p.x1 - 0.25].forEach(function (px) {
+        var pilar = new T.Mesh(new T.BoxGeometry(0.3, p.y - 0.3, 0.3), toon(0x7c7365));
+        pilar.position.set(px, (p.y - 0.3) / 2, -0.9); pilar.castShadow = true; scene.add(pilar);
+      });
+    });
+
+    var matPedra = toon(0xc9c2b0), matPedraEscura = toon(0x9c988c);
+    function coluna(x, z, alt, quebrada) {
+      var g = new T.Group();
+      var base = new T.Mesh(new T.BoxGeometry(1.3, 0.4, 1.3), matPedraEscura); base.position.y = 0.2;
+      var fuste = new T.Mesh(new T.CylinderGeometry(0.42, 0.5, alt, 10), matPedra); fuste.position.y = 0.4 + alt / 2;
+      g.add(base, fuste);
+      if (!quebrada) { var topo = new T.Mesh(new T.BoxGeometry(1.4, 0.4, 1.4), matPedraEscura); topo.position.y = 0.6 + alt; g.add(topo); }
+      else fuste.rotation.z = 0.04;
+      g.children.forEach(function (m) { m.castShadow = m.receiveShadow = true; });
+      g.position.set(x, 0, z); scene.add(g);
+    }
+    for (var i = 0; i < 9; i++) coluna(-3 + i * 6.5, -3.4, i % 3 === 1 ? 2.2 : 5, i % 3 === 1);
+    for (var j = 0; j < 8; j++) coluna(1 + j * 8, -9, j % 2 ? 6.5 : 3, j % 2 === 0);
+    [[4.5, -3.4], [24, -3.4], [37, -3.4]].forEach(function (a) {
+      var viga = new T.Mesh(new T.BoxGeometry(7.8, 0.7, 1.2), matPedraEscura);
+      viga.position.set(a[0] + 2, 6.35, a[1]); viga.castShadow = true; scene.add(viga);
+    });
+
+    var matFolha = toon(0x4f8a4b), matFolha2 = toon(0x3d7350), matTronco = toon(0x6b4a33);
+    function arvore(x, z, s) {
+      var tr = new T.Mesh(new T.CylinderGeometry(0.2 * s, 0.3 * s, 2 * s, 6), matTronco); tr.position.set(x, s - 0.8, z);
+      var c1 = new T.Mesh(new T.ConeGeometry(1.6 * s, 3 * s, 7), matFolha); c1.position.set(x, 3 * s - 0.8, z);
+      var c2 = new T.Mesh(new T.ConeGeometry(1.2 * s, 2.4 * s, 7), matFolha2); c2.position.set(x, 4.3 * s - 0.8, z);
+      scene.add(tr, c1, c2);
+    }
+    for (var a = 0; a < 26; a++) arvore(-20 + a * 4.1 + (a % 3), -14 - (a * 7 % 11), 1.3 + (a % 4) * 0.35);
+    var matMonte = toon(0x7f9bb0);
+    for (var m = 0; m < 7; m++) {
+      var monte = new T.Mesh(new T.ConeGeometry(14 + (m % 3) * 5, 16 + (m % 2) * 8, 5), matMonte);
+      monte.position.set(-30 + m * 20, 6, -55 - (m % 2) * 8); monte.rotation.y = m; scene.add(monte);
+    }
+    // Primeiro plano: pedras e mato na frente do plano de jogo, para dar profundidade
+    var matMato = toon(0x5d9a4f);
+    for (var f = 0; f < 14; f++) {
+      var fx = -2 + f * 3.7 + (f % 2) * 1.1;
+      if (f % 3 === 0) {
+        var pedra = new T.Mesh(new T.DodecahedronGeometry(0.35 + (f % 4) * 0.08, 0), matPedraEscura);
+        pedra.position.set(fx, 0.15, 2.0); pedra.castShadow = true; scene.add(pedra);
+      } else {
+        for (var q = 0; q < 3; q++) {
+          var folha = new T.Mesh(new T.ConeGeometry(0.09, 0.5 + q * 0.12, 4), matMato);
+          folha.position.set(fx + q * 0.16, 0.25 + q * 0.06, 2.0 - q * 0.1); folha.rotation.z = (q - 1) * 0.25; scene.add(folha);
+        }
+      }
+    }
+  })();
+
+  // Cristais que flutuam atrás do plano de jogo
+  var cristais = [];
+  [5, 15, 27, 39].forEach(function (x, i) {
+    var c = new T.Mesh(new T.OctahedronGeometry(0.3, 0), new T.MeshBasicMaterial({ color: i % 2 ? 0x8fe6ff : 0xffd98a }));
+    c.position.set(x, 2.6 + (i % 2), -2.2); scene.add(c); cristais.push(c);
+  });
+
+  // ---------- Construção de personagens ----------
+  function novaPeca(ator, pai, w, h, d, cor, x, y, z) {
+    var chave = String(cor);
+    if (!ator.mats[chave]) ator.mats[chave] = toon(cor);
+    var geo = new T.BoxGeometry(w, h, d);
+    var m = new T.Mesh(geo, ator.mats[chave]);
+    m.position.set(x || 0, y || 0, z || 0);
+    m.castShadow = true; m.layers.set(ator.camada);
+    var o = new T.Mesh(geo, matContorno);
+    var e = 0.035;
+    o.scale.set(1 + 2 * e / w, 1 + 2 * e / h, 1 + 2 * e / d);
+    o.layers.set(ator.camada);
+    m.add(o); pai.add(m);
+    return m;
+  }
+  function novoGrupo(pai, x, y, z) { var g = new T.Group(); g.position.set(x || 0, y || 0, z || 0); pai.add(g); return g; }
+
+  function criarKael() {
+    var a = { camada: 1, mats: {}, raiz: new T.Group() };
+    var AZUL = 0x3f6fd1, AZUL_ESC = 0x27488f, OURO = 0xf2c14e, PELE = 0xf1c27d, CABELO = 0x6b3f22, CALCA = 0x2b2b3a, BOTA = 0x4a2f1d, ACO = 0xdfe5ee, CAPA = 0xb8323a;
+    var P = a.p = {};
+    P.quadril = novoGrupo(a.raiz, 0, 0.86, 0);
+    P.tronco = novoGrupo(P.quadril, 0, 0, 0);
+    novaPeca(a, P.tronco, 0.34, 0.5, 0.52, AZUL, 0, 0.3, 0);
+    novaPeca(a, P.tronco, 0.37, 0.1, 0.55, OURO, 0, 0.05, 0);
+    novaPeca(a, P.tronco, 0.1, 0.3, 0.3, AZUL_ESC, 0.16, 0.34, 0);
+    P.cabeca = novoGrupo(P.tronco, 0, 0.58, 0);
+    novaPeca(a, P.cabeca, 0.36, 0.36, 0.38, PELE, 0.01, 0.2, 0);
+    novaPeca(a, P.cabeca, 0.4, 0.16, 0.42, CABELO, -0.02, 0.36, 0);
+    novaPeca(a, P.cabeca, 0.14, 0.3, 0.42, CABELO, -0.15, 0.22, 0);
+    novaPeca(a, P.cabeca, 0.03, 0.08, 0.06, 0x1a1a22, 0.19, 0.22, 0.1);
+    novaPeca(a, P.cabeca, 0.03, 0.08, 0.06, 0x1a1a22, 0.19, 0.22, -0.1);
+    P.capa = novoGrupo(P.tronco, -0.19, 0.52, 0);
+    novaPeca(a, P.capa, 0.04, 0.85, 0.5, CAPA, 0, -0.42, 0);
+    function braco(z) {
+      var o = {};
+      o.ombro = novoGrupo(P.tronco, 0, 0.5, z);
+      novaPeca(a, o.ombro, 0.2, 0.18, 0.2, OURO, 0, -0.02, 0);
+      novaPeca(a, o.ombro, 0.14, 0.3, 0.14, AZUL_ESC, 0, -0.17, 0);
+      o.cotovelo = novoGrupo(o.ombro, 0, -0.32, 0);
+      novaPeca(a, o.cotovelo, 0.13, 0.26, 0.13, PELE, 0, -0.13, 0);
+      o.mao = novoGrupo(o.cotovelo, 0, -0.28, 0);
+      return o;
+    }
+    P.bracoEspada = braco(0.34);
+    P.bracoEscudo = braco(-0.34);
+    novaPeca(a, P.bracoEspada.mao, 0.95, 0.1, 0.04, ACO, 0.58, 0, 0);
+    novaPeca(a, P.bracoEspada.mao, 0.06, 0.3, 0.1, OURO, 0.1, 0, 0);
+    novaPeca(a, P.bracoEspada.mao, 0.16, 0.06, 0.06, BOTA, 0, 0, 0);
+    novaPeca(a, P.bracoEscudo.cotovelo, 0.07, 0.62, 0.5, AZUL, 0.1, -0.16, -0.02);
+    novaPeca(a, P.bracoEscudo.cotovelo, 0.09, 0.2, 0.2, OURO, 0.11, -0.16, -0.02);
+    function perna(z) {
+      var o = {};
+      o.coxa = novoGrupo(P.quadril, 0, 0, z);
+      novaPeca(a, o.coxa, 0.18, 0.42, 0.18, CALCA, 0, -0.21, 0);
+      o.joelho = novoGrupo(o.coxa, 0, -0.42, 0);
+      novaPeca(a, o.joelho, 0.16, 0.3, 0.16, CALCA, 0, -0.15, 0);
+      novaPeca(a, o.joelho, 0.28, 0.16, 0.2, BOTA, 0.04, -0.36, 0);
+      return o;
+    }
+    P.pernaA = perna(0.13); P.pernaB = perna(-0.13);
+    // Rastro do golpe
+    a.rastro = new T.Mesh(new T.RingGeometry(0.75, 1.55, 20, 1, 0, 1), new T.MeshBasicMaterial({ color: 0xfff1b8, transparent: true, opacity: 0, side: T.DoubleSide, depthWrite: false }));
+    a.rastro.position.set(0.1, 1.3, 0.34); a.rastro.layers.set(1); a.raiz.add(a.rastro);
+    scene.add(a.raiz);
+    return a;
+  }
+
+  function criarGolem(camada, x) {
+    var a = { camada: camada, mats: {}, raiz: new T.Group() };
+    var PEDRA = 0x6f8f8a, PEDRA_ESC = 0x4d6663, MUSGO = 0x7fae5a;
+    var P = a.p = {};
+    P.corpo = novoGrupo(a.raiz, 0, 0.5, 0);
+    novaPeca(a, P.corpo, 0.9, 0.85, 0.9, PEDRA, 0, 0.42, 0);
+    novaPeca(a, P.corpo, 0.7, 0.2, 0.95, MUSGO, -0.05, 0.86, 0);
+    novaPeca(a, P.corpo, 0.5, 0.4, 0.5, PEDRA_ESC, 0, 1.1, 0);
+    a.olhoMat = new T.MeshBasicMaterial({ color: 0xffd35a });
+    [0.13, -0.13].forEach(function (z) {
+      var o = new T.Mesh(new T.BoxGeometry(0.05, 0.1, 0.1), a.olhoMat); o.position.set(-0.26, 1.12, z); o.layers.set(camada); P.corpo.add(o);
+    });
+    P.bracoA = novoGrupo(P.corpo, 0, 0.7, 0.58); novaPeca(a, P.bracoA, 0.3, 0.75, 0.26, PEDRA_ESC, 0, -0.32, 0);
+    P.bracoB = novoGrupo(P.corpo, 0, 0.7, -0.58); novaPeca(a, P.bracoB, 0.3, 0.75, 0.26, PEDRA_ESC, 0, -0.32, 0);
+    P.peA = novaPeca(a, a.raiz, 0.34, 0.5, 0.3, PEDRA_ESC, 0, 0.25, 0.25);
+    P.peB = novaPeca(a, a.raiz, 0.34, 0.5, 0.3, PEDRA_ESC, 0, 0.25, -0.25);
+    a.raiz.position.set(x, 0, 0); scene.add(a.raiz);
+    a.x = a.x0 = x; a.y = 0; a.vx = 0; a.vy = 0; a.hp = 6; a.flash = 0; a.morto = 0; a.amasso = 0; a.fase = x;
+    return a;
+  }
+
+  var heroi = criarKael();
+  Object.assign(heroi, { x: 3, y: 0, vx: 0, vy: 0, lado: 1, giro: -0.4, noChao: true, pulos: 0, estado: 'idle', t: 0, passo: 0, fila: false, acertou: false, relogio: 0 });
+  var golens = [criarGolem(2, 8), criarGolem(3, 18.5), criarGolem(4, 25)];
+  golens[1].y = plataformas[1].y;
+  var atores = [heroi].concat(golens);
+
+  // ---------- Sprites (modo 3): cada personagem é fotografado de lado para uma textura pequena ----------
+  var SPR_PX = 150, SPR_MUNDO = 5;
+  atores.forEach(function (a) {
+    a.alvo = new T.WebGLRenderTarget(SPR_PX, SPR_PX, { minFilter: T.NearestFilter, magFilter: T.NearestFilter });
+    a.camSprite = new T.OrthographicCamera(-SPR_MUNDO / 2, SPR_MUNDO / 2, SPR_MUNDO / 2, -SPR_MUNDO / 2, 0.1, 30);
+    a.camSprite.layers.set(a.camada);
+    a.folha = new T.Mesh(new T.PlaneGeometry(SPR_MUNDO, SPR_MUNDO), new T.MeshBasicMaterial({ map: a.alvo.texture, transparent: true, alphaTest: 0.05, side: T.DoubleSide, fog: false }));
+    a.folha.visible = false; scene.add(a.folha);
+    a.sombra = new T.Mesh(new T.CircleGeometry(0.5, 16), new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false }));
+    a.sombra.rotation.x = -Math.PI / 2; a.sombra.visible = false; scene.add(a.sombra);
+  });
+  function fotografar(a) {
+    var fundo = scene.background, nevoa = scene.fog;
+    scene.background = null; scene.fog = null;
+    a.camSprite.position.set(a.raiz.position.x, a.raiz.position.y + 1.3, 12);
+    a.camSprite.lookAt(a.raiz.position.x, a.raiz.position.y + 1.3, 0);
+    rHD.setRenderTarget(a.alvo); rHD.setClearColor(0x000000, 0); rHD.clear();
+    var sombras = rHD.shadowMap.autoUpdate; rHD.shadowMap.autoUpdate = false;
+    rHD.render(scene, a.camSprite);
+    rHD.shadowMap.autoUpdate = sombras;
+    rHD.setRenderTarget(null);
+    scene.background = fundo; scene.fog = nevoa;
+  }
+
+  // ---------- Faíscas ----------
+  var faiscas = [];
+  var geoFaisca = new T.PlaneGeometry(0.16, 0.16);
+  function soltarFaiscas(x, y, forte) {
+    for (var i = 0; i < (forte ? 12 : 7); i++) {
+      var m = new T.Mesh(geoFaisca, new T.MeshBasicMaterial({ color: i % 2 ? 0xfff1b8 : 0xffffff, transparent: true }));
+      m.position.set(x, y, 0.6);
+      var ang = Math.random() * Math.PI * 2, v = 3 + Math.random() * (forte ? 7 : 4);
+      faiscas.push({ m: m, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v + 2, t: 0.28 });
+      scene.add(m);
+    }
+  }
+
+  // ---------- Entrada ----------
+  var tecla = { left: false, right: false }, apertou = { jump: false, atk: false };
+  var MAPA = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', Space: 'jump', KeyX: 'jump', ArrowUp: 'jump', KeyW: 'jump', KeyZ: 'atk', KeyJ: 'atk' };
+  function baixar(k) { if (k === 'left' || k === 'right') tecla[k] = true; else apertou[k] = true; }
+  function soltar(k) { if (k === 'left' || k === 'right') tecla[k] = false; }
+  window.addEventListener('keydown', function (e) {
+    if (e.code === 'Digit1' || e.code === 'Numpad1') return definirModo(0);
+    if (e.code === 'Digit2' || e.code === 'Numpad2') return definirModo(1);
+    if (e.code === 'Digit3' || e.code === 'Numpad3') return definirModo(2);
+    if (e.code === 'KeyC' && !e.repeat) return alternarCamera();
+    var k = MAPA[e.code]; if (!k) return;
+    e.preventDefault(); if (!e.repeat) baixar(k);
+  });
+  window.addEventListener('keyup', function (e) { var k = MAPA[e.code]; if (k) soltar(k); });
+  window.addEventListener('blur', function () { tecla.left = tecla.right = false; });
+  document.querySelectorAll('.toque button').forEach(function (b) {
+    var k = b.getAttribute('data-tecla');
+    b.addEventListener('pointerdown', function (e) { e.preventDefault(); baixar(k); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) { b.addEventListener(ev, function () { soltar(k); }); });
+  });
+  palco.addEventListener('pointerdown', function () { palco.focus(); });
+
+  // ---------- Modos ----------
+  var MODOS = [
+    { titulo: '3D em tempo real', texto: 'O personagem é um modelo 3D com cel shading e contorno, andando num plano 2D. Grand Chase e Elsword funcionam assim. A animação é lisa, o corpo gira ao virar e trocar de arma não exige redesenhar nada.' },
+    { titulo: '3D que vira pixel art', texto: 'O mesmo modelo 3D, mostrado em baixa resolução e com animação a 12 quadros por segundo. Fica com cara de pixel art, mas cada animação nova sai do modelo, sem desenhar quadro a quadro.' },
+    { titulo: 'Sprite 2D em cenário 3D', texto: 'O cenário é 3D em alta resolução e os personagens são sprites planos, no estilo HD-2D. Gire a câmera para ver que eles são folhas de papel. Aqui o sprite sai do modelo 3D. Num jogo real viria do PixelLab ou de renders.' }
+  ];
+  var modo = 0, camGirada = false, camAngulo = 0;
+  function definirModo(m) {
+    modo = m;
+    document.querySelectorAll('[data-modo]').forEach(function (b) { b.setAttribute('aria-pressed', String(+b.getAttribute('data-modo') === m)); });
+    document.getElementById('lg-titulo').textContent = MODOS[m].titulo;
+    document.getElementById('lg-texto').textContent = MODOS[m].texto;
+    cvHD.classList.toggle('oculto', m === 1); cvPX.classList.toggle('oculto', m !== 1);
+    camera.layers.set(0);
+    if (m !== 2) CAMADAS_PERSONAGEM.forEach(function (c) { camera.layers.enable(c); });
+    atores.forEach(function (a) { a.folha.visible = a.sombra.visible = (m === 2); });
+    quadroPose = -1;
+  }
+  function alternarCamera() { camGirada = !camGirada; document.getElementById('bt-cam').setAttribute('aria-pressed', String(camGirada)); }
+  document.querySelectorAll('[data-modo]').forEach(function (b) { b.addEventListener('click', function () { definirModo(+b.getAttribute('data-modo')); palco.focus(); }); });
+  document.getElementById('bt-cam').addEventListener('click', function () { alternarCamera(); palco.focus(); });
+
+  // ---------- Jogo ----------
+  var GRAV = 30, VEL = 5.6, PULO = 11;
+  var DUR = [0.30, 0.30, 0.50], ACERTO = [0.09, 0.09, 0.17];
+  var ARCO = [[2.7, 0.5], [-0.5, 2.5], [3.1, 0.15]]; // ângulo do ombro: início e fim de cada golpe
+  var pausaImpacto = 0, tremor = 0, combo = 0, comboT = 0;
+  var elCombo = document.getElementById('combo');
+
+  function chaoEm(x, yAntes, yDepois) {
+    var melhor = 0;
+    for (var i = 0; i < plataformas.length; i++) {
+      var p = plataformas[i];
+      if (x > p.x0 - 0.2 && x < p.x1 + 0.2 && yAntes >= p.y - 0.001 && yDepois <= p.y) melhor = Math.max(melhor, p.y);
+    }
+    return melhor;
+  }
+  function iniciarGolpe(n) {
+    heroi.estado = 'atk'; heroi.t = 0; heroi.passo = n; heroi.fila = false; heroi.acertou = false;
+    if (tecla.left) heroi.lado = -1; if (tecla.right) heroi.lado = 1;
+    var a = ARCO[n], ini = a[0] - Math.PI / 2, fim = a[1] - Math.PI / 2;
+    heroi.rastro.geometry.dispose();
+    heroi.rastro.geometry = new T.RingGeometry(n === 2 ? 0.7 : 0.85, n === 2 ? 1.85 : 1.6, 20, 1, Math.min(ini, fim), Math.abs(fim - ini));
+  }
+  function atualizarHeroi(dt) {
+    var h = heroi;
+    h.relogio += dt;
+    var dir = (tecla.right ? 1 : 0) - (tecla.left ? 1 : 0);
+    if (h.estado === 'atk') {
+      h.t += dt;
+      if (apertou.atk && h.t > 0.1) h.fila = true;
+      if (h.noChao) h.vx = h.t < 0.1 ? h.lado * (h.passo === 2 ? 5 : 2.5) : h.vx * 0.8;
+      else h.vx = dir * VEL * 0.8;
+      if (!h.acertou && h.t >= ACERTO[h.passo]) { h.acertou = true; aplicarGolpe(); }
+      if (h.t >= DUR[h.passo]) {
+        if (h.fila && h.passo < 2) iniciarGolpe(h.passo + 1);
+        else { h.estado = 'idle'; h.t = 0; }
+      } else if (h.fila && h.passo < 2 && h.t >= DUR[h.passo] * 0.72) iniciarGolpe(h.passo + 1);
+    } else {
+      h.vx = dir * VEL;
+      if (dir) h.lado = dir;
+      if (apertou.atk) iniciarGolpe(0);
+    }
+    if (apertou.jump && h.pulos < 2 && h.estado !== 'atk') { h.vy = h.pulos ? PULO * 0.9 : PULO; h.pulos++; h.noChao = false; }
+    h.vy -= GRAV * dt;
+    var yAntes = h.y;
+    h.x = Math.max(NIVEL_MIN, Math.min(NIVEL_MAX, h.x + h.vx * dt));
+    h.y += h.vy * dt;
+    h.noChao = false;
+    if (h.vy <= 0) {
+      var c = chaoEm(h.x, yAntes, h.y);
+      if (h.y <= c) { h.y = c; h.vy = 0; h.noChao = true; h.pulos = 0; }
+    }
+    if (h.estado !== 'atk') h.estado = !h.noChao ? 'ar' : (dir ? 'run' : 'idle');
+  }
+  function aplicarGolpe() {
+    var h = heroi, forte = h.passo === 2, pegou = false;
+    golens.forEach(function (g) {
+      if (g.morto) return;
+      var dx = (g.x - h.x) * h.lado;
+      if (dx > -0.3 && dx < (forte ? 2.5 : 2.1) && Math.abs(g.y - h.y) < 1.6) {
+        pegou = true;
+        g.hp -= forte ? 2 : 1; g.flash = 0.1; g.amasso = 1;
+        g.vx = h.lado * (forte ? 8 : 3.5); if (forte) g.vy = 6;
+        soltarFaiscas(g.x - h.lado * 0.4, g.y + 0.9, forte);
+        if (g.hp <= 0) { g.morto = 0.001; g.vy = 7; g.vx = h.lado * 6; }
+      }
+    });
+    if (pegou) {
+      pausaImpacto = forte ? 0.11 : 0.06; tremor = poucoMovimento ? 0 : (forte ? 0.22 : 0.1);
+      combo++; comboT = 2.2;
+      elCombo.firstChild.nodeValue = combo; elCombo.style.opacity = 1;
+    }
+  }
+  function atualizarGolem(g, dt) {
+    g.fase += dt;
+    if (g.flash > 0) g.flash -= dt;
+    g.amasso = Math.max(0, g.amasso - dt * 5);
+    g.vy -= GRAV * dt;
+    var yAntes = g.y;
+    g.x += g.vx * dt; g.y += g.vy * dt;
+    g.vx *= Math.pow(0.004, dt);
+    if (g.vy <= 0) { var c = chaoEm(g.x, yAntes, g.y); if (g.y <= c) { g.y = c; g.vy = 0; } }
+    if (g.morto) {
+      g.morto += dt;
+      if (g.morto > 2.6) { g.morto = 0; g.hp = 6; g.x = g.x0; g.y = g === golens[1] ? plataformas[1].y : 0; g.vx = g.vy = 0; }
+    }
+  }
+
+  // ---------- Poses ----------
+  function suave(k) { k = Math.max(0, Math.min(1, k)); return 1 - Math.pow(1 - k, 3); }
+  function posarHeroi() {
+    var h = heroi, P = h.p, r = h.relogio, e = h.estado;
+    var S = 0.25, E = 0.9, W = 0.5, S2 = 0.5, E2 = 1.1, inclina = 0, torce = 0, sobe = 0;
+    var cA = 0, jA = 0, cB = 0, jB = 0, capa = 0.12 + Math.sin(r * 2) * 0.04;
+    if (e === 'idle') {
+      sobe = Math.sin(r * 2.6) * 0.015; S += Math.sin(r * 2.6) * 0.05;
+      cA = 0.12; cB = -0.12; jA = -0.1; jB = -0.1;
+    } else if (e === 'run') {
+      var p = r * 13, s = Math.sin(p);
+      cA = s * 0.95; cB = -s * 0.95;
+      jA = -Math.max(0, Math.cos(p)) * 1.3 - 0.15; jB = -Math.max(0, -Math.cos(p)) * 1.3 - 0.15;
+      S = -s * 0.5 + 0.2; E = 1.2; W = 0.3; S2 = s * 0.4 + 0.4;
+      inclina = -0.16; sobe = Math.abs(Math.cos(p)) * 0.06 - 0.03; capa = 0.75 + Math.sin(p * 2) * 0.1;
+    } else if (e === 'ar') {
+      var sub = h.vy > 0;
+      cA = sub ? 0.9 : 0.35; jA = sub ? -1.3 : -0.5; cB = sub ? -0.2 : -0.3; jB = sub ? -0.5 : -0.2;
+      S = sub ? 0.9 : 1.9; E = 0.5; W = 0.2; S2 = sub ? 0.7 : 1.5; E2 = 0.6;
+      inclina = sub ? -0.08 : 0.06; capa = sub ? 0.5 : 1.3;
+    } else if (e === 'atk') {
+      var n = h.passo, k = suave(h.t / ACERTO[n]), a = ARCO[n];
+      var volta = Math.max(0, (h.t - ACERTO[n]) / (DUR[n] - ACERTO[n]));
+      S = a[0] + (a[1] - a[0]) * k + (a[1] > a[0] ? 1 : -1) * volta * 0.12;
+      E = 0.12; W = -1.35;
+      inclina = (n === 1 ? 0.14 : -0.24) * k; torce = (n === 1 ? -0.5 : 0.5) * (k - 0.4);
+      S2 = -0.5; E2 = 0.9;
+      cA = 0.55; jA = -0.35; cB = -0.5; jB = -0.25; sobe = -0.06 * k;
+      if (n === 2) { cA = 0.8; jA = -0.7; sobe = -0.14 * k; inclina = -0.38 * k; }
+      capa = 0.5 + k * 0.4;
+      h.rastro.material.opacity = h.t > ACERTO[n] - 0.05 ? Math.max(0, 0.85 - (h.t - ACERTO[n] + 0.05) * 5) : 0;
+    }
+    if (e !== 'atk') h.rastro.material.opacity = 0;
+    P.quadril.position.y = 0.86 + sobe;
+    P.tronco.rotation.set(0, torce, inclina);
+    P.cabeca.rotation.z = -inclina * 0.6;
+    P.capa.rotation.z = -capa;
+    P.bracoEspada.ombro.rotation.z = S; P.bracoEspada.cotovelo.rotation.z = E; P.bracoEspada.mao.rotation.z = W;
+    P.bracoEscudo.ombro.rotation.z = S2; P.bracoEscudo.cotovelo.rotation.z = E2;
+    P.pernaA.coxa.rotation.z = cA; P.pernaA.joelho.rotation.z = jA;
+    P.pernaB.coxa.rotation.z = cB; P.pernaB.joelho.rotation.z = jB;
+  }
+  function posarGolem(g) {
+    var P = g.p, w = Math.sin(g.fase * 3);
+    var am = g.amasso;
+    P.corpo.scale.set(1 + am * 0.25, 1 - am * 0.3 + w * 0.02, 1 + am * 0.25);
+    P.corpo.rotation.z = g.morto ? -g.morto * 6 : (g.vx * 0.04);
+    P.bracoA.rotation.z = w * 0.25 - 0.2; P.bracoB.rotation.z = -w * 0.25 - 0.2;
+    var s = g.morto ? Math.max(0.001, 1 - g.morto * 1.6) : 1;
+    g.raiz.scale.setScalar(g.morto > 0.62 ? 0.001 : s);
+    for (var k in g.mats) g.mats[k].emissive.setHex(g.flash > 0 ? 0xffffff : 0x000000);
+  }
+
+  // ---------- Laço principal ----------
+  var quadroPose = -1, antes = performance.now(), tempo = 0;
+  var camX = heroi.x, camY = 2.4;
+
+  function ajustarTamanho() {
+    var w = palco.clientWidth || 800, h = palco.clientHeight || 450;
+    rHD.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    rHD.setSize(w, h, false);
+    rPX.setPixelRatio(1);
+    rPX.setSize(Math.round(PX_ALTURA * w / h), PX_ALTURA, false);
+    camera.aspect = w / h;
+    camera.fov = w / h < 1.2 ? 40 : 28;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', ajustarTamanho);
+  ajustarTamanho();
+  definirModo(0);
+
+  function quadro(agora) {
+    requestAnimationFrame(quadro);
+    var dt = Math.min(0.033, (agora - antes) / 1000); antes = agora; tempo += dt;
+
+    if (pausaImpacto > 0) pausaImpacto -= dt;
+    else { atualizarHeroi(dt); golens.forEach(function (g) { atualizarGolem(g, dt); }); }
+    apertou.jump = apertou.atk = false;
+    if (comboT > 0) { comboT -= dt; if (comboT <= 0) { combo = 0; elCombo.style.opacity = 0; } }
+
+    for (var i = faiscas.length - 1; i >= 0; i--) {
+      var f = faiscas[i]; f.t -= dt;
+      f.m.position.x += f.vx * dt; f.m.position.y += f.vy * dt; f.vy -= 20 * dt;
+      f.m.material.opacity = Math.max(0, f.t / 0.28); f.m.rotation.z += dt * 10;
+      if (f.t <= 0) { scene.remove(f.m); f.m.material.dispose(); faiscas.splice(i, 1); }
+    }
+    cristais.forEach(function (c, i) { c.rotation.y = tempo + i; c.position.y += Math.sin(tempo * 1.5 + i) * 0.002; });
+
+    // Posições acompanham todo quadro. As poses só mudam a 12 qps nos modos 2 e 3.
+    var alvoGiro = heroi.lado > 0 ? -0.4 : -Math.PI + 0.4;
+    heroi.giro = modo === 0 ? heroi.giro + (alvoGiro - heroi.giro) * Math.min(1, dt * 18) : alvoGiro;
+    heroi.raiz.rotation.y = heroi.giro;
+    heroi.raiz.position.set(heroi.x, heroi.y, 0);
+    golens.forEach(function (g) { g.raiz.position.set(g.x, g.y, 0); });
+
+    var q = modo === 0 ? -2 : Math.floor(tempo * 12);
+    var novaPose = modo === 0 || q !== quadroPose;
+    if (novaPose) { quadroPose = q; posarHeroi(); golens.forEach(posarGolem); }
+
+    // Câmera
+    var alvoX = Math.max(5, Math.min(NIVEL_MAX - 5, heroi.x + heroi.lado * 1.2));
+    camX += (alvoX - camX) * Math.min(1, dt * 4);
+    camY += ((2.3 + heroi.y * 0.55) - camY) * Math.min(1, dt * 3);
+    camAngulo += ((camGirada ? 0.75 : 0) - camAngulo) * Math.min(1, dt * 4);
+    var dist = 17, tx = 0, ty = 0;
+    if (tremor > 0) { tremor -= dt; tx = (Math.random() - 0.5) * tremor; ty = (Math.random() - 0.5) * tremor; }
+    camera.position.set(camX + Math.sin(camAngulo) * dist + tx, camY + 1.6 + camAngulo * 2 + ty, Math.cos(camAngulo) * dist);
+    camera.lookAt(camX + tx, camY + ty, 0);
+    sol.position.set(camX + 7, 13, 9); sol.target.position.set(camX, 0, 0);
+
+    if (modo === 2) {
+      atores.forEach(function (a) {
+        if (novaPose) fotografar(a);
+        a.folha.position.set(a.raiz.position.x, a.raiz.position.y + 1.3, 0);
+        a.sombra.position.set(a.raiz.position.x, chaoEm(a.raiz.position.x, a.raiz.position.y + 0.01, -1) + 0.02, 0);
+        a.sombra.scale.setScalar(a.raiz.scale.x < 0.1 ? 0.001 : (a === heroi ? 1 : 1.5));
+      });
+    }
+    (modo === 1 ? rPX : rHD).render(scene, camera);
+  }
+  requestAnimationFrame(quadro);
+  palco.focus();
+})();
+</script>
+</body>
+</html>

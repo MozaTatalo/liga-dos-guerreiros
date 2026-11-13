@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kael, o Guardião</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout: vitrine do personagem em tela cheia. Ficha à esquerda, controles em colunas à direita. */
+  --noite: #090a11;
+  --painel: rgba(9, 10, 17, 0.78);
+  --linha: rgba(214, 208, 196, 0.2);
+  --osso: #e6e1d4;
+  --osso-fraco: #a09c96;
+  --carmesim: #a3243b;
+  --fonte-titulo: "Cinzel", "Palatino Linotype", Georgia, serif;
+  --fonte-corpo: "Spectral", Georgia, "Times New Roman", serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--noite); color: var(--osso); font-family: var(--fonte-corpo); overflow: hidden; }
+#palco { position: relative; width: 100%; height: 100%; outline: none; touch-action: none; cursor: grab; }
+#palco:active { cursor: grabbing; }
+#palco canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.vinheta { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 50%, rgba(3,3,8,0.75) 100%); }
+
+.ficha { position: absolute; left: 24px; top: 24px; max-width: min(360px, calc(100% - 48px)); display: flex; flex-direction: column; gap: 8px; pointer-events: none; text-shadow: 0 2px 8px #000; }
+.ficha .classe { font: 600 12px/1 var(--fonte-titulo); letter-spacing: 0.3em; text-transform: uppercase; color: var(--carmesim); filter: brightness(1.6); }
+.ficha h1 { font: 800 44px/1 var(--fonte-titulo); letter-spacing: 0.04em; margin: 0; }
+.ficha p { margin: 0; font-size: 15.5px; line-height: 1.5; font-style: italic; color: var(--osso); }
+.ficha ul { margin: 6px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--osso-fraco); }
+.ficha li b { color: var(--osso); font-weight: 600; }
+
+.controles { position: absolute; right: 20px; top: 20px; display: flex; flex-direction: column; gap: 14px; align-items: flex-end; }
+.grupo { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.grupo > span { font: 600 10.5px/1 var(--fonte-titulo); letter-spacing: 0.24em; text-transform: uppercase; color: var(--osso-fraco); text-shadow: 0 1px 4px #000; }
+.grupo div { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+button {
+  font: 600 13px/1 var(--fonte-titulo); letter-spacing: 0.05em; color: var(--osso);
+  background: var(--painel); border: 1px solid var(--linha); border-radius: 2px; padding: 10px 13px; cursor: pointer;
+}
+button:hover { border-color: var(--osso-fraco); }
+button:focus-visible { outline: 2px solid var(--osso); outline-offset: 2px; }
+button[aria-pressed="true"] { background: var(--carmesim); border-color: var(--carmesim); }
+.dica { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); margin: 0; font-size: 13px; color: var(--osso-fraco); text-shadow: 0 1px 4px #000; text-align: center; width: calc(100% - 32px); pointer-events: none; }
+@media (max-width: 720px) {
+  .ficha h1 { font-size: 30px; } .ficha p, .ficha ul { display: none; }
+  .controles { top: auto; bottom: 44px; left: 16px; right: 16px; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: flex-start; }
+  .grupo, .grupo div { align-items: center; justify-content: center; }
+  button { padding: 9px 10px; font-size: 12px; }
+}
+</style>
+</head>
+<body>
+<div id="palco" tabindex="0">
+  <canvas id="cv"></canvas>
+  <div class="vinheta"></div>
+
+  <div class="ficha">
+    <span class="classe">Guardião · Modelo base</span>
+    <h1>Kael</h1>
+    <p>Último cavaleiro da Ordem da Rosácea. Jurou guardar as ruínas de Arvália até que o último vitral se apague.</p>
+    <ul>
+      <li><b>Olhos:</b> pupila em losango, a marca da Ordem</li>
+      <li><b>Cicatriz:</b> corta a sobrancelha do lado da espada</li>
+      <li><b>Cabelo:</b> cinza-claro, rabo de cavalo com fita e uma mecha tingida</li>
+      <li><b>Base:</b> macacão liso de uma cor só, manga curta e short, sem enfeites</li>
+      <li><b>Armas base:</b> espada e escudo de madeira</li>
+      <li><b>Equipamentos:</b> armadura, manto de penas com capa, espada rúnica e escudo da Ordem</li>
+      <li><b>Porte:</b> pequeno, com mãos e pés grandes</li>
+    </ul>
+  </div>
+
+  <div class="controles">
+    <div class="grupo"><span>Ver</span><div>
+      <button type="button" data-vista="rosto" aria-pressed="false">Rosto</button>
+      <button type="button" data-vista="busto" aria-pressed="false">Busto</button>
+      <button type="button" data-vista="corpo" aria-pressed="true">Corpo inteiro</button>
+    </div></div>
+    <div class="grupo"><span>Cores</span><div>
+      <button type="button" data-paleta="0" aria-pressed="true">Aço negro e carmesim</button>
+      <button type="button" data-paleta="1" aria-pressed="false">Prata e azul-noite</button>
+      <button type="button" data-paleta="2" aria-pressed="false">Bronze e osso</button>
+    </div></div>
+    <div class="grupo"><span>Equipamento</span><div>
+      <button type="button" data-equip="armadura" aria-pressed="false">Armadura</button>
+      <button type="button" data-equip="manto" aria-pressed="false">Manto e capa</button>
+      <button type="button" data-equip="espada" aria-pressed="false">Espada rúnica</button>
+      <button type="button" data-equip="escudo" aria-pressed="false">Escudo da Ordem</button>
+    </div><div>
+      <button type="button" id="eq-nada">Modelo base</button>
+      <button type="button" id="eq-tudo">Vestir tudo</button>
+      <button type="button" id="eq-cabelo" aria-pressed="true">Cabelo</button>
+    </div></div>
+    <div class="grupo"><span>Animação</span><div>
+      <button type="button" data-anim="idle" aria-pressed="true">Parado</button>
+      <button type="button" data-anim="run" aria-pressed="false">Correr</button>
+      <button type="button" data-anim="atk" aria-pressed="false">Combo</button>
+    </div></div>
+  </div>
+
+  <p class="dica">Arraste para girar · role para aproximar</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* Kael, o Guardião: modelo 3D montado em código (three.js r128).
+   Uso: var Kael = KaelLib(THREE); var k = Kael.criar(); scene.add(k.raiz); Kael.paleta(k, 0); Kael.posar(k, dt); */
+function KaelLib(T) {
+  'use strict';
+  var PI = Math.PI;
+  // Proporção 'pequeno guerreiro': cerca de 3 cabeças de altura, mãos e pés grandes
+  var NK = 0.56, TS = 0.72, TW = 0.76, QY = 0.6, H = 0.225, LU = 0.17, LF = 0.17, L1 = 0.2, L2 = 0.2, CAPA_L = 0.82;
+  function cor(h) { return new T.Color(h).convertSRGBToLinear(); }
+  var sem = 11;
+  function rnd() { sem = (sem * 16807) % 2147483647; return (sem - 1) / 2147483646; }
+  function tom(hex, f) { // clareia (f>1) ou escurece (f<1) uma cor '#rrggbb'
+    var n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+    function c(v) { return Math.max(0, Math.min(255, Math.round(f > 1 ? v + (255 - v) * (f - 1) : v * f))); }
+    return 'rgb(' + c(r) + ',' + c(g) + ',' + c(b) + ')';
+  }
+
+  var PALETAS = [
+    { nome: 'Aço negro e carmesim', aco: '#343846', friso: '#99a1ba', pano: '#191822', capa: '#84172b', cabelo: '#e2dfea', mecha: '#b02a44', couro: '#2e1f1c', lamina: '#8f98b2', brilho: '#9ecbff', olho: '#c2243f', olhoClaro: '#ff9a86', pena: '#27304f', macacao: '#3a425c', pele: '#f2ddd0' },
+    { nome: 'Prata e azul-noite', aco: '#8f98ae', friso: '#b59c5e', pano: '#171e35', capa: '#1e2f61', cabelo: '#1b1924', mecha: '#5f86dc', couro: '#241d24', lamina: '#aab3c8', brilho: '#c4e2ff', olho: '#3a78d6', olhoClaro: '#a6e4ff', pena: '#0d142b', macacao: '#2b3b6a', pele: '#f2ddd0' },
+    { nome: 'Bronze e osso', aco: '#4d4036', friso: '#b8944e', pano: '#261f1d', capa: '#c0b7a2', cabelo: '#4a1a20', mecha: '#c9a255', couro: '#2c1e15', lamina: '#a59c88', brilho: '#ffc47a', olho: '#cf962a', olhoClaro: '#ffe592', pena: '#1e1714', macacao: '#6b5745', pele: '#efd6c4' }
+  ];
+
+  function degraus(vals) {
+    var d = [];
+    vals.forEach(function (v) { d.push(v, v, v, 255); });
+    var t = new T.DataTexture(new Uint8Array(d), vals.length, 1, T.RGBAFormat);
+    t.minFilter = t.magFilter = T.NearestFilter; t.needsUpdate = true; return t;
+  }
+  var GRAD = degraus([70, 135, 200, 255]), GRAD_PELE = degraus([205, 255]), GRAD_CABELO = degraus([150, 215, 255]);
+  function toon(extra, grad) {
+    var o = { color: 0xffffff, gradientMap: grad || GRAD };
+    if (extra) for (var k in extra) o[k] = extra[k];
+    return new T.MeshToonMaterial(o);
+  }
+  function contorno(esp) {
+    var m = new T.MeshBasicMaterial({ color: 0x06050a, side: T.BackSide });
+    m.onBeforeCompile = function (s) {
+      s.vertexShader = s.vertexShader.replace('#include <begin_vertex>', 'vec3 transformed = position + normalize(normal) * ' + esp.toFixed(4) + ';');
+    };
+    return m;
+  }
+  var C_GROSSO = contorno(0.014), C_FINO = contorno(0.007), C_CABECA = contorno(0.05), C_MECHA = contorno(0.035);
+
+  var texBrilho = (function () {
+    var c = document.createElement('canvas'); c.width = c.height = 128; var g = c.getContext('2d');
+    var gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.25, 'rgba(255,255,255,0.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+    var t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; return t;
+  })();
+  function brilho(escala, opac) {
+    var s = new T.Sprite(new T.SpriteMaterial({ map: texBrilho, transparent: true, opacity: opac, depthWrite: false, fog: false, blending: T.AdditiveBlending }));
+    s.scale.set(escala, escala, 1); return s;
+  }
+
+  // ---------- Desenhos em canvas ----------
+  function rosacea(g, cx, cy, r, traco, larg) { // emblema do Guardião: rosácea de oito pontas
+    g.save(); g.translate(cx, cy); g.strokeStyle = traco; g.fillStyle = traco; g.lineWidth = larg; g.lineJoin = 'round';
+    g.beginPath(); g.arc(0, 0, r, 0, PI * 2); g.stroke();
+    g.beginPath(); g.arc(0, 0, r * 0.72, 0, PI * 2); g.lineWidth = larg * 0.6; g.stroke();
+    for (var i = 0; i < 8; i++) {
+      g.rotate(PI / 4);
+      g.beginPath(); g.moveTo(0, -r * 0.2); g.quadraticCurveTo(r * 0.2, -r * 0.5, 0, -r * 0.72); g.quadraticCurveTo(-r * 0.2, -r * 0.5, 0, -r * 0.2); g.stroke();
+    }
+    g.beginPath(); g.moveTo(0, -r * 0.2); g.lineTo(r * 0.13, 0); g.lineTo(0, r * 0.2); g.lineTo(-r * 0.13, 0); g.closePath(); g.fill();
+    g.restore();
+  }
+  function olho(g, cx, cy, s, pal, fechado) {
+    g.save(); g.translate(cx, cy); g.scale(s * 1.62, 1.55);
+    if (fechado) {
+      g.strokeStyle = '#1c1420'; g.lineWidth = 9; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(-54, 2); g.quadraticCurveTo(0, 22, 64, -8); g.stroke();
+      g.lineWidth = 4; g.beginPath(); g.moveTo(60, -6); g.lineTo(76, -16); g.stroke();
+      g.restore(); return;
+    }
+    function forma() { g.beginPath(); g.moveTo(-54, 8); g.bezierCurveTo(-24, -34, 26, -38, 60, -14); g.bezierCurveTo(44, 22, -8, 30, -54, 8); g.closePath(); }
+    forma(); g.fillStyle = '#f5f1f6'; g.fill();
+    g.save(); forma(); g.clip();
+    // íris
+    var ix = 3, iy = -4, rx = 30, ry = 35;
+    g.fillStyle = tom(pal.olho, 0.42); g.beginPath(); g.ellipse(ix, iy, rx, ry, 0, 0, PI * 2); g.fill();
+    var gr = g.createRadialGradient(ix, iy + 16, 2, ix, iy + 6, 34);
+    gr.addColorStop(0, pal.olhoClaro); gr.addColorStop(0.45, pal.olho); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.beginPath(); g.ellipse(ix, iy, rx - 3, ry - 3, 0, 0, PI * 2); g.fill();
+    g.strokeStyle = tom(pal.olho, 0.22); g.lineWidth = 5; g.beginPath(); g.ellipse(ix, iy, rx, ry, 0, 0, PI * 2); g.stroke();
+    g.strokeStyle = tom(pal.olhoClaro, 1.3); g.globalAlpha = 0.55; g.lineWidth = 2; g.beginPath(); g.ellipse(ix, iy + 3, 19, 22, 0, 0.1 * PI, 0.9 * PI); g.stroke(); g.globalAlpha = 1;
+    // pupila em losango, a marca do Kael
+    g.fillStyle = '#16060c'; g.beginPath(); g.moveTo(ix, iy - 17); g.lineTo(ix + 10, iy); g.lineTo(ix, iy + 17); g.lineTo(ix - 10, iy); g.closePath(); g.fill();
+    // sombra da pálpebra e reflexos
+    var so = g.createLinearGradient(0, -40, 0, -2); so.addColorStop(0, 'rgba(30,20,55,0.75)'); so.addColorStop(1, 'rgba(30,20,55,0)');
+    g.fillStyle = so; g.fillRect(-60, -42, 130, 42);
+    g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(ix - 11, iy - 15, 9, 6.5, -0.5, 0, PI * 2); g.fill();
+    g.beginPath(); g.arc(ix + 13, iy + 15, 4, 0, PI * 2); g.fill();
+    g.restore();
+    // cílios
+    g.fillStyle = '#1a121e';
+    g.beginPath(); g.moveTo(-58, 9); g.bezierCurveTo(-26, -42, 28, -47, 66, -21); g.lineTo(82, -33); g.lineTo(64, -9);
+    g.bezierCurveTo(30, -31, -20, -27, -50, 12); g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(40,24,36,0.85)'; g.lineWidth = 3.5; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(56, -8); g.bezierCurveTo(44, 22, 18, 30, -6, 29); g.stroke();
+    g.strokeStyle = 'rgba(150,96,108,0.55)'; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(-40, -36); g.bezierCurveTo(-10, -56, 34, -56, 60, -38); g.stroke();
+    g.restore();
+  }
+  function pintarRosto(g, w, h, pal, fechado) {
+    var cx = w / 2, pele = pal.pele;
+    g.fillStyle = pele; g.fillRect(0, 0, w, h);
+    // pele uniforme na cabeça toda; só uma sombra leve sob o queixo
+    var gr = g.createLinearGradient(0, 740, 0, 860); gr.addColorStop(0, 'rgba(170,110,110,0)'); gr.addColorStop(1, 'rgba(170,110,110,0.35)');
+    g.fillStyle = gr; g.fillRect(0, 740, w, 284);
+    [-1, 1].forEach(function (s) {
+      var bl = g.createRadialGradient(cx + s * 185, 615, 5, cx + s * 185, 615, 80); bl.addColorStop(0, 'rgba(226,128,124,0.2)'); bl.addColorStop(1, 'rgba(226,128,124,0)');
+      g.fillStyle = bl; g.fillRect(cx + s * 185 - 90, 525, 180, 180);
+      var ol = g.createRadialGradient(cx + s * 142, 470, 10, cx + s * 142, 480, 110); ol.addColorStop(0, 'rgba(120,70,110,0.3)'); ol.addColorStop(1, 'rgba(120,70,110,0)');
+      g.fillStyle = ol; g.fillRect(cx + s * 142 - 115, 365, 230, 230);
+    });
+    // cicatriz sobre o olho do lado da espada
+    g.lineCap = 'round';
+    g.strokeStyle = 'rgba(186,104,112,0.9)'; g.lineWidth = 6; g.beginPath(); g.moveTo(cx - 98, 380); g.quadraticCurveTo(cx - 130, 500, cx - 176, 610); g.stroke();
+    g.strokeStyle = 'rgba(250,214,206,0.9)'; g.lineWidth = 2; g.beginPath(); g.moveTo(cx - 98, 383); g.quadraticCurveTo(cx - 130, 500, cx - 175, 606); g.stroke();
+    // nariz e boca
+    g.fillStyle = 'rgba(160,98,102,0.55)'; g.beginPath(); g.moveTo(cx + 3, 572); g.lineTo(cx + 15, 606); g.lineTo(cx - 3, 609); g.closePath(); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.5)'; g.beginPath(); g.ellipse(cx - 5, 590, 4, 9, 0, 0, PI * 2); g.fill();
+    g.strokeStyle = '#7e4148'; g.lineWidth = 5; g.beginPath(); g.moveTo(cx - 36, 686); g.quadraticCurveTo(cx, 678, cx + 36, 686); g.stroke();
+    g.strokeStyle = 'rgba(160,98,102,0.5)'; g.lineWidth = 4; g.beginPath(); g.moveTo(cx - 14, 701); g.lineTo(cx + 14, 701); g.stroke();
+    // olhos e sobrancelhas
+    olho(g, cx - 140, 520, -1, pal, fechado); olho(g, cx + 140, 520, 1, pal, fechado);
+    g.fillStyle = tom(pal.cabelo, parseInt(pal.cabelo.slice(1, 3), 16) > 128 ? 0.6 : 1.5);
+    [-1, 1].forEach(function (s) {
+      g.save(); g.translate(cx + s * 140, 492); g.scale(s * 1.4, 1.4);
+      g.beginPath(); g.moveTo(-62, -50); g.lineTo(-54, -64); g.quadraticCurveTo(10, -80, 68, -76); g.quadraticCurveTo(10, -66, -62, -50); g.closePath(); g.fill();
+      g.restore();
+    });
+  }
+  function pintarPlaca(g, w, h, pal) { // membros: placa com frisos, nervura e rebites
+    var gr = g.createLinearGradient(0, 0, w, 0);
+    gr.addColorStop(0, tom(pal.aco, 0.7)); gr.addColorStop(0.25, tom(pal.aco, 1.25)); gr.addColorStop(0.5, tom(pal.aco, 0.8)); gr.addColorStop(0.75, tom(pal.aco, 0.6)); gr.addColorStop(1, tom(pal.aco, 0.7));
+    g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    g.fillStyle = tom(pal.aco, 1.5); g.fillRect(w * 0.25 - 1.5, 0, 3, h);
+    g.strokeStyle = tom(pal.aco, 0.4); g.lineWidth = 3;
+    for (var k = 1; k < 3; k++) { g.beginPath(); for (var x = 0; x <= w; x += 4) { var y = h * k / 3 + Math.abs(((x / w + 0.75) % 1) - 0.5) * -60 + 15; if (x) g.lineTo(x, y); else g.moveTo(x, y); } g.stroke(); }
+    g.fillStyle = pal.friso; g.fillRect(0, 0, w, 14); g.fillRect(0, h - 14, w, 14);
+    g.fillStyle = tom(pal.friso, 0.55); g.fillRect(0, 14, w, 3); g.fillRect(0, h - 17, w, 3);
+    for (var i = 0; i < 8; i++) { g.beginPath(); g.arc(w * (i + 0.5) / 8, 7, 3, 0, PI * 2); g.fill(); g.beginPath(); g.arc(w * (i + 0.5) / 8, h - 7, 3, 0, PI * 2); g.fill(); }
+  }
+  function pintarTronco(g, w, h, pal) {
+    var gr = g.createLinearGradient(0, 0, w, 0);
+    gr.addColorStop(0, tom(pal.aco, 0.65)); gr.addColorStop(0.25, tom(pal.aco, 1.2)); gr.addColorStop(0.5, tom(pal.aco, 0.65)); gr.addColorStop(1, tom(pal.aco, 0.55));
+    g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    var fx = w * 0.25;
+    function Y(v) { return h * (1 - v); }
+    // lâminas do abdômen
+    g.strokeStyle = tom(pal.aco, 0.35); g.lineWidth = 4;
+    [0.1, 0.19, 0.28].forEach(function (v) { g.beginPath(); for (var x = 0; x <= w; x += 4) { var d = Math.min(Math.abs(x - fx), w - Math.abs(x - fx)) / w; var y = Y(v) + 26 - d * 110; if (x) g.lineTo(x, y); else g.moveTo(x, y); } g.stroke(); });
+    // borda do peitoral
+    g.strokeStyle = pal.friso; g.lineWidth = 9; g.beginPath();
+    for (var x = 0; x <= w; x += 4) { var d = Math.min(Math.abs(x - fx), w - Math.abs(x - fx)) / w; var y = Y(0.37) + 34 - d * 150; if (x) g.lineTo(x, y); else g.moveTo(x, y); } g.stroke();
+    g.fillStyle = tom(pal.aco, 1.35); g.fillRect(fx - 2, Y(0.74), 4, Y(0.4) - Y(0.74));
+    // emblema e filigrana
+    rosacea(g, fx, Y(0.56), 46, pal.friso, 5);
+    g.fillStyle = pal.capa; g.beginPath(); g.moveTo(fx, Y(0.56) - 10); g.lineTo(fx + 7, Y(0.56)); g.lineTo(fx, Y(0.56) + 10); g.lineTo(fx - 7, Y(0.56)); g.closePath(); g.fill();
+    g.strokeStyle = pal.friso; g.lineWidth = 3;
+    [-1, 1].forEach(function (s) {
+      g.beginPath(); g.moveTo(fx + s * 54, Y(0.56)); g.bezierCurveTo(fx + s * 80, Y(0.62), fx + s * 96, Y(0.52), fx + s * 82, Y(0.47)); g.bezierCurveTo(fx + s * 70, Y(0.45), fx + s * 66, Y(0.52), fx + s * 76, Y(0.52)); g.stroke();
+      g.beginPath(); g.moveTo(fx + s * 20, Y(0.68)); g.bezierCurveTo(fx + s * 50, Y(0.74), fx + s * 84, Y(0.7), fx + s * 100, Y(0.62)); g.stroke();
+    });
+    // correias laterais e gola
+    g.fillStyle = pal.couro; g.fillRect(0, Y(0.36), 10, Y(0) - Y(0.36)); g.fillRect(w - 10, Y(0.36), 10, Y(0) - Y(0.36)); g.fillRect(w * 0.5 - 10, Y(0.36), 20, Y(0) - Y(0.36));
+    g.fillStyle = pal.friso; g.fillRect(0, Y(0.9), w, 8); g.fillRect(0, Y(0.045), w, 6);
+  }
+  function pintarSaia(g, w, h, pal, alfa) { // escarcelas pontudas
+    var n = 8, lw = w / n;
+    g.fillStyle = alfa ? '#000' : tom(pal.aco, 0.9); g.fillRect(0, 0, w, h);
+    for (var i = 0; i < n; i++) {
+      var x0 = i * lw, alto = (i % 2) ? 0.72 : 1.0;
+      g.beginPath(); g.moveTo(x0, 0); g.lineTo(x0 + lw, 0); g.lineTo(x0 + lw, h * alto * 0.62); g.lineTo(x0 + lw / 2, h * alto); g.lineTo(x0, h * alto * 0.62); g.closePath();
+      if (alfa) { g.fillStyle = '#fff'; g.fill(); continue; }
+      var gr = g.createLinearGradient(x0, 0, x0 + lw, 0); gr.addColorStop(0, tom(pal.aco, 0.6)); gr.addColorStop(0.5, tom(pal.aco, 1.25)); gr.addColorStop(1, tom(pal.aco, 0.6));
+      g.fillStyle = gr; g.fill(); g.strokeStyle = pal.friso; g.lineWidth = 5; g.stroke();
+      g.fillStyle = pal.friso; g.beginPath(); g.arc(x0 + lw / 2, h * alto * 0.6, 4, 0, PI * 2); g.fill();
+    }
+    if (!alfa) { g.fillStyle = pal.couro; g.fillRect(0, 0, w, 10); }
+  }
+  function pintarCapa(g, w, h, pal) {
+    var gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, tom(pal.capa, 1.12)); gr.addColorStop(1, tom(pal.capa, 0.62));
+    g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    for (var i = 0; i < 9; i++) { var x = w * (i + 0.5) / 9; var lg = g.createLinearGradient(x - 14, 0, x + 14, 0); lg.addColorStop(0, 'rgba(0,0,0,0)'); lg.addColorStop(0.5, 'rgba(0,0,0,0.22)'); lg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = lg; g.fillRect(x - 14, h * 0.12, 28, h); }
+    g.globalAlpha = 0.28; rosacea(g, w / 2, h * 0.42, w * 0.3, tom(pal.capa, 1.6), 6); g.globalAlpha = 1;
+    g.strokeStyle = pal.friso; g.lineWidth = 4; g.strokeRect(12, -10, w - 24, h * 0.86);
+    g.lineWidth = 2; g.strokeRect(22, -10, w - 44, h * 0.86 - 10);
+    g.fillStyle = pal.friso;
+    for (var y = 30; y < h * 0.84; y += 34) [17, w - 17].forEach(function (x) { g.beginPath(); g.moveTo(x, y - 7); g.lineTo(x + 5, y); g.lineTo(x, y + 7); g.lineTo(x - 5, y); g.closePath(); g.fill(); });
+  }
+  function pintarRasgo(g, w, h) {
+    g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.fillStyle = '#000';
+    var x = 0; while (x < w) { var l = 8 + rnd() * 16, a = 10 + rnd() * 46; g.beginPath(); g.moveTo(x, h); g.lineTo(x + l / 2, h - a); g.lineTo(x + l, h); g.fill(); x += l; }
+  }
+  function pintarTabardo(g, w, h, pal) {
+    g.fillStyle = tom(pal.capa, 0.85); g.fillRect(0, 0, w, h);
+    g.strokeStyle = pal.friso; g.lineWidth = 5; g.strokeRect(8, -10, w - 16, h * 0.84);
+    rosacea(g, w / 2, h * 0.4, w * 0.27, pal.friso, 4);
+  }
+  function pintarEscudo(g, w, h, pal) {
+    var gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, tom(pal.aco, 1.3)); gr.addColorStop(1, tom(pal.aco, 0.6));
+    g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    g.fillStyle = tom(pal.capa, 0.9); g.beginPath(); g.moveTo(w / 2, h * 0.04); g.lineTo(w * 0.64, h * 0.5); g.lineTo(w / 2, h * 0.97); g.lineTo(w * 0.36, h * 0.5); g.closePath(); g.fill();
+    g.strokeStyle = pal.friso; g.lineWidth = 6; g.stroke();
+    rosacea(g, w / 2, h * 0.36, w * 0.25, pal.friso, 6);
+    g.strokeStyle = pal.friso; g.lineWidth = 5; g.beginPath(); g.moveTo(w / 2, h * 0.56); g.lineTo(w / 2, h * 0.86); g.moveTo(w * 0.44, h * 0.62); g.lineTo(w * 0.56, h * 0.62); g.stroke();
+  }
+  function pintarRunas(g, w, h, pal) {
+    g.clearRect(0, 0, w, h); g.strokeStyle = pal.brilho; g.lineWidth = 3; g.lineCap = 'square'; g.shadowColor = pal.brilho; g.shadowBlur = 8;
+    g.beginPath(); g.moveTo(6, h / 2); g.lineTo(w - 30, h / 2); g.stroke();
+    for (var i = 0; i < 9; i++) {
+      var x = 26 + i * (w - 70) / 9, a = h * 0.3;
+      g.beginPath();
+      switch (i % 4) {
+        case 0: g.moveTo(x, h / 2 - a); g.lineTo(x + 9, h / 2); g.lineTo(x, h / 2 + a); break;
+        case 1: g.moveTo(x, h / 2 - a); g.lineTo(x, h / 2 + a); g.moveTo(x, h / 2 - a); g.lineTo(x + 10, h / 2 - a * 0.3); break;
+        case 2: g.moveTo(x - 5, h / 2 - a); g.lineTo(x + 5, h / 2 + a); g.moveTo(x + 5, h / 2 - a); g.lineTo(x - 5, h / 2 + a); break;
+        default: g.moveTo(x, h / 2 - a); g.lineTo(x + 8, h / 2 - a * 0.2); g.lineTo(x, h / 2 + a * 0.4); g.lineTo(x, h / 2 + a);
+      }
+      g.stroke();
+    }
+  }
+  function pintarCabelo(g, w, h, pal) {
+    var gr = g.createLinearGradient(0, 0, 0, h), c = pal.cabelo;
+    gr.addColorStop(0, tom(c, 0.92)); gr.addColorStop(0.2, tom(c, 0.92)); gr.addColorStop(0.3, tom(c, 1.6)); gr.addColorStop(0.38, tom(c, 0.95)); gr.addColorStop(0.75, tom(c, 0.82)); gr.addColorStop(1, tom(c, 0.66));
+    g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    g.fillStyle = tom(c, 0.6); g.globalAlpha = 0.35;
+    for (var i = 0; i < 5; i++) g.fillRect(w * (i + 0.5) / 5, 0, 1.5, h);
+    g.globalAlpha = 1;
+  }
+  function pintarMecha(g, w, h, pal) { pintarCabelo(g, w, h, { cabelo: pal.mecha }); }
+  function pintarMalha(g, w, h, pal) {
+    g.fillStyle = tom(pal.pano, 1.0); g.fillRect(0, 0, w, h); g.fillStyle = tom(pal.pano, 1.45);
+    for (var y = 0; y < h; y += 6) for (var x = (y / 6 % 2) * 3; x < w; x += 6) g.fillRect(x, y, 3, 2);
+  }
+
+  function pintarMadeira(g, w, h, pal, escudo) { // tábuas com veios; no escudo, a rosácea pintada à mão
+    var n = escudo ? 5 : 1;
+    for (var i = 0; i < n; i++) {
+      var x0 = w * i / n, lw = w / n, base = ['#8c6238', '#7d5630', '#94693d', '#84592f', '#8a6036'][i % 5];
+      g.fillStyle = base; g.fillRect(x0, 0, lw, h);
+      g.strokeStyle = 'rgba(60,36,16,0.45)'; g.lineWidth = 1.5;
+      for (var k = 0; k < 7; k++) { var vx = x0 + lw * (k + 0.5) / 7; g.beginPath(); g.moveTo(vx, 0); g.bezierCurveTo(vx + 4, h * 0.3, vx - 4, h * 0.6, vx + 2, h); g.stroke(); }
+      g.fillStyle = 'rgba(40,24,10,0.8)'; g.fillRect(x0, 0, 2.5, h);
+    }
+    if (escudo) {
+      g.fillStyle = '#3a2614'; g.fillRect(0, h * 0.2, w, 12); g.fillRect(0, h * 0.62, w, 12);
+      g.fillStyle = '#c9c2b2'; for (var r = 0; r < 6; r++) { g.beginPath(); g.arc(w * (r + 0.5) / 6, h * 0.2 + 6, 3.5, 0, PI * 2); g.fill(); g.beginPath(); g.arc(w * (r + 0.5) / 6, h * 0.62 + 6, 3.5, 0, PI * 2); g.fill(); }
+      g.globalAlpha = 0.85; rosacea(g, w / 2, h * 0.41, w * 0.27, pal.capa, 9); g.globalAlpha = 1;
+    }
+  }
+
+  // ---------- Geometria ----------
+  var TRAS = 0.8; // profundidade da parte de trás do crânio
+  function cabecaPt(x, y, z) { // deforma uma esfera unitária em cabeça estilo anime (rosto para +x)
+    var px = x * (x < 0 ? TRAS : 0.97), py = y * (y > 0 ? 1.0 : 1), pz = z * 1.0, fr = Math.max(0, x);
+    if (y < 0) {
+      var t = -y;
+      pz *= 1 - 0.3 * Math.pow(t, 2.6); // queixo redondo, sem V
+      if (x < 0) px *= 1 - 0.42 * t;
+      py = -t * (0.8 + 0.13 * fr);
+    }
+    if (x > 0) {
+      pz *= 1 + 0.09 * Math.exp(-Math.pow(y + 0.3, 2) * 9) * fr;
+      px += 0.078 * Math.exp(-(Math.pow(y + 0.29, 2) * 55 + z * z * 80)); // nariz discreto
+      px += 0.03 * Math.exp(-(Math.pow(y + 0.2, 2) * 20 + z * z * 40));
+      px -= 0.012 * Math.exp(-(Math.pow(y - 0.02, 2) * 26 + Math.pow(Math.abs(z) - 0.4, 2) * 22));
+      px += 0.06 * fr * Math.exp(-(Math.pow(y + 0.08, 2) * 5 + Math.pow(Math.abs(z) - 0.5, 2) * 9)); // rosto mais plano: olhos voltados para a frente
+      px += 0.055 * Math.exp(-(Math.pow(y + 0.5, 2) * 45 + z * z * 14)); // boca um pouco à frente
+      px += 0.03 * Math.exp(-(Math.pow(y + 0.76, 2) * 30 + z * z * 8));
+    }
+    return [px, py, pz];
+  }
+  function geoCabeca(k, tetaMax) {
+    var g = new T.SphereGeometry(1, 56, 40, 0, PI * 2, 0, tetaMax || PI), p = g.attributes.position;
+    for (var i = 0; i < p.count; i++) {
+      var x = p.getX(i), y = p.getY(i), z = p.getZ(i), l = Math.sqrt(x * x + y * y + z * z) || 1;
+      var v = cabecaPt(x / l, y / l, z / l); p.setXYZ(i, v[0] * k, v[1] * k, v[2] * k);
+    }
+    g.computeVertexNormals(); return g;
+  }
+  function sup(y, z, k) { var x = Math.sqrt(Math.max(0.02, 1 - y * y - z * z)); var v = cabecaPt(x, y, z); return [v[0] * k, v[1] * k, v[2] * k]; }
+  function geoMecha(pts, larg, esp) { // fita afilada ao longo de uma curva
+    var curva = new T.CatmullRomCurve3(pts.map(function (p) { return new T.Vector3(p[0], p[1], p[2]); }));
+    var N = 16, R = 7, pos = [], uv = [], idx = [], centro = new T.Vector3(0, 0.1, 0), ant = new T.Vector3(0, 0, 1);
+    for (var i = 0; i <= N; i++) {
+      var t = i / N, c = curva.getPoint(t), tan = curva.getTangent(t).normalize();
+      var fora = c.clone().sub(centro); fora.sub(tan.clone().multiplyScalar(fora.dot(tan)));
+      if (fora.length() < 0.15) fora.copy(ant); else fora.normalize();
+      ant.copy(fora);
+      var lado = new T.Vector3().crossVectors(tan, fora).normalize();
+      var wd = larg * Math.pow(Math.sin(PI * Math.min(1, t * 0.86 + 0.14)), 0.75);
+      for (var j = 0; j < R; j++) {
+        var a = j / R * PI * 2;
+        pos.push(c.x + lado.x * Math.cos(a) * wd + fora.x * Math.sin(a) * wd * esp, c.y + lado.y * Math.cos(a) * wd + fora.y * Math.sin(a) * wd * esp, c.z + lado.z * Math.cos(a) * wd + fora.z * Math.sin(a) * wd * esp);
+        uv.push(j / R, 1 - t);
+      }
+    }
+    for (var i2 = 0; i2 < N; i2++) for (var j2 = 0; j2 < R; j2++) {
+      var a0 = i2 * R + j2, a1 = i2 * R + (j2 + 1) % R, b0 = a0 + R, b1 = a1 + R;
+      idx.push(a0, b0, a1, a1, b0, b1);
+    }
+    var g = new T.BufferGeometry();
+    g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new T.Float32BufferAttribute(uv, 2));
+    g.setIndex(idx); g.computeVertexNormals(); return g;
+  }
+  var slotAtual = null;
+  function grupo(pai, x, y, z) { var g = new T.Group(); g.position.set(x || 0, y || 0, z || 0); pai.add(g); return g; }
+  function peca(pai, geo, mat, x, y, z, borda) {
+    var m = new T.Mesh(geo, mat); m.position.set(x || 0, y || 0, z || 0); m.castShadow = true;
+    if (borda) m.add(new T.Mesh(geo, borda));
+    pai.add(m); if (slotAtual) slotAtual.push(m); return m;
+  }
+  function membro(rTopo, rBase, comp) { var g = new T.CylinderGeometry(rTopo, rBase, comp, 14); g.translate(0, -comp / 2, 0); return g; }
+  function esfera(r, sx, sy, sz) { var g = new T.SphereGeometry(r, 16, 12); g.scale(sx || 1, sy || 1, sz || 1); return g; }
+  function uvCaixa(geo) { // UV planar em XY a partir da caixa envolvente
+    geo.computeBoundingBox(); var b = geo.boundingBox, p = geo.attributes.position, uv = [];
+    for (var i = 0; i < p.count; i++) uv.push((p.getX(i) - b.min.x) / (b.max.x - b.min.x), (p.getY(i) - b.min.y) / (b.max.y - b.min.y));
+    geo.setAttribute('uv', new T.Float32BufferAttribute(uv, 2)); return geo;
+  }
+
+  function criar() {
+    var a = { raiz: new T.Group(), m: {}, tex: [], piscar: 2, olhoFechado: 0, slots: { armadura: [], manto: [], espada: [], escudo: [], cabelo: [] }, equip: { armadura: true, manto: true, espada: true, escudo: true, cabelo: true } }, M = a.m, P = a.p = {};
+    function slot(n) { slotAtual = n ? a.slots[n] : null; }
+    slot(null);
+    function tex(w, h, pintar, extra) {
+      var c = document.createElement('canvas'); c.width = w; c.height = h;
+      var t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; t.anisotropy = 4;
+      a.tex.push({ c: c, t: t, pintar: pintar, extra: extra }); return t;
+    }
+    // materiais lisos (cor vem da paleta) e texturizados
+    ['aco', 'friso', 'pano', 'couro', 'lamina', 'pena', 'capaLisa'].forEach(function (k) { M[k] = toon(); });
+    M.pele = toon(null, GRAD_PELE); M.orelha = toon(null, GRAD_PELE); M.acoDuplo = toon({ side: T.DoubleSide });
+    M.rosto = toon({ map: tex(2048, 1024, function (g, w, h, p) { pintarRosto(g, w, h, p, false); }) }, GRAD_PELE);
+    a.texAberto = M.rosto.map; a.texFechado = tex(2048, 1024, function (g, w, h, p) { pintarRosto(g, w, h, p, true); });
+    M.cabelo = toon({ map: tex(32, 256, pintarCabelo) }, GRAD_CABELO);
+    M.mecha = toon({ map: tex(32, 256, pintarMecha) }, GRAD_CABELO);
+    M.cabeloLiso = toon(null, GRAD_CABELO);
+    M.placa = toon({ map: tex(128, 256, pintarPlaca) });
+    M.tronco = toon({ map: tex(512, 512, pintarTronco) });
+    M.malha = toon({ map: tex(64, 64, pintarMalha) }); M.malha.map.wrapS = M.malha.map.wrapT = T.RepeatWrapping; M.malha.map.repeat.set(3, 4);
+    var saiaAlfa = tex(256, 128, function (g, w, h, p) { pintarSaia(g, w, h, p, true); });
+    M.saia = toon({ map: tex(256, 128, function (g, w, h, p) { pintarSaia(g, w, h, p, false); }), alphaMap: saiaAlfa, alphaTest: 0.5, side: T.DoubleSide });
+    var rasgo = tex(256, 512, pintarRasgo);
+    M.capa = toon({ map: tex(256, 512, pintarCapa), alphaMap: rasgo, alphaTest: 0.5, side: T.DoubleSide });
+    M.tabardo = toon({ map: tex(128, 256, pintarTabardo), alphaMap: rasgo, alphaTest: 0.5, side: T.DoubleSide });
+    M.escudo = toon({ map: tex(256, 512, pintarEscudo), side: T.DoubleSide });
+    M.runas = new T.MeshBasicMaterial({ map: tex(512, 32, pintarRunas), transparent: true, depthWrite: false, blending: T.AdditiveBlending, side: T.DoubleSide });
+    M.brilho = new T.MeshBasicMaterial({ color: 0xffffff });
+    M.gema = new T.MeshBasicMaterial({ color: 0xffffff });
+    M.frisoDuplo = toon({ side: T.DoubleSide });
+    M.macLiso = toon(); M.macDuplo = toon({ side: T.DoubleSide });
+    M.madeira = toon({ map: tex(64, 256, function (g, w, h, p) { pintarMadeira(g, w, h, p, false); }) });
+    M.escudoMadeira = toon({ map: tex(256, 512, function (g, w, h, p) { pintarMadeira(g, w, h, p, true); }), side: T.DoubleSide });
+    M.madeiraEsc = new T.MeshToonMaterial({ color: cor('#4a3018'), gradientMap: GRAD });
+    a.base = {};
+
+    // ----- quadril -----
+    P.quadril = grupo(a.raiz, 0, QY, 0);
+    peca(P.quadril, esfera(0.15, 0.7, 0.72, 1.16), M.macLiso, 0, -0.035, 0, C_FINO);
+    slot('armadura');
+    var saia = new T.CylinderGeometry(0.16, 0.265, 0.34, 24, 1, true); saia.scale(0.9, 1, 1.2);
+    peca(P.quadril, saia, M.saia, 0, -0.085, 0).scale.set(0.95, 0.62, 0.95);
+    P.tabardo = grupo(P.quadril, 0.15, 0.0, 0);
+    var gt = new T.PlaneGeometry(0.2, 0.68, 1, 4); gt.rotateY(PI / 2); gt.translate(0, -0.34, 0);
+    peca(P.tabardo, gt, M.tabardo).scale.y = 0.55;
+    slot(null);
+    // cinto, fivela e corrente com a gema
+    P.tronco = grupo(P.quadril, 0, 0, 0);
+    var TG = grupo(P.tronco, 0, 0, 0); TG.scale.set(TW, TS, TW);
+    var cinto = new T.TorusGeometry(0.15, 0.022, 8, 28); cinto.rotateX(PI / 2); cinto.scale(0.86, 1.3, 1.26);
+    slot('armadura');
+    peca(TG, cinto, M.couro, 0, 0.045, 0, C_FINO);
+    var fivela = new T.OctahedronGeometry(0.045, 0); fivela.scale(0.4, 1, 1);
+    peca(TG, fivela, M.friso, 0.135, 0.045, 0, C_FINO);
+    for (var ci = 0; ci <= 8; ci++) {
+      var ct = ci / 8, cz = 0.04 + ct * 0.15, cy = 0.02 - Math.sin(ct * PI) * 0.12;
+      peca(TG, esfera(0.011), M.friso, 0.125 - Math.abs(ct - 0.5) * 0.02, cy, cz);
+    }
+    var gema = new T.OctahedronGeometry(0.026, 0); gema.scale(0.7, 1.4, 0.7);
+    peca(TG, gema, M.gema, 0.13, -0.13, 0.115);
+    a.brilhoGema = brilho(0.22, 0.6); a.brilhoGema.position.set(0.14, -0.13, 0.115); TG.add(a.brilhoGema); a.slots.armadura.push(a.brilhoGema);
+    slot(null);
+
+    // ----- tronco -----
+    var perfil = [[0.136, 0], [0.138, 0.07], [0.128, 0.18], [0.14, 0.3], [0.166, 0.4], [0.17, 0.465], [0.158, 0.497], [0.08, 0.512], [0.066, 0.53], [0.062, NK]].map(function (p) { return new T.Vector2(p[0], p[1]); });
+    var geoTronco = new T.LatheGeometry(perfil, 28); geoTronco.scale(0.84, 1, 1.3);
+    peca(TG, geoTronco, M.macLiso, 0, 0, 0, C_GROSSO);
+    var golaBase = new T.CylinderGeometry(0.088, 0.07, 0.07, 16, 1, true);
+    peca(TG, golaBase, M.macDuplo, -0.006, NK - 0.04, 0);
+    slot('armadura');
+    var couraca = peca(TG, geoTronco, M.tronco, 0, 0.004, 0, C_GROSSO); couraca.scale.set(1.07, 1.0, 1.07);
+    // gola alta
+    var gola = new T.CylinderGeometry(0.1, 0.074, 0.075, 16, 1, true); gola.scale(0.95, 1, 1.05);
+    peca(TG, gola, M.acoDuplo, -0.008, NK - 0.035, 0);
+    var aroGola = new T.TorusGeometry(0.1, 0.006, 5, 20); aroGola.rotateX(PI / 2); aroGola.scale(0.95, 1, 1.05);
+    peca(TG, aroGola, M.friso, -0.008, NK + 0.003, 0);
+    slot('manto');
+    // manto de penas sobre os ombros
+    P.manto = grupo(TG, 0, NK - 0.09, 0); P.manto.scale.set(1.05, 1.25, 1.05);
+    var geoPena = new T.ConeGeometry(0.06, 0.36, 5); geoPena.translate(0, -0.18, 0); geoPena.scale(1, 1, 0.3);
+    for (var f = 0; f < 2; f++) for (var pi = 0; pi < 15; pi++) {
+      var ang = (pi + f * 0.5) / 15 * PI * 2; if (Math.cos(ang) > 0.15) continue; // só ombros e costas
+      var pg = grupo(P.manto, Math.cos(ang) * (0.14 + f * 0.03), 0.03 - f * 0.05, Math.sin(ang) * (0.2 + f * 0.05));
+      pg.rotation.y = -PI / 2 - ang;
+      var pm = peca(pg, geoPena, M.pena, 0, 0, 0, C_FINO); pm.rotation.x = 0.62 - f * 0.22; pm.scale.setScalar(1 + f * 0.25 + rnd() * 0.2);
+    }
+
+    slot(null);
+    // ----- cabeça -----
+    P.cabeca = grupo(P.tronco, 0, NK * TS, 0);
+    peca(P.cabeca, new T.CylinderGeometry(0.04, 0.046, 0.1, 12), M.pele, -0.005, 0.02, 0, C_FINO);
+    var cab = grupo(P.cabeca, -0.03, H * 0.8, 0); cab.scale.set(H, H, H * 0.78); a.cab = cab;
+    a.rosto = peca(cab, geoCabeca(1), M.rosto, 0, 0, 0, C_CABECA);
+    [1, -1].forEach(function (s) { // orelhas: concha fina, levemente aberta para trás, com o miolo mais escuro
+      var og = grupo(cab, -0.1, -0.1, s * 0.95); og.rotation.y = s * 0.5; og.rotation.z = -0.2;
+      peca(og, esfera(1, 0.16, 0.26, 0.075), M.pele, 0, 0, 0, C_CABECA);
+      peca(og, esfera(1, 0.1, 0.18, 0.035), M.orelha, 0.012, -0.01, s * 0.055);
+    });
+    slot('cabelo'); // o cabelo pode ser escondido para conferir o formato da cabeça
+    var CAB_TRAS = 0.72; // o cabelo de trás acompanha o crânio menor
+    // calota do cabelo
+    var calota = peca(cab, geoCabeca(1.045, PI * 0.6), M.cabeloLiso, 0, 0, 0, C_CABECA); calota.rotation.z = 0.5;
+    function mecha(pts, larg, esp, mat, pai) { if (!pai) pts = pts.map(function (p) { return [p[0] < 0 ? p[0] * CAB_TRAS * (1 - 0.2 * Math.min(1, Math.max(0, -p[1]))) : p[0], p[1], p[2]]; }); return peca(pai || cab, geoMecha(pts, larg, esp || 0.38), mat || M.cabelo, 0, 0, 0, C_MECHA); }
+    // franja
+    [[-0.8, 0.1, 0.16], [-0.62, 0.3, 0.17], [-0.44, 0.2, 0.17], [-0.26, 0.4, 0.17], [-0.08, 0.02, 0.15], [0.1, 0.42, 0.16], [0.28, 0.28, 0.17], [0.46, 0.38, 0.17], [0.64, 0.2, 0.17], [0.8, 0.08, 0.15]].forEach(function (b, i) {
+      var z0 = b[0], fim = sup(b[1], z0 * 0.98, 1.1), meio = sup(0.62, z0 * 0.72, 1.14);
+      mecha([[0.1, 1.04, z0 * 0.25], [0.55, 1.0, z0 * 0.5], meio, [fim[0] + 0.02, fim[1], fim[2] + (z0 > 0 ? -0.06 : 0.06)]], b[2], 0.4, M.cabelo);
+    });
+    // mechas laterais que emolduram o rosto
+    [1, -1].forEach(function (s) {
+      mecha([[0.2, 0.98, s * 0.5], sup(0.45, s * 0.86, 1.12), [0.52, -0.3, s * 0.95], [0.5, -0.95, s * 0.8], [0.58, -1.35, s * 0.7]], s > 0 ? 0.13 : 0.2, 0.42, s > 0 ? M.mecha : M.cabelo);
+      mecha([[0.0, 1.0, s * 0.55], sup(0.3, s * 0.93, 1.12), [0.12, -0.5, s * 0.98], [0.05, -1.05, s * 0.92]], 0.24, 0.4);
+    });
+    // cabelo de trás em camadas
+    for (var bi = 0; bi < 9; bi++) {
+      var ba = (bi / 8 - 0.5) * 3.6, bc = -Math.cos(ba), bs = Math.sin(ba), comp = 1.25 + (bi % 2) * 0.3 + rnd() * 0.15;
+      mecha([[-0.25 + bc * 0.1, 1.02, bs * 0.3], [bc * 1.12, 0.45, bs * 1.02], [bc * 1.08, -0.4, bs * 0.95], [bc * 1.0, -comp + 0.25, bs * 0.85], [bc * 1.22, -comp, bs * 0.95]], 0.3, 0.36);
+    }
+    // rabo de cavalo baixo com fita
+    P.cabeloLongo = grupo(cab, -0.62, -0.55, 0);
+    for (var ri = 0; ri < 5; ri++) {
+      var rz = (ri - 2) * 0.13, rl = 2.5 + (ri % 2) * 0.4;
+      mecha([[0.1, 0.1, rz * 0.5], [-0.25, -0.6, rz], [-0.2, -rl * 0.5, rz * 1.6], [-0.45, -rl * 0.8, rz * 1.3], [-0.3, -rl, rz * 0.8]], 0.26, 0.5, ri === 1 ? M.mecha : M.cabelo, P.cabeloLongo);
+    }
+    var fita = new T.TorusGeometry(0.2, 0.07, 6, 14); fita.rotateX(PI / 2);
+    peca(P.cabeloLongo, fita, M.capaLisa, -0.05, -0.2, 0, C_MECHA);
+    [0.25, -0.25].forEach(function (z) { mecha([[-0.1, -0.2, z * 0.4], [-0.5, -0.5, z], [-0.65, -1.0, z * 1.3]], 0.12, 0.25, M.capaLisa, P.cabeloLongo); });
+
+    slot('armadura');
+    // ----- ombreiras: a do escudo é maior e tem crista -----
+    [[0.265, 1.0], [-0.265, 1.28]].forEach(function (o) {
+      var z = o[0], k = o[1], g = grupo(TG, 0, 0.475, z); g.rotation.x = z > 0 ? 0.4 : -0.4; g.scale.set(k * 0.95, k * 1.3, k * 0.95);
+      for (var c = 0; c < 3; c++) {
+        var og = new T.SphereGeometry(0.14 - c * 0.022, 16, 8, 0, PI * 2, 0, PI / 2); og.scale(1.08, 0.8, 1.05);
+        peca(g, og, M.aco, 0, c * 0.045, 0, C_GROSSO);
+        var aro = new T.TorusGeometry(0.143 - c * 0.022, 0.006, 6, 22); aro.rotateX(PI / 2); aro.scale(1.08, 1, 1.05);
+        peca(g, aro, M.friso, 0, c * 0.045 + 0.003, 0);
+      }
+      if (k > 1.1) {
+        var cr = new T.Shape(); cr.moveTo(-0.1, 0); cr.quadraticCurveTo(-0.09, 0.1, 0.0, 0.17); cr.quadraticCurveTo(0.03, 0.08, 0.1, 0); cr.lineTo(-0.1, 0);
+        var gc = new T.ExtrudeGeometry(cr, { depth: 0.014, bevelEnabled: true, bevelThickness: 0.004, bevelSize: 0.004, bevelSegments: 1 }); gc.translate(0, 0, -0.007);
+        peca(g, gc, M.aco, 0, 0.1, 0, C_FINO);
+      } else peca(g, new T.ConeGeometry(0.024, 0.1, 6), M.friso, 0, 0.165, 0, C_FINO);
+    });
+
+    slot(null);
+    function braco(z) {
+      var o = {};
+      o.ombro = grupo(P.tronco, 0, 0.42 * TS, z * TW);
+      // base lisa: manga curta do macacão, braço e mão de pele
+      peca(o.ombro, esfera(0.062, 1, 1.05, 1), M.macLiso, 0, 0.004, 0, C_FINO);
+      peca(o.ombro, membro(0.047, 0.045, LU), M.pele, 0, 0, 0, C_FINO);
+      peca(o.ombro, membro(0.058, 0.054, LU * 0.62), M.macLiso, 0, 0, 0, C_FINO);
+      o.cotovelo = grupo(o.ombro, 0, -LU, 0);
+      peca(o.cotovelo, esfera(0.046), M.pele, 0, 0, 0, C_FINO);
+      peca(o.cotovelo, membro(0.046, 0.062, LF), M.pele, 0, 0, 0, C_FINO);
+      o.mao = grupo(o.cotovelo, 0, -LF - 0.055, 0);
+      peca(o.mao, esfera(0.08, 0.9, 1.1, 0.95), M.pele, 0, -0.004, 0, C_GROSSO);
+      peca(o.mao, esfera(0.034, 1, 1.15, 1), M.pele, 0.05, 0.012, 0, C_FINO); // polegar
+      slot('armadura');
+      peca(o.ombro, membro(0.056, 0.053, LU), M.malha, 0, 0, 0, C_FINO);
+      peca(o.cotovelo, esfera(0.062), M.aco, 0, 0, 0, C_FINO);
+      var esp = new T.ConeGeometry(0.03, 0.09, 6); esp.rotateZ(PI / 2);
+      peca(o.cotovelo, esp, M.friso, -0.075, 0, 0, C_FINO);
+      peca(o.cotovelo, membro(0.068, 0.094, LF), M.placa, 0, 0, 0, C_GROSSO);
+      var punho = new T.TorusGeometry(0.096, 0.014, 6, 18); punho.rotateX(PI / 2);
+      peca(o.cotovelo, punho, M.friso, 0, -LF + 0.01, 0, C_FINO);
+      peca(o.mao, esfera(0.09, 1, 1.05, 0.95), M.aco, 0, 0, 0, C_GROSSO);
+      peca(o.mao, esfera(0.06, 1.2, 0.7, 1.25), M.friso, 0.037, 0.032, 0, C_FINO);
+      slot(null);
+      return o;
+    }
+    P.bracoEspada = braco(0.262); P.bracoEscudo = braco(-0.262);
+
+    // ----- espada longa com runas -----
+    var E = P.espada = grupo(P.bracoEspada.mao, 0, 0, 0); a.slots.espada.push(E);
+    var fl = new T.Shape(); fl.moveTo(0, -0.03); fl.lineTo(0.2, -0.036); fl.lineTo(0.98, -0.024); fl.lineTo(1.2, 0); fl.lineTo(0.98, 0.024); fl.lineTo(0.2, 0.036); fl.lineTo(0, 0.03); fl.lineTo(0, -0.03);
+    var geoLamina = new T.ExtrudeGeometry(fl, { depth: 0.004, bevelEnabled: true, bevelThickness: 0.011, bevelSize: 0.016, bevelSegments: 1 }); geoLamina.translate(0.11, 0, -0.002);
+    peca(E, geoLamina, M.lamina, 0, 0, 0, C_FINO);
+    [0.0145, -0.0145].forEach(function (z) { var r = new T.Mesh(new T.PlaneGeometry(0.9, 0.05), M.runas); r.position.set(0.6, 0, z); E.add(r); });
+    peca(E, new T.BoxGeometry(0.04, 0.3, 0.045), M.friso, 0.095, 0, 0, C_FINO);
+    [0.16, -0.16].forEach(function (y) { var pt = new T.ConeGeometry(0.03, 0.1, 6); pt.rotateZ(-PI / 2 + (y > 0 ? 0.5 : -0.5)); peca(E, pt, M.friso, 0.125, y, 0, C_FINO); });
+    var gemaE = new T.OctahedronGeometry(0.034, 0); gemaE.scale(1, 1, 0.7);
+    peca(E, gemaE, M.gema, 0.1, 0, 0);
+    var cabo = new T.CylinderGeometry(0.019, 0.016, 0.24, 8); cabo.rotateZ(PI / 2);
+    peca(E, cabo, M.couro, -0.035, 0, 0, C_FINO);
+    [-0.09, -0.03, 0.03].forEach(function (x) { var an = new T.TorusGeometry(0.02, 0.005, 5, 10); an.rotateY(PI / 2); peca(E, an, M.friso, x, 0, 0); });
+    var pomo = new T.OctahedronGeometry(0.036, 0); pomo.scale(1.5, 1, 0.8);
+    peca(E, pomo, M.friso, -0.18, 0, 0, C_FINO);
+    a.brilhoEspada = brilho(0.5, 0.3); a.brilhoEspada.position.set(0.65, 0, 0); a.brilhoEspada.scale.set(1.7, 0.3, 1); E.add(a.brilhoEspada);
+    E.scale.set(1.0, 1.25, 1.5); E.position.set(0.02, 0, 0);
+    // espada de madeira (arma base)
+    var Em = a.base.espada = grupo(P.bracoEspada.mao, 0.02, 0, 0);
+    var fm = new T.Shape(); fm.moveTo(0, -0.034); fm.lineTo(0.72, -0.03); fm.quadraticCurveTo(0.86, -0.02, 0.9, 0); fm.quadraticCurveTo(0.86, 0.02, 0.72, 0.03); fm.lineTo(0, 0.034); fm.lineTo(0, -0.034);
+    var geoMad = new T.ExtrudeGeometry(fm, { depth: 0.016, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.008, bevelSegments: 1 }); geoMad.translate(0.1, 0, -0.008);
+    var um = geoMad.attributes.uv, pm2 = geoMad.attributes.position; for (var ui = 0; ui < um.count; ui++) um.setXY(ui, pm2.getY(ui) * 8 + 0.5, pm2.getX(ui));
+    peca(Em, geoMad, M.madeira, 0, 0, 0, C_FINO);
+    peca(Em, new T.BoxGeometry(0.05, 0.24, 0.05), M.madeiraEsc, 0.085, 0, 0, C_FINO);
+    var caboM = new T.CylinderGeometry(0.021, 0.021, 0.22, 8); caboM.rotateZ(PI / 2);
+    peca(Em, caboM, M.capaLisa, -0.035, 0, 0, C_FINO);
+    peca(Em, esfera(0.03), M.madeiraEsc, -0.16, 0, 0, C_FINO);
+    Em.scale.set(1.0, 1.25, 1.5); Em.visible = false;
+
+    // ----- escudo com brasão pintado -----
+    var Sd = P.escudo = grupo(P.bracoEscudo.cotovelo, 0, -0.1, -0.12); a.slots.escudo.push(Sd);
+    function formaEscudo(k) { var s = new T.Shape(); s.moveTo(-0.2 * k, 0.3 * k); s.quadraticCurveTo(-0.1 * k, 0.33 * k, 0, 0.4 * k); s.quadraticCurveTo(0.1 * k, 0.33 * k, 0.2 * k, 0.3 * k); s.lineTo(0.21 * k, 0); s.quadraticCurveTo(0.17 * k, -0.32 * k, 0, -0.54 * k); s.quadraticCurveTo(-0.17 * k, -0.32 * k, -0.21 * k, 0); s.lineTo(-0.2 * k, 0.3 * k); return s; }
+    peca(Sd, new T.ExtrudeGeometry(formaEscudo(1.09), { depth: 0.02, bevelEnabled: false }), M.friso, 0, 0, -0.02, C_FINO);
+    [-0.024, 0.004].forEach(function (z) { peca(Sd, uvCaixa(new T.ShapeGeometry(formaEscudo(1))), M.escudo, 0, 0, z); });
+    peca(Sd, esfera(0.035, 1, 1, 0.5), M.friso, 0, 0.11, -0.03, C_FINO);
+    Sd.scale.setScalar(0.9);
+    // escudo de madeira (escudo base)
+    var Sm = a.base.escudo = grupo(P.bracoEscudo.cotovelo, 0, -0.1, -0.12);
+    peca(Sm, new T.ExtrudeGeometry(formaEscudo(1.07), { depth: 0.02, bevelEnabled: false }), M.madeiraEsc, 0, 0, -0.02, C_FINO);
+    [-0.024, 0.004].forEach(function (z) { peca(Sm, uvCaixa(new T.ShapeGeometry(formaEscudo(1))), M.escudoMadeira, 0, 0, z); });
+    Sm.scale.setScalar(0.82); Sm.visible = false;
+
+    var pesBase = [];
+    a.base.armadura = { set visible(v) { pesBase.forEach(function (o) { o.visible = v; }); } };
+    function perna(z) {
+      var o = {};
+      o.coxa = grupo(P.quadril, 0, -0.06, z);
+      // base lisa: short do macacão, perna e pé de pele
+      peca(o.coxa, membro(0.076, 0.066, L1), M.pele, 0, 0, 0, C_FINO);
+      peca(o.coxa, esfera(0.088), M.macLiso, 0, 0, 0, C_FINO); // raiz da coxa, une a perna ao quadril
+      peca(o.coxa, membro(0.086, 0.079, L1 * 0.66), M.macLiso, 0, 0, 0, C_FINO);
+      o.joelho = grupo(o.coxa, 0, -L1, 0);
+      peca(o.joelho, esfera(0.066), M.pele, 0.004, 0, 0, C_FINO);
+      peca(o.joelho, membro(0.068, 0.092, L2), M.pele, 0, 0, 0, C_FINO);
+      var pe = grupo(o.joelho, 0.075, -L2 - 0.045, 0); pesBase.push(pe); // pé descalço some sob a bota da armadura
+      peca(pe, esfera(0.115, 1.6, 0.68, 1.0), M.pele, 0, 0, 0, C_GROSSO);
+      slot('armadura');
+      peca(o.coxa, membro(0.09, 0.077, L1), M.placa, 0, 0, 0, C_GROSSO);
+      peca(o.joelho, esfera(0.08, 1.08, 1, 1), M.aco, 0.012, 0, 0, C_FINO);
+      var asa = new T.ConeGeometry(0.05, 0.12, 4); asa.scale(0.3, 1, 1);
+      peca(o.joelho, asa, M.friso, 0.02, 0.03, z > 0 ? 0.085 : -0.085, C_FINO).rotation.x = z > 0 ? 0.9 : -0.9;
+      peca(o.joelho, membro(0.087, 0.127, L2), M.placa, 0, 0, 0, C_GROSSO);
+      var dobra = new T.TorusGeometry(0.094, 0.022, 7, 20); dobra.rotateX(PI / 2);
+      peca(o.joelho, dobra, M.friso, 0, -0.03, 0, C_FINO);
+      peca(o.joelho, esfera(0.132, 1.45, 0.82, 1.0), M.aco, 0.07, -L2 - 0.03, 0, C_GROSSO);
+      var bico = new T.ConeGeometry(0.075, 0.16, 8); bico.rotateZ(-PI / 2); bico.scale(1, 0.7, 1.15);
+      peca(o.joelho, bico, M.friso, 0.265, -L2 - 0.06, 0, C_FINO);
+      var fiv = new T.BoxGeometry(0.03, 0.05, 0.27);
+      peca(o.joelho, fiv, M.friso, 0.1, -L2 + 0.04, 0, C_FINO);
+      slot(null);
+      return o;
+    }
+    P.pernaA = perna(0.105); P.pernaB = perna(-0.105);
+
+    // ----- capa -----
+    var gcapa = new T.PlaneGeometry(1, 1, 8, 14), pp = gcapa.attributes.position;
+    a.capaUV = [];
+    for (var i = 0; i < pp.count; i++) a.capaUV.push([pp.getX(i), 0.5 - pp.getY(i)]);
+    a.capa = new T.Mesh(gcapa, M.capa); a.capa.castShadow = true; a.capa.position.set(-0.12, (NK - 0.09) * TS, 0); a.capa.frustumCulled = false;
+    P.tronco.add(a.capa); a.slots.manto.push(a.capa);
+
+    a.rastro = new T.Mesh(new T.RingGeometry(0.8, 1.7, 24, 1, 0, 1), new T.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, side: T.DoubleSide, depthWrite: false, blending: T.AdditiveBlending }));
+    a.rastro.position.set(0.05, QY + 0.3, 0.3); a.raiz.add(a.rastro);
+    a.estado = 'idle'; a.t = 0; a.passo = 0; a.vy = 0; a.relogio = 0; a.vento = 0; a.J = null;
+    paleta(a, 0);
+    return a;
+  }
+
+  function paleta(a, n) {
+    var pl = PALETAS[n], M = a.m; a.paletaAtual = n;
+    a.tex.forEach(function (t) { t.pintar(t.c.getContext('2d'), t.c.width, t.c.height, pl); t.t.needsUpdate = true; });
+    M.aco.color.copy(cor(pl.aco)); M.friso.color.copy(cor(pl.friso)); M.frisoDuplo.color.copy(cor(pl.friso)); M.pano.color.copy(cor(pl.pano));
+    M.couro.color.copy(cor(pl.couro)); M.lamina.color.copy(cor(pl.lamina)); M.pena.color.copy(cor(pl.pena)); M.capaLisa.color.copy(cor(pl.capa));
+    M.macLiso.color.copy(cor(pl.macacao)); M.macDuplo.color.copy(cor(pl.macacao)).multiplyScalar(0.6); M.pele.color.copy(cor(pl.pele)).multiplyScalar(0.8); M.orelha.color.copy(cor(pl.pele)).multiply(new T.Color(0.62, 0.45, 0.45)); M.rosto.color.setScalar(0.8); M.acoDuplo.color.copy(cor(pl.aco)); M.cabeloLiso.color.copy(cor(pl.cabelo));
+    M.brilho.color.copy(cor(pl.brilho)); M.gema.color.copy(cor(pl.olhoClaro));
+    a.rastro.material.color.copy(cor(pl.brilho)); a.brilhoEspada.material.color.copy(cor(pl.brilho)); a.brilhoGema.material.color.copy(cor(pl.olho));
+  }
+
+  function equipar(a, nome, ligado) {
+    a.equip[nome] = ligado; a.slots[nome].forEach(function (o) { o.visible = ligado; });
+    if (a.base[nome]) a.base[nome].visible = !ligado;
+  }
+
+  function ondularCapa(a, t, vento) {
+    var p = a.capa.geometry.attributes.position, L = CAPA_L;
+    for (var i = 0; i < p.count; i++) {
+      var u = a.capaUV[i][0], v = a.capaUV[i][1];
+      var ang = (0.1 + vento * 1.05) * Math.pow(v, 0.75);
+      var onda = Math.sin(t * (4 + vento * 5) - v * 6 + u * 4) * 0.055 * v * (0.35 + vento);
+      var bolsa = (1 - 4 * u * u) * 0.07 * v;
+      p.setXYZ(i, -(0.02 + Math.sin(ang) * L * v) - onda - bolsa, -Math.cos(ang) * L * v, u * (0.42 + 0.5 * v));
+    }
+    p.needsUpdate = true; a.capa.geometry.computeVertexNormals();
+  }
+
+  var DUR = [0.32, 0.32, 0.54], ACERTO = [0.1, 0.1, 0.18], ARCO = [[2.75, 0.45], [-0.55, 2.55], [3.15, 0.1]];
+  function suave(k) { k = Math.max(0, Math.min(1, k)); return 1 - Math.pow(1 - k, 3); }
+  function posar(h, dt) {
+    var P = h.p, r = h.relogio, e = h.estado;
+    var A = { S: 0.3, E: 0.5, W: -1.3, S2: 0.35, E2: 1.25, cA: 0.28, jA: -0.2, cB: -0.3, jB: -0.12, inc: -0.03, tor: 0.12, sobe: -0.03, cab: 0 };
+    var taxa = 16;
+    if (e === 'idle') {
+      var b = Math.sin(r * 2.2);
+      A.sobe += b * 0.012; A.S += b * 0.03; A.E += b * 0.04; A.S2 += b * 0.02;
+    } else if (e === 'run') {
+      var p = r * 12.5, s = Math.sin(p), c = Math.cos(p);
+      A.cA = s * 0.95 + 0.1; A.cB = -s * 0.95 + 0.1;
+      A.jA = -Math.max(0, c) * 1.35 - 0.2; A.jB = -Math.max(0, -c) * 1.35 - 0.2;
+      A.S = -0.55 + s * 0.12; A.E = 0.35; A.W = -2.55; A.S2 = 0.5 + s * 0.2; A.E2 = 1.3;
+      A.inc = -0.22; A.tor = s * 0.14; A.sobe = Math.abs(c) * 0.055 - 0.06; A.cab = 0.12; taxa = 26;
+    } else if (e === 'ar') {
+      var sub = h.vy > 0;
+      A.cA = sub ? 0.95 : 0.4; A.jA = sub ? -1.35 : -0.55; A.cB = sub ? -0.25 : -0.35; A.jB = sub ? -0.5 : -0.25;
+      A.S = sub ? -0.7 : 2.3; A.E = 0.4; A.W = sub ? -2.2 : -1.2; A.S2 = sub ? 0.8 : 1.4; A.E2 = 0.8;
+      A.inc = sub ? -0.1 : 0.08; A.sobe = 0; taxa = 14;
+    } else {
+      var n = h.passo, k = suave(h.t / ACERTO[n]), ar = ARCO[n];
+      var volta = Math.max(0, (h.t - ACERTO[n]) / (DUR[n] - ACERTO[n]));
+      A.S = ar[0] + (ar[1] - ar[0]) * k + (ar[1] > ar[0] ? 1 : -1) * volta * 0.1; A.E = 0.1; A.W = -1.38;
+      A.inc = (n === 1 ? 0.16 : -0.28) * k; A.tor = (n === 1 ? -0.6 : 0.6) * (k - 0.45);
+      A.S2 = -0.45; A.E2 = 1.0; A.cA = 0.62; A.jA = -0.45; A.cB = -0.55; A.jB = -0.2; A.sobe = -0.09 * k - 0.03;
+      if (n === 2) { A.cA = 0.9; A.jA = -0.85; A.cB = -0.7; A.sobe = -0.2 * k; A.inc = -0.42 * k; }
+      taxa = 90;
+      h.rastro.material.opacity = h.t > ACERTO[n] - 0.06 ? Math.max(0, 0.75 - (h.t - ACERTO[n] + 0.06) * 4.5) : 0;
+    }
+    if (e !== 'atk') h.rastro.material.opacity = 0;
+    if (!h.J) h.J = A;
+    var J = h.J, f = Math.min(1, dt * taxa);
+    for (var kk in A) J[kk] += (A[kk] - J[kk]) * f;
+    P.quadril.position.y = QY + J.sobe * 0.6;
+    P.tronco.rotation.set(0, J.tor, J.inc);
+    P.cabeca.rotation.set(0, -J.tor * 0.7, -J.inc * 0.6 + J.cab);
+    P.cabeloLongo.rotation.z = -0.1 - h.vento * 0.8 + Math.sin(r * 7) * 0.06 * h.vento + Math.sin(r * 1.7) * 0.03;
+    P.tabardo.rotation.z = -Math.max(J.cA, J.cB) * 0.6 + 0.04;
+    P.bracoEspada.ombro.rotation.z = J.S; P.bracoEspada.cotovelo.rotation.z = J.E; P.espada.rotation.z = J.W; h.base.espada.rotation.z = J.W;
+    P.bracoEscudo.ombro.rotation.z = J.S2; P.bracoEscudo.cotovelo.rotation.z = J.E2; P.escudo.rotation.z = -(J.S2 + J.E2) - J.inc; h.base.escudo.rotation.z = P.escudo.rotation.z;
+    P.pernaA.coxa.rotation.z = J.cA; P.pernaA.joelho.rotation.z = J.jA;
+    P.pernaB.coxa.rotation.z = J.cB; P.pernaB.joelho.rotation.z = J.jB;
+    h.brilhoEspada.material.opacity = 0.25 + Math.sin(r * 3) * 0.08 + (e === 'atk' ? 0.4 : 0);
+    h.m.runas.opacity = 0.7 + Math.sin(r * 3) * 0.2 + (e === 'atk' ? 0.3 : 0);
+    h.brilhoGema.material.opacity = 0.45 + Math.sin(r * 2.3) * 0.2;
+    // piscar
+    h.piscar -= dt;
+    if (h.piscar <= 0) { h.olhoFechado = 0.11; h.piscar = 2.5 + rnd() * 3; }
+    if (h.olhoFechado > 0) h.olhoFechado -= dt;
+    var alvoTex = h.olhoFechado > 0 ? h.texFechado : h.texAberto;
+    if (h.m.rosto.map !== alvoTex) { h.m.rosto.map = alvoTex; }
+    ondularCapa(h, r, h.vento);
+  }
+
+  return { ALTURA: QY + NK * TS + H * 2.1, criar: criar, paleta: paleta, posar: posar, equipar: equipar, PALETAS: PALETAS, DUR: DUR, ACERTO: ACERTO, ARCO: ARCO };
+}
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var palco = document.getElementById('palco');
+  if (!window.THREE) { document.querySelector('.dica').textContent = 'Não foi possível carregar o 3D. Esta página precisa de internet para baixar a biblioteca three.js.'; return; }
+  var T = THREE, PI = Math.PI;
+  function cor(h) { return new T.Color(h).convertSRGBToLinear(); }
+  var renderer = new T.WebGLRenderer({ canvas: document.getElementById('cv'), antialias: true });
+  renderer.outputEncoding = T.sRGBEncoding; renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
+  var scene = new T.Scene();
+  scene.fog = new T.Fog(0x000000, 9, 34); scene.fog.color.copy(cor(0x141a2e));
+  function texturaCanvas(w, h, desenhar) { var c = document.createElement('canvas'); c.width = w; c.height = h; desenhar(c.getContext('2d'), w, h); var t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; return t; }
+  scene.background = texturaCanvas(4, 256, function (g, w, h) { var gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#04050c'); gr.addColorStop(0.55, '#121a33'); gr.addColorStop(1, '#2a2f4c'); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+  var texBrilho = texturaCanvas(128, 128, function (g) { var gr = g.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.25, 'rgba(255,255,255,0.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); });
+  function brilho(hex, escala, opac) { var s = new T.Sprite(new T.SpriteMaterial({ map: texBrilho, color: cor(hex), transparent: true, opacity: opac, depthWrite: false, fog: false, blending: T.AdditiveBlending })); s.scale.set(escala, escala, 1); return s; }
+
+  var camera = new T.PerspectiveCamera(26, 16 / 9, 0.05, 120);
+  scene.add(new T.HemisphereLight(0x8ea0d8, 0x1a1420, 0.5));
+  var chave = new T.DirectionalLight(0xfff0e0, 0.72); chave.position.set(3, 5, 6); chave.castShadow = true;
+  chave.shadow.mapSize.set(2048, 2048); chave.shadow.camera.left = -3; chave.shadow.camera.right = 3; chave.shadow.camera.top = 4; chave.shadow.camera.bottom = -1; chave.shadow.bias = -0.0006; chave.shadow.normalBias = 0.01;
+  var contra = new T.DirectionalLight(0x8fa8ff, 0.6); contra.position.set(-4, 5, -6);
+  var fogo = new T.PointLight(0xff7a3c, 0.9, 9, 1.6); fogo.position.set(-2.6, 1.6, 1.2);
+  scene.add(chave, contra, fogo);
+
+  // Palco: plataforma de pedra com a rosácea, arcos ao fundo, lua e névoa
+  var grad = new T.DataTexture(new Uint8Array([70, 70, 70, 255, 135, 135, 135, 255, 200, 200, 200, 255, 255, 255, 255, 255]), 4, 1, T.RGBAFormat); grad.minFilter = grad.magFilter = T.NearestFilter; grad.needsUpdate = true;
+  function toon(hex, extra) { var o = { color: cor(hex), gradientMap: grad }; if (extra) for (var k in extra) o[k] = extra[k]; return new T.MeshToonMaterial(o); }
+  var texPiso = texturaCanvas(1024, 1024, function (g, w, h) {
+    g.fillStyle = '#3b3f52'; g.fillRect(0, 0, w, h);
+    g.strokeStyle = '#22242f'; g.lineWidth = 5;
+    for (var r = 90; r < 520; r += 86) { g.beginPath(); g.arc(512, 512, r, 0, PI * 2); g.stroke(); }
+    for (var i = 0; i < 24; i++) { var a = i / 24 * PI * 2; g.beginPath(); g.moveTo(512 + Math.cos(a) * 176, 512 + Math.sin(a) * 176); g.lineTo(512 + Math.cos(a) * 520, 512 + Math.sin(a) * 520); g.stroke(); }
+    g.strokeStyle = '#8d93ab'; g.lineWidth = 6; g.beginPath(); g.arc(512, 512, 150, 0, PI * 2); g.stroke(); g.beginPath(); g.arc(512, 512, 108, 0, PI * 2); g.lineWidth = 3; g.stroke();
+    g.save(); g.translate(512, 512);
+    for (var k = 0; k < 8; k++) { g.rotate(PI / 4); g.beginPath(); g.moveTo(0, -30); g.quadraticCurveTo(30, -75, 0, -108); g.quadraticCurveTo(-30, -75, 0, -30); g.stroke(); }
+    g.restore();
+  });
+  var piso = new T.Mesh(new T.CylinderGeometry(2.3, 2.5, 0.3, 48), [toon(0x2c2f3e), toon(0xffffff, { map: texPiso }), toon(0x2c2f3e)]);
+  piso.position.y = -0.15; piso.receiveShadow = true; scene.add(piso);
+  var chao = new T.Mesh(new T.CircleGeometry(60, 32), toon(0x161a28)); chao.rotation.x = -PI / 2; chao.position.y = -0.3; scene.add(chao);
+  var matPedra = toon(0x3a3e52);
+  function formaArco(l, esp) { var s = new T.Shape(), a = l / 2; s.moveTo(-a - esp, 0); s.quadraticCurveTo(-a - esp, l * 0.8, 0, l * 1.1 + esp); s.quadraticCurveTo(a + esp, l * 0.8, a + esp, 0); s.lineTo(a, 0); s.quadraticCurveTo(a, l * 0.72, 0, l * 0.98); s.quadraticCurveTo(-a, l * 0.72, -a, 0); s.lineTo(-a - esp, 0); return s; }
+  for (var i = -2; i <= 2; i++) {
+    var ang = i * 0.62, R = 8.5, ax = Math.sin(ang) * R, az = -Math.cos(ang) * R;
+    var g = new T.Group(); g.position.set(ax, -0.3, az); g.rotation.y = -ang; scene.add(g);
+    [-1.6, 1.6].forEach(function (dx) { var p = new T.Mesh(new T.CylinderGeometry(0.3, 0.34, 5, 10), matPedra); p.position.set(dx, 2.5, 0); g.add(p); });
+    if (i !== -1) { var ar = new T.Mesh(new T.ExtrudeGeometry(formaArco(2.7, 0.4), { depth: 0.6, bevelEnabled: false }), matPedra); ar.position.set(0, 5, -0.3); ar.scale.y = 0.75; g.add(ar); }
+  }
+  var lua = new T.Mesh(new T.CircleGeometry(5, 48), new T.MeshBasicMaterial({ color: cor(0xe6e9fb), fog: false })); lua.position.set(-7, 13, -60); scene.add(lua);
+  var h1 = brilho(0x9fb0ff, 36, 0.5); h1.position.set(-7, 13, -61); scene.add(h1);
+  var chama = brilho(0xff7a2a, 1.2, 0.9), chama2 = brilho(0xffd9a0, 0.5, 0.95);
+  chama.position.set(-2.6, 1.55, 1.0); chama2.position.set(-2.6, 1.48, 1.0); scene.add(chama, chama2);
+  var ferro = toon(0x1a1b24);
+  var haste = new T.Mesh(new T.CylinderGeometry(0.035, 0.05, 1.5, 6), ferro); haste.position.set(-2.6, 0.45, 1.0); scene.add(haste);
+  var taca = new T.Mesh(new T.SphereGeometry(0.22, 10, 6, 0, PI * 2, PI / 2, PI / 2), ferro); taca.position.set(-2.6, 1.36, 1.0); scene.add(taca);
+  var nevoas = [];
+  for (var n = 0; n < 9; n++) { var nv = new T.Sprite(new T.SpriteMaterial({ map: texBrilho, color: cor(0x8494c4), transparent: true, opacity: 0.08, depthWrite: false })); nv.scale.set(8, 2.4, 1); nv.position.set(-8 + n * 2, 0.1 + (n % 3) * 0.3, -3 - (n % 4)); scene.add(nv); nevoas.push(nv); }
+  var geoP = new T.BufferGeometry(), posP = new Float32Array(90 * 3);
+  for (var q = 0; q < 90; q++) { posP[q * 3] = (Math.random() - 0.5) * 10; posP[q * 3 + 1] = Math.random() * 5; posP[q * 3 + 2] = (Math.random() - 0.5) * 8; }
+  geoP.setAttribute('position', new T.BufferAttribute(posP, 3));
+  var cinzas = new T.Points(geoP, new T.PointsMaterial({ color: cor(0xffb070), size: 0.035, transparent: true, opacity: 0.8, depthWrite: false, blending: T.AdditiveBlending })); scene.add(cinzas);
+
+  // Kael
+  var Kael = KaelLib(T), k = Kael.criar(); scene.add(k.raiz);
+  function vestir(nome, on) { Kael.equipar(k, nome, on); document.querySelector('[data-equip="' + nome + '"]').setAttribute('aria-pressed', String(on)); }
+  var PECAS = ['armadura', 'manto', 'espada', 'escudo'];
+  PECAS.forEach(function (n) { vestir(n, false); });
+  document.querySelectorAll('[data-equip]').forEach(function (b) { b.addEventListener('click', function () { var n = b.getAttribute('data-equip'); vestir(n, !k.equip[n]); }); });
+  document.getElementById('eq-nada').addEventListener('click', function () { PECAS.forEach(function (n) { vestir(n, false); }); });
+  document.getElementById('eq-cabelo').addEventListener('click', function () { var on = !k.equip.cabelo; Kael.equipar(k, 'cabelo', on); this.setAttribute('aria-pressed', String(on)); });
+  document.getElementById('eq-tudo').addEventListener('click', function () { PECAS.forEach(function (n) { vestir(n, true); }); });
+  var VISTAS = { rosto: { y: 1.24, d: 1.7 }, busto: { y: 1.05, d: 2.6 }, corpo: { y: 0.78, d: 4.9 } };
+  var giro = -PI / 2 + 0.5, giroAlvo = giro, elev = 0.08, elevAlvo = 0.08, alvo = { y: 0.78, d: 4.9 }, atual = { y: 0.78, d: 4.9 };
+  var anim = 'idle', arrastando = false, px = 0, py = 0, auto = true;
+  function marcar(attr, val) { document.querySelectorAll('[' + attr + ']').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute(attr) === String(val))); }); }
+  document.querySelectorAll('[data-vista]').forEach(function (b) { b.addEventListener('click', function () { var v = VISTAS[b.getAttribute('data-vista')]; alvo.y = v.y; alvo.d = v.d; marcar('data-vista', b.getAttribute('data-vista')); if (b.getAttribute('data-vista') !== 'corpo') { giroAlvo = -PI / 2 + 0.45; elevAlvo = 0.02; auto = false; } }); });
+  document.querySelectorAll('[data-paleta]').forEach(function (b) { b.addEventListener('click', function () { Kael.paleta(k, +b.getAttribute('data-paleta')); marcar('data-paleta', b.getAttribute('data-paleta')); }); });
+  document.querySelectorAll('[data-anim]').forEach(function (b) { b.addEventListener('click', function () { anim = b.getAttribute('data-anim'); marcar('data-anim', anim); if (anim === 'atk') { k.estado = 'atk'; k.passo = 0; k.t = 0; novoRastro(); } }); });
+  palco.addEventListener('pointerdown', function (e) { if (e.target.closest('button')) return; arrastando = true; auto = false; px = e.clientX; py = e.clientY; palco.setPointerCapture(e.pointerId); });
+  palco.addEventListener('pointermove', function (e) { if (!arrastando) return; giroAlvo += (e.clientX - px) * 0.01; elevAlvo = Math.max(-0.25, Math.min(0.7, elevAlvo + (e.clientY - py) * 0.005)); px = e.clientX; py = e.clientY; });
+  ['pointerup', 'pointercancel'].forEach(function (ev) { palco.addEventListener(ev, function () { arrastando = false; }); });
+  palco.addEventListener('wheel', function (e) { e.preventDefault(); alvo.d = Math.max(0.9, Math.min(8, alvo.d * (e.deltaY > 0 ? 1.1 : 0.9))); }, { passive: false });
+  function novoRastro() {
+    var a = Kael.ARCO[k.passo], ini = a[0] - PI / 2, fim = a[1] - PI / 2;
+    k.rastro.geometry.dispose(); k.rastro.geometry = new T.RingGeometry(0.9, k.passo === 2 ? 2.05 : 1.85, 28, 1, Math.min(ini, fim), Math.abs(fim - ini));
+  }
+  function ajustar() { var w = palco.clientWidth || 800, h = palco.clientHeight || 450; renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w / h < 1 ? 38 : 26; camera.updateProjectionMatrix(); }
+  window.addEventListener('resize', ajustar); ajustar();
+
+  var antes = performance.now(), tempo = 0;
+  function quadro(agora) {
+    requestAnimationFrame(quadro);
+    var dt = Math.min(0.033, (agora - antes) / 1000); antes = agora; tempo += dt;
+    k.relogio += dt;
+    if (anim === 'atk') {
+      k.estado = 'atk'; k.t += dt;
+      if (k.t >= Kael.DUR[k.passo] + (k.passo === 2 ? 0.5 : 0.04)) { k.passo = (k.passo + 1) % 3; k.t = 0; novoRastro(); }
+    } else k.estado = anim;
+    var ventoAlvo = anim === 'run' ? 0.75 : anim === 'atk' ? 0.5 : 0.06 + Math.sin(tempo * 0.7) * 0.05;
+    k.vento += (ventoAlvo - k.vento) * Math.min(1, dt * 5);
+    Kael.posar(k, dt);
+    if (auto) giroAlvo += dt * 0.25;
+    giro += (giroAlvo - giro) * Math.min(1, dt * 8); elev += (elevAlvo - elev) * Math.min(1, dt * 8);
+    atual.y += (alvo.y - atual.y) * Math.min(1, dt * 5); atual.d += (alvo.d - atual.d) * Math.min(1, dt * 5);
+    k.raiz.rotation.y = giro;
+    camera.position.set(0, atual.y + Math.sin(elev) * atual.d, Math.cos(elev) * atual.d); camera.lookAt(0, atual.y, 0);
+    var fl = 0.85 + Math.sin(tempo * 11) * 0.08 + Math.sin(tempo * 23) * 0.07;
+    fogo.intensity = 0.9 * fl; chama.scale.set(1.2 * fl, 1.5 * fl, 1); chama2.scale.set(0.5 * fl, 0.7 * fl, 1);
+    nevoas.forEach(function (nv, i) { nv.position.x += dt * (0.1 + i * 0.02); if (nv.position.x > 9) nv.position.x = -9; });
+    var pc = cinzas.geometry.attributes.position;
+    for (var q = 0; q < pc.count; q++) { var y = pc.getY(q) + dt * (0.25 + (q % 5) * 0.06); if (y > 5) y = 0; pc.setY(q, y); }
+    pc.needsUpdate = true;
+    renderer.render(scene, camera);
+  }
+  requestAnimationFrame(quadro);
+})();
+</script>
+</body>
+</html>

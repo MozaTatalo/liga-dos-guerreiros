@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arena gótica do Kael</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Spectral:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout: palco 3D em tela cheia, faixa de opções no topo, legenda no canto inferior esquerdo, vinheta por cima. */
+  --noite: #0a0b12;
+  --painel: rgba(10, 11, 18, 0.8);
+  --linha: rgba(214, 208, 196, 0.2);
+  --osso: #e4dfd2;
+  --osso-fraco: #9d9a94;
+  --carmesim: #a3243b;
+  --fonte-titulo: "Cinzel", "Palatino Linotype", Georgia, serif;
+  --fonte-corpo: "Spectral", Georgia, "Times New Roman", serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--noite); color: var(--osso); font-family: var(--fonte-corpo); overflow: hidden; }
+#palco { position: relative; width: 100%; height: 100%; outline: none; }
+#palco canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.vinheta { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 55%, rgba(0,0,0,0) 45%, rgba(4,4,10,0.72) 100%); }
+
+.topo { position: absolute; top: 12px; left: 16px; right: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.topo button {
+  font: 600 13px/1 var(--fonte-titulo); letter-spacing: 0.05em; color: var(--osso);
+  background: var(--painel); border: 1px solid var(--linha); border-radius: 2px;
+  padding: 10px 13px; cursor: pointer; display: flex; gap: 8px; align-items: center;
+}
+.topo button kbd { font: 800 11px/1 var(--fonte-titulo); color: var(--noite); background: var(--osso-fraco); border-radius: 2px; padding: 3px 5px; }
+.topo button:hover { border-color: var(--osso-fraco); }
+.topo button:focus-visible { outline: 2px solid var(--osso); outline-offset: 2px; }
+.topo button[aria-pressed="true"] { background: var(--carmesim); border-color: var(--carmesim); }
+.topo button[aria-pressed="true"] kbd { background: var(--noite); color: var(--osso); }
+.topo .espaco { flex: 1; }
+
+.fase { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 2px; text-shadow: 0 2px 6px #000; pointer-events: none; }
+.fase span { font: 600 12px/1 var(--fonte-titulo); letter-spacing: 0.22em; text-transform: uppercase; color: var(--osso-fraco); }
+.fase b { font: 800 30px/1 var(--fonte-titulo); letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
+.hud { position: absolute; left: 16px; bottom: 16px; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; pointer-events: none; }
+.brasao { width: 64px; height: 64px; transform: rotate(45deg); margin: 10px 14px 10px 10px; background: linear-gradient(135deg, #2a2d3c, #0d0e16); border: 2px solid var(--osso-fraco); box-shadow: 0 0 0 3px var(--noite), 0 0 18px rgba(163,36,59,0.7); display: grid; place-items: center; }
+.brasao span { transform: rotate(-45deg); font: 800 30px/1 var(--fonte-titulo); color: var(--osso); text-shadow: 0 0 10px var(--carmesim); }
+.barras { display: flex; flex-direction: column; gap: 5px; width: min(300px, 60vw); }
+.nome { font: 800 17px/1 var(--fonte-titulo); letter-spacing: 0.06em; text-shadow: 0 2px 4px #000; }
+.nome small { font: 600 11px/1 var(--fonte-titulo); letter-spacing: 0.18em; text-transform: uppercase; color: var(--osso-fraco); margin-left: 6px; }
+.barra { position: relative; height: 18px; background: rgba(6,6,12,0.85); border: 1px solid var(--linha); transform: skewX(-18deg); overflow: hidden; }
+.barra.mana { height: 13px; width: 82%; }
+.barra i { position: absolute; inset: 0; transform-origin: left; transition: transform 0.15s; }
+.barra.vida i { background: linear-gradient(#d2415c, #7d1628); }
+.barra.mana i { background: linear-gradient(#7fc4ff, #2c4f9a); }
+.barra em { position: absolute; right: 8px; top: 50%; transform: translateY(-50%) skewX(18deg); font: 600 11px/1 var(--fonte-corpo); font-style: normal; font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px #000; }
+.barra.mana em { font-size: 10px; }
+.tecnicas { display: flex; gap: 8px; }
+.tec { position: relative; width: 62px; height: 62px; background: var(--painel); border: 1px solid var(--osso-fraco); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; overflow: hidden; }
+.tec kbd { font: 800 18px/1 var(--fonte-titulo); color: var(--osso); position: relative; }
+.tec span { font: 600 9.5px/1 var(--fonte-titulo); letter-spacing: 0.06em; text-transform: uppercase; position: relative; }
+.tec small { font-size: 9.5px; color: #8fc8ff; position: relative; }
+.tec i { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: rgba(163,36,59,0.75); }
+.tec.sem-mp { opacity: 0.45; }
+.dica { position: absolute; right: 16px; bottom: 14px; margin: 0; font-size: 12.5px; color: var(--osso-fraco); text-shadow: 0 1px 3px #000; text-align: right; max-width: min(420px, 45vw); }
+.dica b { color: var(--osso); font-weight: 600; }
+.legenda { display: none; position: absolute; left: 16px; bottom: 16px; width: min(430px, calc(100% - 32px)); background: var(--painel); border: 1px solid var(--linha); border-left: 3px solid var(--carmesim); border-radius: 2px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.legenda h1 { font: 800 19px/1.2 var(--fonte-titulo); letter-spacing: 0.04em; margin: 0; text-wrap: balance; }
+.legenda p { font-size: 14.5px; line-height: 1.5; margin: 0; }
+.legenda .teclas { color: var(--osso-fraco); font-size: 13px; border-top: 1px solid var(--linha); padding-top: 8px; }
+.legenda .teclas b { color: var(--osso); font-weight: 600; }
+
+#combo { position: absolute; right: 22px; top: 120px; font: 800 36px/1 var(--fonte-titulo); color: var(--osso); text-shadow: 0 0 14px var(--carmesim), 0 2px 0 var(--noite); opacity: 0; transition: opacity 0.2s; font-variant-numeric: tabular-nums; text-align: right; }
+#combo small { display: block; font-size: 12px; letter-spacing: 0.2em; color: var(--osso-fraco); }
+
+.toque { position: absolute; right: 16px; bottom: 16px; display: none; gap: 10px; }
+.toque button { width: 58px; height: 58px; border-radius: 50%; border: 1px solid var(--linha); background: var(--painel); color: var(--osso); font: 600 12px var(--fonte-titulo); touch-action: none; user-select: none; }
+@media (pointer: coarse) { .toque { display: flex; bottom: 110px; } .dica { display: none; } }
+@media (max-width: 760px) { .dica { display: none; } .topo button { padding: 9px 9px; font-size: 12px; } .fase { top: 110px; } }
+</style>
+</head>
+<body>
+<div id="palco" tabindex="0">
+  <canvas id="cv"></canvas>
+  <div class="vinheta"></div>
+
+  <div class="topo">
+    <button type="button" data-paleta="0" aria-pressed="true"><kbd>1</kbd>Aço negro e carmesim</button>
+    <button type="button" data-paleta="1" aria-pressed="false"><kbd>2</kbd>Prata e azul-noite</button>
+    <button type="button" data-paleta="2" aria-pressed="false"><kbd>3</kbd>Bronze e osso</button>
+    <span class="espaco"></span>
+    <button type="button" id="bt-zoom" aria-pressed="false"><kbd>V</kbd>Aproximar</button>
+    <button type="button" id="bt-cam" aria-pressed="false"><kbd>C</kbd>Girar câmera</button>
+  </div>
+
+  <div id="combo">0<small>GOLPES</small></div>
+
+  <div class="fase"><span>Fase 1 · Ruínas de Arvália</span><b id="relogio">00:00</b></div>
+
+  <div class="hud">
+    <div class="brasao" aria-hidden="true"><span>K</span></div>
+    <div class="barras">
+      <div class="nome">Kael <small>Guardião</small></div>
+      <div class="barra vida"><i id="hp-fill"></i><em id="hp-num">1200 / 1200</em></div>
+      <div class="barra mana"><i id="mp-fill"></i><em id="mp-num">60 / 100</em></div>
+    </div>
+    <div class="tecnicas">
+      <div class="tec"><kbd>Z</kbd><span>Combo</span></div>
+      <div class="tec" id="tec-a"><i id="cd-fill"></i><kbd>A</kbd><span>Investida</span><small>25 MP</small></div>
+    </div>
+  </div>
+
+  <p class="dica"><b>Setas</b> andar · <b>Espaço ou X</b> pular (2x) · <b>↓ + pulo</b> descer · <b>Z</b> combo · <b>A</b> investida · <b>E</b> base ou equipado</p>
+
+  <div class="toque">
+    <button type="button" data-tecla="left">◀</button>
+    <button type="button" data-tecla="right">▶</button>
+    <button type="button" data-tecla="jump">Pulo</button>
+    <button type="button" data-tecla="atk">Golpe</button>
+    <button type="button" data-tecla="skill">Invest.</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/*KAEL_LIB*/
+</script>
+<script>
+(function () {
+  'use strict';
+  var palco = document.getElementById('palco');
+  if (!window.THREE) {
+    document.querySelector('.dica').textContent = 'Não foi possível carregar o 3D. Este teste precisa de internet para baixar a biblioteca three.js.';
+    return;
+  }
+  var T = THREE, PI = Math.PI;
+  var poucoMovimento = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function cor(h) { return new T.Color(h).convertSRGBToLinear(); }
+  var semente = 7;
+  function rnd() { semente = (semente * 16807) % 2147483647; return (semente - 1) / 2147483646; }
+
+  var renderer = new T.WebGLRenderer({ canvas: document.getElementById('cv'), antialias: true });
+  renderer.outputEncoding = T.sRGBEncoding;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = T.PCFSoftShadowMap;
+
+  var scene = new T.Scene();
+  scene.fog = new T.Fog(0x000000, 16, 78); scene.fog.color.copy(cor(0x15304a));
+
+  function texturaCanvas(w, h, desenhar, srgb) {
+    var c = document.createElement('canvas'); c.width = w; c.height = h;
+    desenhar(c.getContext('2d'), w, h);
+    var t = new T.CanvasTexture(c); if (srgb !== false) t.encoding = T.sRGBEncoding; return t;
+  }
+  scene.background = texturaCanvas(4, 256, function (g, w, h) {
+    var gr = g.createLinearGradient(0, 0, 0, h);
+    gr.addColorStop(0, '#050a1e'); gr.addColorStop(0.4, '#10284e'); gr.addColorStop(0.75, '#1f5068'); gr.addColorStop(1, '#3f7a78');
+    g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  });
+  var texBrilho = texturaCanvas(128, 128, function (g) {
+    var gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.25, 'rgba(255,255,255,0.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  });
+  function brilho(hex, escala, opac, aditivo) {
+    var s = new T.Sprite(new T.SpriteMaterial({ map: texBrilho, color: cor(hex), transparent: true, opacity: opac, depthWrite: false, fog: false, blending: aditivo === false ? T.NormalBlending : T.AdditiveBlending }));
+    s.scale.set(escala, escala, 1); return s;
+  }
+  function texRasgada(noTopo) {
+    return texturaCanvas(128, 128, function (g, w, h) {
+      g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.fillStyle = '#000';
+      var x = 0;
+      while (x < w) {
+        var l = 6 + rnd() * 14, a = 8 + rnd() * 30;
+        g.beginPath();
+        if (noTopo) { g.moveTo(x, 0); g.lineTo(x + l / 2, a); g.lineTo(x + l, 0); }
+        else { g.moveTo(x, h); g.lineTo(x + l / 2, h - a); g.lineTo(x + l, h); }
+        g.fill(); x += l;
+      }
+    }, false);
+  }
+
+  var camera = new T.PerspectiveCamera(28, 16 / 9, 0.3, 260);
+
+  // ---------- Luz: lua fria por trás, preenchimento suave pela frente, braseiros quentes ----------
+  var hemi = new T.HemisphereLight(0x86b4d8, 0x16201c, 0.72);
+  var lua = new T.DirectionalLight(0xa9bcff, 1.05);
+  lua.castShadow = true; lua.shadow.mapSize.set(2048, 2048);
+  lua.shadow.camera.left = -17; lua.shadow.camera.right = 17; lua.shadow.camera.top = 16; lua.shadow.camera.bottom = -8;
+  lua.shadow.camera.near = 1; lua.shadow.camera.far = 60; lua.shadow.bias = -0.0008; lua.shadow.normalBias = 0.02;
+  var frente = new T.DirectionalLight(0xc9c2d8, 0.64);
+  scene.add(hemi, lua, lua.target, frente, frente.target);
+
+  var degraus = new T.DataTexture(new Uint8Array([58, 58, 58, 255, 120, 120, 120, 255, 190, 190, 190, 255, 255, 255, 255, 255]), 4, 1, T.RGBAFormat);
+  degraus.minFilter = degraus.magFilter = T.NearestFilter; degraus.needsUpdate = true;
+  function toon(hex, extra) {
+    var o = { color: cor(hex), gradientMap: degraus };
+    if (extra) for (var k in extra) o[k] = extra[k];
+    return new T.MeshToonMaterial(o);
+  }
+  function contorno(esp) {
+    var m = new T.MeshBasicMaterial({ color: 0x050409, side: T.BackSide });
+    m.onBeforeCompile = function (s) {
+      s.vertexShader = s.vertexShader.replace('#include <begin_vertex>', 'vec3 transformed = position + normalize(normal) * ' + esp.toFixed(4) + ';');
+    };
+    return m;
+  }
+  var matContorno = contorno(0.017), matContornoFino = contorno(0.009);
+
+  // ---------- Cenário ----------
+  var NIVEL_MIN = 0, NIVEL_MAX = 46;
+  var plataformas = [{ x0: -1, x1: 11.5, y: 3.1 }, { x0: 16.5, x1: 29.5, y: 3.1 }, { x0: 35, x1: 47, y: 3.1 }, { x0: 6, x1: 20, y: 6.2 }, { x0: 26, x1: 40, y: 6.2 }];
+  var chamas = [], nevoas = [];
+  var matPedra = toon(0x4b4f62), matPedraEsc = toon(0x33364a), matFerro = toon(0x1c1d26), matOsso = toon(0xbdb6a4), matMusgo = toon(0x2f6e4a), matFolha = toon(0x1c4a40), matFolhaClara = toon(0x2c6e52), matFolhaLuz = toon(0x26857a);
+  var cascatas = [];
+
+  function add(geo, mat, x, y, z, sombra) {
+    var m = new T.Mesh(geo, mat); m.position.set(x, y, z);
+    if (sombra !== false) { m.castShadow = true; m.receiveShadow = true; }
+    scene.add(m); return m;
+  }
+  function formaArco(l, esp) {
+    var s = new T.Shape(), a = l / 2;
+    s.moveTo(-a - esp, 0); s.quadraticCurveTo(-a - esp, l * 0.8, 0, l * 1.1 + esp);
+    s.quadraticCurveTo(a + esp, l * 0.8, a + esp, 0); s.lineTo(a, 0);
+    s.quadraticCurveTo(a, l * 0.72, 0, l * 0.98); s.quadraticCurveTo(-a, l * 0.72, -a, 0); s.lineTo(-a - esp, 0);
+    return s;
+  }
+  function formaJanela(l, h) {
+    var s = new T.Shape(), a = l / 2;
+    s.moveTo(-a, 0); s.lineTo(-a, h); s.quadraticCurveTo(-a, h + l * 0.8, 0, h + l * 1.15);
+    s.quadraticCurveTo(a, h + l * 0.8, a, h); s.lineTo(a, 0); s.lineTo(-a, 0);
+    return s;
+  }
+  function pilar(x, z, alt, quebrado) {
+    add(new T.BoxGeometry(1.0, 0.35, 1.0), matPedraEsc, x, 0.17, z);
+    add(new T.CylinderGeometry(0.4, 0.46, 0.3, 8), matPedraEsc, x, 0.5, z);
+    var f = add(new T.CylinderGeometry(0.27, 0.3, alt, 10), matPedra, x, 0.65 + alt / 2, z);
+    [0.19, -0.19].forEach(function (d) { add(new T.CylinderGeometry(0.09, 0.09, alt, 6), matPedraEsc, x + d, 0.65 + alt / 2, z + 0.24); });
+    if (quebrado) f.rotation.z = 0.03; else add(new T.BoxGeometry(0.9, 0.3, 0.9), matPedraEsc, x, 0.8 + alt, z);
+  }
+  function braseiro(x, z) {
+    add(new T.CylinderGeometry(0.035, 0.05, 1.3, 6), matFerro, x, 0.65, z);
+    add(new T.CylinderGeometry(0.2, 0.05, 0.08, 6), matFerro, x, 0.04, z);
+    add(new T.SphereGeometry(0.24, 10, 6, 0, PI * 2, PI / 2, PI / 2), matFerro, x, 1.48, z);
+    var luz = new T.PointLight(0xff8a3c, 1.5, 10, 1.6); luz.position.set(x, 1.9, z + 0.6); scene.add(luz);
+    var f1 = brilho(0xff7a2a, 1.3, 0.85), f2 = brilho(0xffd9a0, 0.5, 0.95), halo = brilho(0xff6a20, 4.5, 0.16);
+    f1.position.set(x, 1.72, z); f2.position.set(x, 1.62, z); halo.position.set(x, 1.8, z);
+    scene.add(f1, f2, halo);
+    chamas.push({ luz: luz, f1: f1, f2: f2, fase: x * 1.7 });
+  }
+  function lapide(x, z, tipo, giro) {
+    var g = new T.Group();
+    if (tipo === 0) {
+      var c = new T.Mesh(new T.BoxGeometry(0.5, 0.6, 0.14), matPedra); c.position.y = 0.3;
+      var gt = new T.CylinderGeometry(0.25, 0.25, 0.14, 14); gt.rotateX(PI / 2);
+      var t = new T.Mesh(gt, matPedra); t.position.y = 0.6;
+      g.add(c, t);
+    } else {
+      var v = new T.Mesh(new T.BoxGeometry(0.13, 1.0, 0.12), matPedraEsc); v.position.y = 0.5;
+      var hz = new T.Mesh(new T.BoxGeometry(0.55, 0.13, 0.12), matPedraEsc); hz.position.y = 0.72;
+      g.add(v, hz);
+    }
+    g.children.forEach(function (m) { m.castShadow = m.receiveShadow = true; });
+    g.position.set(x, 0, z); g.rotation.z = giro; g.rotation.y = giro * 2; scene.add(g);
+  }
+  function arvoreMorta(x, z, s) {
+    var mat = matFerro;
+    function galho(pai, comp, raio, nivel) {
+      var geo = new T.CylinderGeometry(raio * 0.6, raio, comp, 5); geo.translate(0, comp / 2, 0);
+      var m = new T.Mesh(geo, mat); pai.add(m);
+      if (nivel > 0) for (var i = 0; i < 2; i++) {
+        var g = new T.Group(); g.position.y = comp * (0.75 + rnd() * 0.25);
+        g.rotation.set((rnd() - 0.5) * 1.2, rnd() * 6, (i ? 1 : -1) * (0.45 + rnd() * 0.5));
+        m.add(g); galho(g, comp * 0.68, raio * 0.6, nivel - 1);
+      }
+      return m;
+    }
+    var raiz = new T.Group(); raiz.position.set(x, -0.2, z); raiz.rotation.z = (rnd() - 0.5) * 0.2; scene.add(raiz);
+    galho(raiz, 2.6 * s, 0.22 * s, 3);
+  }
+
+  (function montarCenario() {
+    var texChao = texturaCanvas(256, 256, function (g, w, h) {
+      g.fillStyle = '#1c2a2a'; g.fillRect(0, 0, w, h);
+      for (var j = 0; j < 6; j++) for (var i = -1; i < 6; i++) {
+        var v = 52 + Math.floor(rnd() * 26);
+        g.fillStyle = 'rgb(' + (v - 4) + ',' + (v + 14) + ',' + (v + 12) + ')';
+        var x = i * 48 + (j % 2) * 24 + 3, y = j * 42.6 + 3;
+        g.beginPath(); g.moveTo(x + 8, y); g.arcTo(x + 42, y, x + 42, y + 37, 8); g.arcTo(x + 42, y + 37, x, y + 37, 8); g.arcTo(x, y + 37, x, y, 8); g.arcTo(x, y, x + 42, y, 8); g.fill();
+      }
+    });
+    texChao.wrapS = texChao.wrapT = T.RepeatWrapping; texChao.repeat.set(26, 2.4);
+    var lado = toon(0x2a2c38);
+    var chao = add(new T.BoxGeometry(84, 1.4, 7), [lado, lado, toon(0xffffff, { map: texChao }), lado, toon(0x20222c), lado], 23, -0.7, -1);
+    chao.castShadow = false;
+    add(new T.BoxGeometry(200, 0.5, 90), toon(0x17332f), 23, -1.0, -47).castShadow = false;
+
+    plataformas.forEach(function (p) {
+      var l = p.x1 - p.x0, cx = (p.x0 + p.x1) / 2;
+      add(new T.BoxGeometry(l, 0.5, 2.6), matPedra, cx, p.y - 0.27, -0.1);
+      add(new T.BoxGeometry(l + 0.3, 0.09, 2.8), matMusgo, cx, p.y - 0.035, -0.1);
+      for (var k = 0; k < l / 0.85; k++) {
+        var px = p.x0 + 0.35 + k * 0.85 + rnd() * 0.3;
+        add(new T.DodecahedronGeometry(0.25 + rnd() * 0.17, 0), k % 3 ? matPedraEsc : matPedra, px, p.y - 0.4 - rnd() * 0.15, 1.05).rotation.set(rnd() * 3, rnd() * 3, 0);
+        if (k % 2 === 0) add(new T.ConeGeometry(0.05, 0.5 + rnd() * 1.0, 4), k % 4 ? matFolha : matFolhaLuz, px + 0.3, p.y - 0.8 - rnd() * 0.3, 1.15, false).rotation.z = PI;
+        if (k % 3 === 1) add(new T.IcosahedronGeometry(0.2 + rnd() * 0.12, 1), matFolhaClara, px, p.y + 0.02, 1.15, false).scale.y = 0.5;
+      }
+    });
+    function moita(x, y, z, s) {
+      var ms = [matFolha, matFolhaClara, matFolhaLuz];
+      for (var i = 0; i < 4; i++) add(new T.IcosahedronGeometry(s * (0.6 + rnd() * 0.5), 1), ms[Math.floor(rnd() * 3)], x + (rnd() - 0.5) * s * 1.6, y + rnd() * s * 0.7, z + (rnd() - 0.5) * s, false);
+    }
+    var texAgua = texturaCanvas(64, 256, function (g, w, h) {
+      g.fillStyle = '#1a5a80'; g.fillRect(0, 0, w, h);
+      for (var i = 0; i < 90; i++) { g.fillStyle = 'rgba(' + (150 + Math.floor(rnd() * 100)) + ',240,255,' + (0.25 + rnd() * 0.5) + ')'; var sx = rnd() * w, sy = rnd() * h, sl = 20 + rnd() * 70; g.fillRect(sx, sy, 1 + rnd() * 3, sl); g.fillRect(sx, sy - h, 3, sl); }
+    });
+    texAgua.wrapS = texAgua.wrapT = T.RepeatWrapping;
+    function cascata(x, z, w, h) {
+      var tex = texAgua.clone(); tex.needsUpdate = true; tex.repeat.set(w / 2, h / 8);
+      var m = new T.Mesh(new T.PlaneGeometry(w, h), new T.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.9, fog: false }));
+      m.position.set(x, h / 2 - 1, z); scene.add(m); cascatas.push(tex);
+      var b1 = brilho(0x58dcff, w * 3.2, 0.3); b1.position.set(x, 0.6, z + 0.5); scene.add(b1);
+      var b2 = brilho(0x58dcff, h * 0.9, 0.12); b2.position.set(x, h * 0.45, z + 0.3); scene.add(b2);
+    }
+    cascata(25.5, -12.5, 6, 20); cascata(44.3, -10.2, 2.2, 9.5); cascata(7.3, -9.4, 1.5, 11);
+    for (var mo = 0; mo < 16; mo++) moita(-10 + mo * 4.4 + rnd() * 2, 8.6 + (mo % 2), -11, 1.3 + rnd() * 0.6);
+    for (var mg = 0; mg < 22; mg++) moita(-8 + mg * 3 + rnd() * 2, 0, -5 - rnd() * 4, 0.5 + rnd() * 0.45);
+    for (var gr = 0; gr < 70; gr++) { var gx = -4 + gr * 0.8 + rnd() * 0.5; add(new T.ConeGeometry(0.05, 0.3 + rnd() * 0.35, 4), gr % 3 ? matMusgo : matFolhaLuz, gx, 0.15, 2.3 + rnd() * 0.15, false).rotation.z = (rnd() - 0.5) * 0.5; }
+
+    // Arcada gótica logo atrás do plano de jogo
+    var VAO = 6.5, ALT = 8.8;
+    for (var i = 0; i < 10; i++) {
+      var x = -7 + i * VAO, quebrado = i % 4 === 2;
+      pilar(x, -3.3, quebrado ? 4.0 + (i % 3) : ALT, quebrado);
+      if (!quebrado && (i + 1) % 4 !== 2 && i < 9) {
+        var arco = add(new T.ExtrudeGeometry(formaArco(VAO - 0.7, 0.4), { depth: 0.7, bevelEnabled: false }), matPedra, x + VAO / 2, ALT + 0.95, -3.65);
+        arco.scale.y = 0.62;
+      }
+    }
+    // Parede de catedral em ruínas com vitrais
+    var texVitral = texturaCanvas(64, 256, function (g, w, h) {
+      var cs = ['#7a1f3d', '#28407a', '#5a2f7a', '#1f5a6a', '#8a5a1f'];
+      for (var yy = 0; yy < 16; yy++) for (var xx = 0; xx < 4; xx++) { g.fillStyle = cs[Math.floor(rnd() * cs.length)]; g.fillRect(xx * 16, yy * 16, 16, 16); }
+      g.strokeStyle = '#07070c'; g.lineWidth = 2;
+      for (var k = 0; k <= 16; k++) { g.beginPath(); g.moveTo(0, k * 16); g.lineTo(w, k * 16); g.stroke(); }
+      for (var q = 0; q <= 4; q++) { g.beginPath(); g.moveTo(q * 16, 0); g.lineTo(q * 16, h); g.stroke(); }
+    });
+    var matVitral = new T.MeshBasicMaterial({ map: texVitral, fog: true });
+    var geoJanela = new T.ShapeGeometry(formaJanela(1.3, 4.2));
+    (function () { var p = geoJanela.attributes.position, uv = geoJanela.attributes.uv; for (var i = 0; i < p.count; i++) uv.setXY(i, (p.getX(i) + 0.65) / 1.3, p.getY(i) / 5.7); })();
+    for (var s = 0; s < 6; s++) {
+      var sx = -12 + s * 12.5, alt = 8.3 + (s % 2);
+      if (s === 3) continue;
+      add(new T.BoxGeometry(10.5, alt, 1.2), matPedraEsc, sx, alt / 2 - 0.5, -11);
+      add(new T.BoxGeometry(1.4, alt + 3, 2.2), matPedraEsc, sx - 5.6, (alt + 3) / 2 - 0.5, -10.6);
+      add(new T.ConeGeometry(0.9, 2.6, 4), matPedraEsc, sx - 5.6, alt + 3.8, -10.6).rotation.y = PI / 4;
+      [-2.6, 0, 2.6].forEach(function (dx, n) {
+        if ((s + n) % 4 === 3) return;
+        add(geoJanela, matVitral, sx + dx, 2.2, -10.38, false);
+        var h = brilho(n % 2 ? 0x6a4fd0 : 0xc43a5a, 6.5, 0.1); h.position.set(sx + dx, 5, -10.2); scene.add(h);
+      });
+    }
+    // Silhuetas distantes
+    var matLonge = new T.MeshBasicMaterial({ color: cor(0x0e2233) });
+    for (var t = 0; t < 12; t++) {
+      var tx = -40 + t * 11 + rnd() * 5, th = 12 + rnd() * 20, tz = -32 - rnd() * 22;
+      add(new T.BoxGeometry(3 + rnd() * 3, th, 3), matLonge, tx, th / 2 - 1, tz, false);
+      add(new T.ConeGeometry(2.2 + rnd() * 1.5, 7 + rnd() * 8, 4), matLonge, tx, th + 3, tz, false).rotation.y = PI / 4;
+    }
+    for (var a = 0; a < 9; a++) { var ax = -8 + a * 7.3 + rnd() * 2, az = -5.5 - rnd() * 3.5, as = 1 + rnd() * 0.6; arvoreMorta(ax, az, as); if (a % 3 !== 1) { moita(ax, 4.2 * as, az, 1.5 * as); moita(ax + 1.2, 3.4 * as, az + 0.3, 1.1 * as); } }
+    for (var l = 0; l < 13; l++) lapide(-3 + l * 4.3 + rnd() * 1.5, -1.9 - rnd() * 0.5, l % 3 === 1 ? 1 : 0, (rnd() - 0.5) * 0.3);
+    for (var f = 0; f < 10; f++) {
+      var fx = -1 + f * 5.2 + rnd() * 2;
+      {
+        add(new T.DodecahedronGeometry(0.28 + rnd() * 0.12, 0), matPedraEsc, fx, 0.1, 2.1);
+        var vela = add(new T.CylinderGeometry(0.035, 0.04, 0.22, 6), matOsso, fx + 0.45, 0.11, 2.0, false);
+        var cv = brilho(0xffc070, 0.4, 0.95); cv.position.set(vela.position.x, 0.28, 2.0); scene.add(cv);
+        chamas.push({ f2: cv, fase: fx, base: 0.4 });
+      }
+    }
+    [3.5, 14.8, 22.5, 28.3, 37.5, 44].forEach(function (x) { braseiro(x, -2.1); });
+
+    // Lua, estrelas, nuvens e névoa
+    var geoE = new T.BufferGeometry(), pe = [];
+    for (var e = 0; e < 320; e++) pe.push(-160 + rnd() * 360, 8 + rnd() * 75, -118);
+    geoE.setAttribute('position', new T.Float32BufferAttribute(pe, 3));
+    scene.add(new T.Points(geoE, new T.PointsMaterial({ color: 0xcfd6ff, size: 0.45, fog: false, transparent: true, opacity: 0.8 })));
+    for (var n = 0; n < 12; n++) {
+      var nv = brilho(0x8494c4, 9 + rnd() * 6, 0.07 + rnd() * 0.05, false);
+      nv.position.set(-6 + rnd() * 60, 0.5 + rnd() * 1.2, -7 + rnd() * 9); nv.scale.y *= 0.35;
+      scene.add(nv); nevoas.push({ s: nv, v: 0.15 + rnd() * 0.3 });
+    }
+  })();
+  var grupoLua = new T.Group(); scene.add(grupoLua);
+  (function () {
+    var disco = new T.Mesh(new T.CircleGeometry(7.5, 48), new T.MeshBasicMaterial({ color: cor(0xe6e9fb), fog: false }));
+    var h1 = brilho(0x9fb0ff, 46, 0.45), h2 = brilho(0xcfd8ff, 24, 0.5);
+    h1.position.z = h2.position.z = -1;
+    grupoLua.add(h1, h2, disco);
+    [[-13, 3, 34, 0.55], [9, -3.5, 28, 0.5], [-2, -7, 44, 0.4]].forEach(function (n) {
+      var nu = brilho(0x161a2e, n[2], n[3], false); nu.scale.y = n[2] * 0.2; nu.position.set(n[0], n[1], 1); grupoLua.add(nu);
+    });
+  })();
+  var geoCinza = new T.BufferGeometry(), posCinza = new Float32Array(140 * 3);
+  for (var ci = 0; ci < 140; ci++) { posCinza[ci * 3] = rnd() * 30; posCinza[ci * 3 + 1] = rnd() * 8; posCinza[ci * 3 + 2] = -5 + rnd() * 8; }
+  geoCinza.setAttribute('position', new T.BufferAttribute(posCinza, 3));
+  var cinzas = new T.Points(geoCinza, new T.PointsMaterial({ color: cor(0x9fffd0), size: 0.08, transparent: true, opacity: 0.75, depthWrite: false, blending: T.AdditiveBlending }));
+  cinzas.frustumCulled = false; scene.add(cinzas);
+
+  // ---------- Personagens ----------
+  function grupo(pai, x, y, z) { var g = new T.Group(); g.position.set(x || 0, y || 0, z || 0); pai.add(g); return g; }
+  function peca(pai, geo, mat, x, y, z, fino) {
+    var m = new T.Mesh(geo, mat); m.position.set(x || 0, y || 0, z || 0); m.castShadow = true;
+    if (fino !== null) m.add(new T.Mesh(geo, fino ? matContornoFino : matContorno));
+    pai.add(m); return m;
+  }
+  function membro(rTopo, rBase, comp) { var g = new T.CylinderGeometry(rTopo, rBase, comp, 10); g.translate(0, -comp / 2, 0); return g; }
+  function esfera(r, sx, sy, sz) { var g = new T.SphereGeometry(r, 14, 10); g.scale(sx || 1, sy || 1, sz || 1); return g; }
+
+  var Kael = KaelLib(T);
+  function aplicarPaleta(n) {
+    Kael.paleta(heroi, n);
+    document.querySelectorAll('[data-paleta]').forEach(function (b) { b.setAttribute('aria-pressed', String(+b.getAttribute('data-paleta') === n)); });
+  }
+
+  function criarEspectro(x) {
+    var a = { raiz: new T.Group(), mats: [] }, P = a.p = {};
+    var manto = toon(0x1d2433, { side: T.DoubleSide, alphaMap: texRasgada(true), alphaTest: 0.5 }), mantoEsc = toon(0x121722), osso = toon(0xb9b3a2);
+    a.mats = [manto, mantoEsc, osso];
+    P.corpo = grupo(a.raiz, 0, 0.3, 0);
+    var perfil = [[0.001, 1.78], [0.09, 1.75], [0.165, 1.64], [0.185, 1.48], [0.15, 1.33], [0.2, 1.22], [0.29, 1.0], [0.31, 0.7], [0.36, 0.4], [0.44, 0.15], [0.5, -0.05]].map(function (p) { return new T.Vector2(p[0], p[1]); });
+    peca(P.corpo, new T.LatheGeometry(perfil, 16), manto, 0, 0, 0, null);
+    var capuz = new T.SphereGeometry(0.2, 14, 10, 0, PI * 2, 0, PI * 0.62); capuz.scale(1.05, 1.15, 1);
+    peca(P.corpo, capuz, mantoEsc, -0.02, 1.52, 0).rotation.z = 0.5;
+    var vazio = new T.Mesh(esfera(0.13), new T.MeshBasicMaterial({ color: 0x020205 })); vazio.position.set(0.07, 1.5, 0); P.corpo.add(vazio);
+    a.olhos = [];
+    [0.05, -0.05].forEach(function (z) { var o = brilho(0x7fe9ff, 0.2, 1); o.position.set(0.19, 1.52, z); P.corpo.add(o); a.olhos.push(o); });
+    var halo = brilho(0x4fd0ff, 1.6, 0.22); halo.position.set(0.1, 1.5, 0); P.corpo.add(halo); a.halo = halo;
+    function bracoE(z) {
+      var g = grupo(P.corpo, 0.02, 1.25, z);
+      var manga = new T.CylinderGeometry(0.06, 0.13, 0.62, 8, 1, true); manga.translate(0, -0.31, 0);
+      peca(g, manga, mantoEsc, 0, 0, 0, null).material = mantoEsc; mantoEsc.side = T.DoubleSide;
+      for (var i = -1; i <= 1; i++) { var d = new T.ConeGeometry(0.014, 0.2, 4); d.translate(0, -0.1, 0); var m = peca(g, d, osso, 0, -0.62, i * 0.04, null); m.rotation.x = i * 0.3; m.rotation.z = 0.25; }
+      return g;
+    }
+    P.bracoA = bracoE(0.2); P.bracoB = bracoE(-0.2);
+    a.barra = new T.Group();
+    var bf = new T.Mesh(new T.PlaneGeometry(0.96, 0.11), new T.MeshBasicMaterial({ color: 0x05050a, fog: false }));
+    var gb = new T.PlaneGeometry(0.9, 0.06); gb.translate(0.45, 0, 0);
+    a.barraFill = new T.Mesh(gb, new T.MeshBasicMaterial({ color: cor(0xd2415c), fog: false })); a.barraFill.position.set(-0.45, 0, 0.01);
+    a.barra.add(bf, a.barraFill); scene.add(a.barra);
+    a.raiz.position.set(x, 0, 0); scene.add(a.raiz);
+    a.x = a.x0 = x; a.y = 0; a.vx = 0; a.vy = 0; a.hp = 6; a.flash = 0; a.morto = 0; a.amasso = 0; a.fase = x; a.lado = -1;
+    return a;
+  }
+
+  var heroi = Kael.criar(); scene.add(heroi.raiz); heroi.raiz.scale.setScalar(1.15);
+  Object.assign(heroi, { x: 3, y: 0, vx: 0, vy: 0, lado: 1, giro: -0.42, noChao: true, pulos: 0, estado: 'idle', t: 0, passo: 0, fila: false, acertou: false, relogio: 0, vento: 0, J: null, mp: 60, cd: 0, descer: 0, investida: false });
+  var espectros = [criarEspectro(8), criarEspectro(22), criarEspectro(12), criarEspectro(31), criarEspectro(40), criarEspectro(33)];
+  espectros[1].y = 3.1; espectros[2].y = 6.2; espectros[4].y = 3.1; espectros[5].y = 6.2;
+  espectros.forEach(function (e) { e.y0 = e.y; });
+
+  var faiscas = [], geoFaisca = new T.PlaneGeometry(0.05, 0.3);
+  function soltarFaiscas(x, y, forte) {
+    for (var i = 0; i < (forte ? 14 : 8); i++) {
+      var m = new T.Mesh(geoFaisca, new T.MeshBasicMaterial({ color: cor(i % 3 ? 0xbfe9ff : 0xffffff), transparent: true, blending: T.AdditiveBlending, depthWrite: false }));
+      m.position.set(x, y, 0.5);
+      var ang = rnd() * PI * 2, v = 4 + rnd() * (forte ? 9 : 5);
+      m.rotation.z = ang - PI / 2;
+      faiscas.push({ m: m, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, t: 0.26 }); scene.add(m);
+    }
+    var cl = brilho(0xcfefff, forte ? 3.2 : 2, 0.9); cl.position.set(x, y, 0.6); scene.add(cl);
+    faiscas.push({ m: cl, vx: 0, vy: 0, t: 0.12, clarao: true });
+  }
+
+  // ---------- Entrada ----------
+  var tecla = { left: false, right: false, down: false }, apertou = { jump: false, atk: false, skill: false };
+  var MAPA = { ArrowLeft: 'left', ArrowRight: 'right', ArrowDown: 'down', Space: 'jump', KeyX: 'jump', ArrowUp: 'jump', KeyZ: 'atk', KeyA: 'skill' };
+  function baixar(k) { if (k in tecla) tecla[k] = true; else apertou[k] = true; }
+  function soltar(k) { if (k in tecla) tecla[k] = false; }
+  var camGirada = false, camAngulo = 0, zoom = false, zoomK = 0;
+  function alternar(id, v) { document.getElementById(id).setAttribute('aria-pressed', String(v)); }
+  window.addEventListener('keydown', function (e) {
+    if (e.code === 'Digit1' || e.code === 'Numpad1') return aplicarPaleta(0);
+    if (e.code === 'Digit2' || e.code === 'Numpad2') return aplicarPaleta(1);
+    if (e.code === 'Digit3' || e.code === 'Numpad3') return aplicarPaleta(2);
+    if (e.code === 'KeyC' && !e.repeat) { camGirada = !camGirada; return alternar('bt-cam', camGirada); }
+    if (e.code === 'KeyE' && !e.repeat) { var eq = !heroi.equip.armadura; ['armadura', 'manto', 'espada', 'escudo'].forEach(function (n) { Kael.equipar(heroi, n, eq); }); return; }
+    if (e.code === 'KeyV' && !e.repeat) { zoom = !zoom; return alternar('bt-zoom', zoom); }
+    var k = MAPA[e.code]; if (!k) return;
+    e.preventDefault(); if (!e.repeat) baixar(k);
+  });
+  window.addEventListener('keyup', function (e) { var k = MAPA[e.code]; if (k) soltar(k); });
+  window.addEventListener('blur', function () { tecla.left = tecla.right = tecla.down = false; });
+  document.querySelectorAll('.toque button').forEach(function (b) {
+    var k = b.getAttribute('data-tecla');
+    b.addEventListener('pointerdown', function (e) { e.preventDefault(); baixar(k); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) { b.addEventListener(ev, function () { soltar(k); }); });
+  });
+  palco.addEventListener('pointerdown', function () { palco.focus(); });
+  document.querySelectorAll('[data-paleta]').forEach(function (b) { b.addEventListener('click', function () { aplicarPaleta(+b.getAttribute('data-paleta')); palco.focus(); }); });
+  document.getElementById('bt-cam').addEventListener('click', function () { camGirada = !camGirada; alternar('bt-cam', camGirada); palco.focus(); });
+  document.getElementById('bt-zoom').addEventListener('click', function () { zoom = !zoom; alternar('bt-zoom', zoom); palco.focus(); });
+
+  // ---------- Jogo ----------
+  var GRAV = 30, VEL = 5.4, PULO = 11.2;
+  var DUR = [0.32, 0.32, 0.54], ACERTO = [0.1, 0.1, 0.18];
+  var ARCO = [[2.75, 0.45], [-0.55, 2.55], [3.15, 0.1]];
+  var pausaImpacto = 0, tremor = 0, combo = 0, comboT = 0, elCombo = document.getElementById('combo');
+
+  function chaoEm(x, yAntes, yDepois) {
+    var melhor = 0;
+    for (var i = 0; i < plataformas.length; i++) { var p = plataformas[i]; if (x > p.x0 - 0.2 && x < p.x1 + 0.2 && yAntes >= p.y - 0.001 && yDepois <= p.y) melhor = Math.max(melhor, p.y); }
+    return melhor;
+  }
+  function iniciarGolpe(n) {
+    var h = heroi; h.estado = 'atk'; h.t = 0; h.passo = n; h.fila = false; h.acertou = false; h.investida = false;
+    if (tecla.left) h.lado = -1; if (tecla.right) h.lado = 1;
+    var a = ARCO[n], ini = a[0] - PI / 2, fim = a[1] - PI / 2;
+    h.rastro.geometry.dispose();
+    h.rastro.geometry = new T.RingGeometry(n === 2 ? 0.75 : 0.9, n === 2 ? 2.05 : 1.85, 28, 1, Math.min(ini, fim), Math.abs(fim - ini));
+  }
+  function atualizarHeroi(dt) {
+    var h = heroi; h.relogio += dt;
+    var dir = (tecla.right ? 1 : 0) - (tecla.left ? 1 : 0);
+    if (h.estado === 'atk') {
+      h.t += dt;
+      if (apertou.atk && h.t > 0.1) h.fila = true;
+      if (h.investida) h.vx = h.t < 0.17 ? h.lado * 17 : h.vx * 0.75;
+      else if (h.noChao) h.vx = h.t < 0.11 ? h.lado * (h.passo === 2 ? 5.5 : 2.6) : h.vx * 0.8; else h.vx = dir * VEL * 0.8;
+      if (!h.acertou && h.t >= ACERTO[h.passo]) { h.acertou = true; aplicarGolpe(); }
+      if (h.t >= DUR[h.passo]) { if (h.fila && h.passo < 2) iniciarGolpe(h.passo + 1); else { h.estado = 'idle'; h.t = 0; } }
+      else if (h.fila && h.passo < 2 && h.t >= DUR[h.passo] * 0.72) iniciarGolpe(h.passo + 1);
+    } else {
+      h.vx = dir * VEL; if (dir) h.lado = dir;
+      if (apertou.atk) iniciarGolpe(0);
+    }
+    h.cd = Math.max(0, h.cd - dt); h.descer -= dt;
+    if (apertou.skill && h.mp >= 25 && h.cd <= 0) { h.mp -= 25; h.cd = 3; iniciarGolpe(2); h.investida = true; if (h.vy < 0) h.vy = 0; }
+    if (apertou.jump && tecla.down && h.noChao && h.y > 0.1 && h.estado !== 'atk') { h.descer = 0.22; apertou.jump = false; }
+    if (apertou.jump && h.pulos < 2 && h.estado !== 'atk') { h.vy = h.pulos ? PULO * 0.9 : PULO; h.pulos++; h.noChao = false; }
+    h.vy -= GRAV * dt;
+    var yAntes = h.y;
+    h.x = Math.max(NIVEL_MIN, Math.min(NIVEL_MAX, h.x + h.vx * dt)); h.y += h.vy * dt; h.noChao = false;
+    if (h.vy <= 0) { var c = h.descer > 0 ? 0 : chaoEm(h.x, yAntes, h.y); if (h.y <= c) { h.y = c; h.vy = 0; h.noChao = true; h.pulos = 0; } }
+    if (h.estado !== 'atk') h.estado = !h.noChao ? 'ar' : (dir ? 'run' : 'idle');
+    var alvoVento = h.estado === 'run' ? 0.75 : h.estado === 'ar' ? (h.vy > 0 ? 0.45 : 1.0) : h.estado === 'atk' ? 0.55 : 0;
+    h.vento += (alvoVento - h.vento) * Math.min(1, dt * 6);
+  }
+  function aplicarGolpe() {
+    var h = heroi, forte = h.passo === 2, pegou = false;
+    espectros.forEach(function (g) {
+      if (g.morto) return;
+      var dx = (g.x - h.x) * h.lado;
+      if (dx > (h.investida ? -2.6 : -0.3) && dx < (forte ? 2.9 : 2.5) && Math.abs(g.y - h.y) < 1.7) {
+        pegou = true; g.hp -= forte ? 2 : 1; g.flash = 0.1; g.amasso = 1;
+        g.vx = h.lado * (forte ? 8 : 3.5); if (forte) g.vy = 6;
+        soltarFaiscas(g.x - h.lado * 0.3, g.y + 1.2, forte);
+        if (g.hp <= 0) { g.morto = 0.001; g.vy = 5; g.vx = h.lado * 5; }
+      }
+    });
+    if (pegou) {
+      pausaImpacto = forte ? 0.12 : 0.065; tremor = poucoMovimento ? 0 : (forte ? 0.22 : 0.09);
+      combo++; comboT = 2.2; h.mp = Math.min(100, h.mp + 7); elCombo.firstChild.nodeValue = combo; elCombo.style.opacity = 1;
+    }
+  }
+  function atualizarEspectro(g, dt) {
+    g.fase += dt; if (g.flash > 0) g.flash -= dt;
+    g.amasso = Math.max(0, g.amasso - dt * 5);
+    g.vy -= GRAV * dt; var yAntes = g.y;
+    g.x += g.vx * dt; g.y += g.vy * dt; g.vx *= Math.pow(0.004, dt);
+    if (g.vy <= 0) { var c = chaoEm(g.x, yAntes, g.y); if (g.y <= c) { g.y = c; g.vy = 0; } }
+    if (!g.morto && Math.abs(heroi.x - g.x) > 0.3) g.lado = heroi.x > g.x ? 1 : -1;
+    if (g.morto) { g.morto += dt; if (g.morto > 2.8) { g.morto = 0; g.hp = 6; g.x = g.x0; g.y = g.y0; g.vx = g.vy = 0; } }
+  }
+
+  // ---------- Poses ----------
+  function suave(k) { k = Math.max(0, Math.min(1, k)); return 1 - Math.pow(1 - k, 3); }
+  function posarHeroi(dt) { Kael.posar(heroi, dt); }
+  function posarEspectro(g) {
+    var P = g.p, w = Math.sin(g.fase * 2.2), am = g.amasso;
+    var alvo = g.lado > 0 ? 0 : PI; g.raiz.rotation.y += (alvo - g.raiz.rotation.y) * 0.15;
+    P.corpo.position.y = 0.3 + w * 0.08;
+    P.corpo.scale.set(1 + am * 0.2, 1 - am * 0.22, 1 + am * 0.2);
+    P.corpo.rotation.z = g.morto ? g.morto * 1.5 : -Math.abs(g.vx) * 0.05 + w * 0.03;
+    P.bracoA.rotation.z = 1.0 + w * 0.15; P.bracoB.rotation.z = 0.8 - w * 0.15;
+    var s = g.morto ? Math.max(0.001, 1 - g.morto * 1.5) : 1;
+    g.raiz.scale.set(s, g.morto > 0.66 ? 0.001 : s, s);
+    g.mats.forEach(function (m) { m.emissive.setHex(g.flash > 0 ? 0xffffff : 0x000000); });
+    g.halo.material.opacity = 0.2 + w * 0.06;
+    g.barra.visible = !g.morto && g.hp < 6; g.barra.position.set(g.x, g.y + 2.45, 0.2); g.barraFill.scale.x = Math.max(0.001, g.hp / 6);
+  }
+
+  // ---------- Laço ----------
+  var hudSeg = -1, hudMp = -1, elRelogio = document.getElementById('relogio'), elMp = document.getElementById('mp-fill'), elMpNum = document.getElementById('mp-num'), elCd = document.getElementById('cd-fill'), elTec = document.getElementById('tec-a');
+  var antes = performance.now(), tempo = 0, camX = heroi.x, camY = 2.4;
+  function ajustarTamanho() {
+    var w = palco.clientWidth || 800, h = palco.clientHeight || 450;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); renderer.setSize(w, h, false);
+    camera.aspect = w / h; camera.fov = w / h < 1.2 ? 40 : 28; camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', ajustarTamanho); ajustarTamanho(); aplicarPaleta(0);
+
+  function quadro(agora) {
+    requestAnimationFrame(quadro);
+    var dt = Math.min(0.033, (agora - antes) / 1000); antes = agora; tempo += dt;
+    var parado = pausaImpacto > 0;
+    if (parado) pausaImpacto -= dt; else { atualizarHeroi(dt); espectros.forEach(function (g) { atualizarEspectro(g, dt); }); }
+    apertou.jump = apertou.atk = apertou.skill = false;
+    if (comboT > 0) { comboT -= dt; if (comboT <= 0) { combo = 0; elCombo.style.opacity = 0; } }
+
+    for (var i = faiscas.length - 1; i >= 0; i--) {
+      var f = faiscas[i]; f.t -= dt;
+      f.m.position.x += f.vx * dt; f.m.position.y += f.vy * dt;
+      f.m.material.opacity = Math.max(0, f.t / (f.clarao ? 0.12 : 0.26));
+      if (f.t <= 0) { scene.remove(f.m); f.m.material.dispose(); faiscas.splice(i, 1); }
+    }
+    chamas.forEach(function (c) {
+      var k = 0.85 + Math.sin(tempo * 11 + c.fase) * 0.08 + Math.sin(tempo * 23 + c.fase * 2) * 0.07;
+      if (c.luz) { c.luz.intensity = 1.5 * k; c.f1.scale.set(1.3 * k, 1.6 * k, 1); c.f2.scale.set(0.5 * k, 0.7 * k, 1); }
+      else c.f2.scale.set(c.base * k, c.base * 1.4 * k, 1);
+    });
+    nevoas.forEach(function (n) { n.s.position.x += n.v * dt; if (n.s.position.x > camX + 34) n.s.position.x = camX - 34; if (n.s.position.x < camX - 36) n.s.position.x = camX + 30; });
+    var pc = cinzas.geometry.attributes.position;
+    for (var q = 0; q < pc.count; q++) {
+      var y = pc.getY(q) + dt * (0.5 + (q % 5) * 0.12), x = pc.getX(q) + Math.sin(tempo + q) * dt * 0.3;
+      if (y > 8) y = 0; if (x < camX - 15) x += 30; if (x > camX + 15) x -= 30;
+      pc.setXY(q, x, y);
+    }
+    pc.needsUpdate = true;
+
+    var alvoGiro = heroi.lado > 0 ? -0.42 : -PI + 0.42;
+    heroi.giro += (alvoGiro - heroi.giro) * Math.min(1, dt * 18);
+    heroi.raiz.rotation.y = heroi.giro; heroi.raiz.position.set(heroi.x, heroi.y, 0);
+    espectros.forEach(function (g) { g.raiz.position.set(g.x, g.y, 0); });
+    if (!parado) { posarHeroi(dt); espectros.forEach(posarEspectro); }
+
+    zoomK += ((zoom ? 1 : 0) - zoomK) * Math.min(1, dt * 5);
+    var alvoX = Math.max(5, Math.min(NIVEL_MAX - 5, heroi.x + heroi.lado * 1.2)) * (1 - zoomK) + (heroi.x + heroi.lado * 0.3) * zoomK;
+    camX += (alvoX - camX) * Math.min(1, dt * 4);
+    var alvoY = (2.9 + heroi.y * 0.62) * (1 - zoomK) + (heroi.y + 0.85) * zoomK;
+    camY += (alvoY - camY) * Math.min(1, dt * 4);
+    camAngulo += ((camGirada ? 0.75 : 0) - camAngulo) * Math.min(1, dt * 4);
+    var dist = 14.5 - zoomK * 9, tx = 0, ty = 0;
+    if (tremor > 0) { tremor -= dt; tx = (Math.random() - 0.5) * tremor; ty = (Math.random() - 0.5) * tremor; }
+    camera.position.set(camX + Math.sin(camAngulo) * dist + tx, camY + 1.5 * (1 - zoomK) + 0.3 * zoomK + camAngulo * 2 + ty, Math.cos(camAngulo) * dist);
+    camera.lookAt(camX + tx, camY + ty, 0);
+    lua.position.set(camX - 9, 15, -9); lua.target.position.set(camX, 0, 0);
+    frente.position.set(camX + 5, 7, 12); frente.target.position.set(camX, 1, 0);
+    grupoLua.position.set(camX * 0.93 + 13, 32, -110);
+    cascatas.forEach(function (tx) { tx.offset.y += dt * 0.16; });
+    var seg = Math.floor(tempo);
+    if (seg !== hudSeg) { hudSeg = seg; elRelogio.textContent = ('0' + Math.floor(seg / 60)).slice(-2) + ':' + ('0' + seg % 60).slice(-2); }
+    var mpi = Math.round(heroi.mp);
+    if (mpi !== hudMp) { hudMp = mpi; elMp.style.transform = 'scaleX(' + (mpi / 100) + ')'; elMpNum.textContent = mpi + ' / 100'; }
+    elCd.style.height = (heroi.cd / 3 * 100) + '%'; elTec.classList.toggle('sem-mp', heroi.mp < 25);
+    renderer.render(scene, camera);
+  }
+  requestAnimationFrame(quadro);
+  palco.focus();
+})();
+</script>
+</body>
+</html>

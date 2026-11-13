@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kael gótico em 2.5D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Spectral:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout: palco 3D em tela cheia, faixa de opções no topo, legenda no canto inferior esquerdo, vinheta por cima. */
+  --noite: #0a0b12;
+  --painel: rgba(10, 11, 18, 0.8);
+  --linha: rgba(214, 208, 196, 0.2);
+  --osso: #e4dfd2;
+  --osso-fraco: #9d9a94;
+  --carmesim: #a3243b;
+  --fonte-titulo: "Cinzel", "Palatino Linotype", Georgia, serif;
+  --fonte-corpo: "Spectral", Georgia, "Times New Roman", serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--noite); color: var(--osso); font-family: var(--fonte-corpo); overflow: hidden; }
+#palco { position: relative; width: 100%; height: 100%; outline: none; }
+#palco canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.vinheta { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 55%, rgba(0,0,0,0) 45%, rgba(4,4,10,0.72) 100%); }
+
+.topo { position: absolute; top: 12px; left: 16px; right: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.topo button {
+  font: 600 13px/1 var(--fonte-titulo); letter-spacing: 0.05em; color: var(--osso);
+  background: var(--painel); border: 1px solid var(--linha); border-radius: 2px;
+  padding: 10px 13px; cursor: pointer; display: flex; gap: 8px; align-items: center;
+}
+.topo button kbd { font: 800 11px/1 var(--fonte-titulo); color: var(--noite); background: var(--osso-fraco); border-radius: 2px; padding: 3px 5px; }
+.topo button:hover { border-color: var(--osso-fraco); }
+.topo button:focus-visible { outline: 2px solid var(--osso); outline-offset: 2px; }
+.topo button[aria-pressed="true"] { background: var(--carmesim); border-color: var(--carmesim); }
+.topo button[aria-pressed="true"] kbd { background: var(--noite); color: var(--osso); }
+.topo .espaco { flex: 1; }
+
+.legenda { position: absolute; left: 16px; bottom: 16px; width: min(430px, calc(100% - 32px)); background: var(--painel); border: 1px solid var(--linha); border-left: 3px solid var(--carmesim); border-radius: 2px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.legenda h1 { font: 800 19px/1.2 var(--fonte-titulo); letter-spacing: 0.04em; margin: 0; text-wrap: balance; }
+.legenda p { font-size: 14.5px; line-height: 1.5; margin: 0; }
+.legenda .teclas { color: var(--osso-fraco); font-size: 13px; border-top: 1px solid var(--linha); padding-top: 8px; }
+.legenda .teclas b { color: var(--osso); font-weight: 600; }
+
+#combo { position: absolute; right: 22px; top: 70px; font: 800 36px/1 var(--fonte-titulo); color: var(--osso); text-shadow: 0 0 14px var(--carmesim), 0 2px 0 var(--noite); opacity: 0; transition: opacity 0.2s; font-variant-numeric: tabular-nums; text-align: right; }
+#combo small { display: block; font-size: 12px; letter-spacing: 0.2em; color: var(--osso-fraco); }
+
+.toque { position: absolute; right: 16px; bottom: 16px; display: none; gap: 10px; }
+.toque button { width: 58px; height: 58px; border-radius: 50%; border: 1px solid var(--linha); background: var(--painel); color: var(--osso); font: 600 12px var(--fonte-titulo); touch-action: none; user-select: none; }
+@media (pointer: coarse) { .toque { display: flex; } .legenda .teclas { display: none; } .legenda { bottom: 88px; } }
+@media (max-width: 560px) { .legenda p.extra { display: none; } .topo button { padding: 9px 9px; font-size: 12px; } }
+</style>
+</head>
+<body>
+<div id="palco" tabindex="0">
+  <canvas id="cv"></canvas>
+  <div class="vinheta"></div>
+
+  <div class="topo">
+    <button type="button" data-paleta="0" aria-pressed="true"><kbd>1</kbd>Aço negro e carmesim</button>
+    <button type="button" data-paleta="1" aria-pressed="false"><kbd>2</kbd>Prata e azul-noite</button>
+    <button type="button" data-paleta="2" aria-pressed="false"><kbd>3</kbd>Bronze e osso</button>
+    <span class="espaco"></span>
+    <button type="button" id="bt-zoom" aria-pressed="false"><kbd>V</kbd>Aproximar</button>
+    <button type="button" id="bt-cam" aria-pressed="false"><kbd>C</kbd>Girar câmera</button>
+  </div>
+
+  <div id="combo">0<small>GOLPES</small></div>
+
+  <div class="legenda">
+    <h1>Kael, o Guardião · rascunho gótico</h1>
+    <p class="extra">Modelo 3D em tempo real, agora com proporções adultas, armadura de placas, capa de tecido e ruínas de catedral sob a lua. As formas ainda são montadas em código. O modelo final, esculpido, terá rosto e detalhes muito mais finos.</p>
+    <p class="teclas"><b>Setas</b> andar · <b>Espaço ou X</b> pular (2x) · <b>Z</b> atacar (combo de 3) · <b>1 2 3</b> cores · <b>V</b> aproximar · <b>C</b> girar câmera. Clique na tela se as teclas não responderem.</p>
+  </div>
+
+  <div class="toque">
+    <button type="button" data-tecla="left">◀</button>
+    <button type="button" data-tecla="right">▶</button>
+    <button type="button" data-tecla="jump">Pulo</button>
+    <button type="button" data-tecla="atk">Golpe</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  var palco = document.getElementById('palco');
+  if (!window.THREE) {
+    document.querySelector('.legenda h1').textContent = 'Não foi possível carregar o 3D';
+    document.querySelector('.legenda p').textContent = 'Este teste precisa de internet para baixar a biblioteca three.js. Verifique a conexão e recarregue a página.';
+    return;
+  }
+  var T = THREE, PI = Math.PI;
+  var poucoMovimento = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function cor(h) { return new T.Color(h).convertSRGBToLinear(); }
+  var semente = 7;
+  function rnd() { semente = (semente * 16807) % 2147483647; return (semente - 1) / 2147483646; }
+
+  var renderer = new T.WebGLRenderer({ canvas: document.getElementById('cv'), antialias: true });
+  renderer.outputEncoding = T.sRGBEncoding;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = T.PCFSoftShadowMap;
+
+  var scene = new T.Scene();
+  scene.fog = new T.Fog(0x000000, 16, 78); scene.fog.color.copy(cor(0x1b2136));
+
+  function texturaCanvas(w, h, desenhar, srgb) {
+    var c = document.createElement('canvas'); c.width = w; c.height = h;
+    desenhar(c.getContext('2d'), w, h);
+    var t = new T.CanvasTexture(c); if (srgb !== false) t.encoding = T.sRGBEncoding; return t;
+  }
+  scene.background = texturaCanvas(4, 256, function (g, w, h) {
+    var gr = g.createLinearGradient(0, 0, 0, h);
+    gr.addColorStop(0, '#05060f'); gr.addColorStop(0.45, '#141a33'); gr.addColorStop(0.8, '#2c2f4d'); gr.addColorStop(1, '#3d3550');
+    g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  });
+  var texBrilho = texturaCanvas(128, 128, function (g) {
+    var gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.25, 'rgba(255,255,255,0.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  });
+  function brilho(hex, escala, opac, aditivo) {
+    var s = new T.Sprite(new T.SpriteMaterial({ map: texBrilho, color: cor(hex), transparent: true, opacity: opac, depthWrite: false, fog: false, blending: aditivo === false ? T.NormalBlending : T.AdditiveBlending }));
+    s.scale.set(escala, escala, 1); return s;
+  }
+  function texRasgada(noTopo) {
+    return texturaCanvas(128, 128, function (g, w, h) {
+      g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.fillStyle = '#000';
+      var x = 0;
+      while (x < w) {
+        var l = 6 + rnd() * 14, a = 8 + rnd() * 30;
+        g.beginPath();
+        if (noTopo) { g.moveTo(x, 0); g.lineTo(x + l / 2, a); g.lineTo(x + l, 0); }
+        else { g.moveTo(x, h); g.lineTo(x + l / 2, h - a); g.lineTo(x + l, h); }
+        g.fill(); x += l;
+      }
+    }, false);
+  }
+
+  var camera = new T.PerspectiveCamera(28, 16 / 9, 0.3, 260);
+
+  // ---------- Luz: lua fria por trás, preenchimento suave pela frente, braseiros quentes ----------
+  var hemi = new T.HemisphereLight(0x6f7fb8, 0x15121c, 0.55);
+  var lua = new T.DirectionalLight(0xa9bcff, 1.05);
+  lua.castShadow = true; lua.shadow.mapSize.set(2048, 2048);
+  lua.shadow.camera.left = -17; lua.shadow.camera.right = 17; lua.shadow.camera.top = 16; lua.shadow.camera.bottom = -8;
+  lua.shadow.camera.near = 1; lua.shadow.camera.far = 60; lua.shadow.bias = -0.0008; lua.shadow.normalBias = 0.02;
+  var frente = new T.DirectionalLight(0xc9c2d8, 0.64);
+  scene.add(hemi, lua, lua.target, frente, frente.target);
+
+  var degraus = new T.DataTexture(new Uint8Array([58, 58, 58, 255, 120, 120, 120, 255, 190, 190, 190, 255, 255, 255, 255, 255]), 4, 1, T.RGBAFormat);
+  degraus.minFilter = degraus.magFilter = T.NearestFilter; degraus.needsUpdate = true;
+  function toon(hex, extra) {
+    var o = { color: cor(hex), gradientMap: degraus };
+    if (extra) for (var k in extra) o[k] = extra[k];
+    return new T.MeshToonMaterial(o);
+  }
+  function contorno(esp) {
+    var m = new T.MeshBasicMaterial({ color: 0x050409, side: T.BackSide });
+    m.onBeforeCompile = function (s) {
+      s.vertexShader = s.vertexShader.replace('#include <begin_vertex>', 'vec3 transformed = position + normalize(normal) * ' + esp.toFixed(4) + ';');
+    };
+    return m;
+  }
+  var matContorno = contorno(0.011), matContornoFino = contorno(0.006);
+
+  // ---------- Cenário ----------
+  var NIVEL_MIN = 0, NIVEL_MAX = 46;
+  var plataformas = [{ x0: 9, x1: 13.5, y: 1.7 }, { x0: 16, x1: 20.5, y: 3.1 }, { x0: 30, x1: 35, y: 1.9 }];
+  var chamas = [], nevoas = [];
+  var matPedra = toon(0x4b4f62), matPedraEsc = toon(0x33364a), matFerro = toon(0x1c1d26), matOsso = toon(0xbdb6a4);
+
+  function add(geo, mat, x, y, z, sombra) {
+    var m = new T.Mesh(geo, mat); m.position.set(x, y, z);
+    if (sombra !== false) { m.castShadow = true; m.receiveShadow = true; }
+    scene.add(m); return m;
+  }
+  function formaArco(l, esp) {
+    var s = new T.Shape(), a = l / 2;
+    s.moveTo(-a - esp, 0); s.quadraticCurveTo(-a - esp, l * 0.8, 0, l * 1.1 + esp);
+    s.quadraticCurveTo(a + esp, l * 0.8, a + esp, 0); s.lineTo(a, 0);
+    s.quadraticCurveTo(a, l * 0.72, 0, l * 0.98); s.quadraticCurveTo(-a, l * 0.72, -a, 0); s.lineTo(-a - esp, 0);
+    return s;
+  }
+  function formaJanela(l, h) {
+    var s = new T.Shape(), a = l / 2;
+    s.moveTo(-a, 0); s.lineTo(-a, h); s.quadraticCurveTo(-a, h + l * 0.8, 0, h + l * 1.15);
+    s.quadraticCurveTo(a, h + l * 0.8, a, h); s.lineTo(a, 0); s.lineTo(-a, 0);
+    return s;
+  }
+  function pilar(x, z, alt, quebrado) {
+    add(new T.BoxGeometry(1.0, 0.35, 1.0), matPedraEsc, x, 0.17, z);
+    add(new T.CylinderGeometry(0.4, 0.46, 0.3, 8), matPedraEsc, x, 0.5, z);
+    var f = add(new T.CylinderGeometry(0.27, 0.3, alt, 10), matPedra, x, 0.65 + alt / 2, z);
+    [0.19, -0.19].forEach(function (d) { add(new T.CylinderGeometry(0.09, 0.09, alt, 6), matPedraEsc, x + d, 0.65 + alt / 2, z + 0.24); });
+    if (quebrado) f.rotation.z = 0.03; else add(new T.BoxGeometry(0.9, 0.3, 0.9), matPedraEsc, x, 0.8 + alt, z);
+  }
+  function braseiro(x, z) {
+    add(new T.CylinderGeometry(0.035, 0.05, 1.3, 6), matFerro, x, 0.65, z);
+    add(new T.CylinderGeometry(0.2, 0.05, 0.08, 6), matFerro, x, 0.04, z);
+    add(new T.SphereGeometry(0.24, 10, 6, 0, PI * 2, PI / 2, PI / 2), matFerro, x, 1.48, z);
+    var luz = new T.PointLight(0xff8a3c, 1.5, 10, 1.6); luz.position.set(x, 1.9, z + 0.6); scene.add(luz);
+    var f1 = brilho(0xff7a2a, 1.3, 0.85), f2 = brilho(0xffd9a0, 0.5, 0.95), halo = brilho(0xff6a20, 4.5, 0.16);
+    f1.position.set(x, 1.72, z); f2.position.set(x, 1.62, z); halo.position.set(x, 1.8, z);
+    scene.add(f1, f2, halo);
+    chamas.push({ luz: luz, f1: f1, f2: f2, fase: x * 1.7 });
+  }
+  function lapide(x, z, tipo, giro) {
+    var g = new T.Group();
+    if (tipo === 0) {
+      var c = new T.Mesh(new T.BoxGeometry(0.5, 0.6, 0.14), matPedra); c.position.y = 0.3;
+      var gt = new T.CylinderGeometry(0.25, 0.25, 0.14, 14); gt.rotateX(PI / 2);
+      var t = new T.Mesh(gt, matPedra); t.position.y = 0.6;
+      g.add(c, t);
+    } else {
+      var v = new T.Mesh(new T.BoxGeometry(0.13, 1.0, 0.12), matPedraEsc); v.position.y = 0.5;
+      var hz = new T.Mesh(new T.BoxGeometry(0.55, 0.13, 0.12), matPedraEsc); hz.position.y = 0.72;
+      g.add(v, hz);
+    }
+    g.children.forEach(function (m) { m.castShadow = m.receiveShadow = true; });
+    g.position.set(x, 0, z); g.rotation.z = giro; g.rotation.y = giro * 2; scene.add(g);
+  }
+  function arvoreMorta(x, z, s) {
+    var mat = matFerro;
+    function galho(pai, comp, raio, nivel) {
+      var geo = new T.CylinderGeometry(raio * 0.6, raio, comp, 5); geo.translate(0, comp / 2, 0);
+      var m = new T.Mesh(geo, mat); pai.add(m);
+      if (nivel > 0) for (var i = 0; i < 2; i++) {
+        var g = new T.Group(); g.position.y = comp * (0.75 + rnd() * 0.25);
+        g.rotation.set((rnd() - 0.5) * 1.2, rnd() * 6, (i ? 1 : -1) * (0.45 + rnd() * 0.5));
+        m.add(g); galho(g, comp * 0.68, raio * 0.6, nivel - 1);
+      }
+      return m;
+    }
+    var raiz = new T.Group(); raiz.position.set(x, -0.2, z); raiz.rotation.z = (rnd() - 0.5) * 0.2; scene.add(raiz);
+    galho(raiz, 2.6 * s, 0.22 * s, 3);
+  }
+
+  (function montarCenario() {
+    var texChao = texturaCanvas(256, 256, function (g, w, h) {
+      g.fillStyle = '#23252f'; g.fillRect(0, 0, w, h);
+      for (var j = 0; j < 6; j++) for (var i = -1; i < 6; i++) {
+        var v = 52 + Math.floor(rnd() * 26);
+        g.fillStyle = 'rgb(' + v + ',' + (v + 2) + ',' + (v + 12) + ')';
+        var x = i * 48 + (j % 2) * 24 + 3, y = j * 42.6 + 3;
+        g.beginPath(); g.moveTo(x + 8, y); g.arcTo(x + 42, y, x + 42, y + 37, 8); g.arcTo(x + 42, y + 37, x, y + 37, 8); g.arcTo(x, y + 37, x, y, 8); g.arcTo(x, y, x + 42, y, 8); g.fill();
+      }
+    });
+    texChao.wrapS = texChao.wrapT = T.RepeatWrapping; texChao.repeat.set(26, 2.4);
+    var lado = toon(0x2a2c38);
+    var chao = add(new T.BoxGeometry(84, 1.4, 7), [lado, lado, toon(0xffffff, { map: texChao }), lado, toon(0x20222c), lado], 23, -0.7, -1);
+    chao.castShadow = false;
+    add(new T.BoxGeometry(200, 0.5, 90), toon(0x1c2030), 23, -1.0, -47).castShadow = false;
+
+    plataformas.forEach(function (p) {
+      var l = p.x1 - p.x0;
+      add(new T.BoxGeometry(l, 0.3, 2.2), matPedra, (p.x0 + p.x1) / 2, p.y - 0.15, 0);
+      add(new T.BoxGeometry(l + 0.2, 0.1, 2.3), matPedraEsc, (p.x0 + p.x1) / 2, p.y - 0.35, 0);
+      [p.x0 + 0.3, p.x1 - 0.3].forEach(function (px) { add(new T.CylinderGeometry(0.13, 0.16, p.y - 0.4, 8), matPedraEsc, px, (p.y - 0.4) / 2, -0.85); });
+    });
+
+    // Arcada gótica logo atrás do plano de jogo
+    var VAO = 6.5, ALT = 4.6;
+    for (var i = 0; i < 10; i++) {
+      var x = -7 + i * VAO, quebrado = i % 4 === 2;
+      pilar(x, -3.3, quebrado ? 2.0 + (i % 3) : ALT, quebrado);
+      if (!quebrado && (i + 1) % 4 !== 2 && i < 9) {
+        var arco = add(new T.ExtrudeGeometry(formaArco(VAO - 0.7, 0.4), { depth: 0.7, bevelEnabled: false }), matPedra, x + VAO / 2, ALT + 0.95, -3.65);
+        arco.scale.y = 0.62;
+      }
+    }
+    // Parede de catedral em ruínas com vitrais
+    var texVitral = texturaCanvas(64, 256, function (g, w, h) {
+      var cs = ['#7a1f3d', '#28407a', '#5a2f7a', '#1f5a6a', '#8a5a1f'];
+      for (var yy = 0; yy < 16; yy++) for (var xx = 0; xx < 4; xx++) { g.fillStyle = cs[Math.floor(rnd() * cs.length)]; g.fillRect(xx * 16, yy * 16, 16, 16); }
+      g.strokeStyle = '#07070c'; g.lineWidth = 2;
+      for (var k = 0; k <= 16; k++) { g.beginPath(); g.moveTo(0, k * 16); g.lineTo(w, k * 16); g.stroke(); }
+      for (var q = 0; q <= 4; q++) { g.beginPath(); g.moveTo(q * 16, 0); g.lineTo(q * 16, h); g.stroke(); }
+    });
+    var matVitral = new T.MeshBasicMaterial({ map: texVitral, fog: true });
+    var geoJanela = new T.ShapeGeometry(formaJanela(1.3, 4.2));
+    (function () { var p = geoJanela.attributes.position, uv = geoJanela.attributes.uv; for (var i = 0; i < p.count; i++) uv.setXY(i, (p.getX(i) + 0.65) / 1.3, p.getY(i) / 5.7); })();
+    for (var s = 0; s < 6; s++) {
+      var sx = -12 + s * 12.5, alt = 8.3 + (s % 2);
+      if (s === 3) continue;
+      add(new T.BoxGeometry(10.5, alt, 1.2), matPedraEsc, sx, alt / 2 - 0.5, -11);
+      add(new T.BoxGeometry(1.4, alt + 3, 2.2), matPedraEsc, sx - 5.6, (alt + 3) / 2 - 0.5, -10.6);
+      add(new T.ConeGeometry(0.9, 2.6, 4), matPedraEsc, sx - 5.6, alt + 3.8, -10.6).rotation.y = PI / 4;
+      [-2.6, 0, 2.6].forEach(function (dx, n) {
+        if ((s + n) % 4 === 3) return;
+        add(geoJanela, matVitral, sx + dx, 2.2, -10.38, false);
+        var h = brilho(n % 2 ? 0x6a4fd0 : 0xc43a5a, 6.5, 0.1); h.position.set(sx + dx, 5, -10.2); scene.add(h);
+      });
+    }
+    // Silhuetas distantes
+    var matLonge = new T.MeshBasicMaterial({ color: cor(0x10131f) });
+    for (var t = 0; t < 12; t++) {
+      var tx = -40 + t * 11 + rnd() * 5, th = 12 + rnd() * 20, tz = -32 - rnd() * 22;
+      add(new T.BoxGeometry(3 + rnd() * 3, th, 3), matLonge, tx, th / 2 - 1, tz, false);
+      add(new T.ConeGeometry(2.2 + rnd() * 1.5, 7 + rnd() * 8, 4), matLonge, tx, th + 3, tz, false).rotation.y = PI / 4;
+    }
+    for (var a = 0; a < 9; a++) arvoreMorta(-8 + a * 7.3 + rnd() * 2, -5.5 - rnd() * 3.5, 1 + rnd() * 0.6);
+    for (var l = 0; l < 13; l++) lapide(-3 + l * 4.3 + rnd() * 1.5, -1.9 - rnd() * 0.5, l % 3 === 1 ? 1 : 0, (rnd() - 0.5) * 0.3);
+    for (var f = 0; f < 10; f++) {
+      var fx = -1 + f * 5.2 + rnd() * 2;
+      {
+        add(new T.DodecahedronGeometry(0.28 + rnd() * 0.12, 0), matPedraEsc, fx, 0.1, 2.1);
+        var vela = add(new T.CylinderGeometry(0.035, 0.04, 0.22, 6), matOsso, fx + 0.45, 0.11, 2.0, false);
+        var cv = brilho(0xffc070, 0.4, 0.95); cv.position.set(vela.position.x, 0.28, 2.0); scene.add(cv);
+        chamas.push({ f2: cv, fase: fx, base: 0.4 });
+      }
+    }
+    [3.5, 14.8, 22.5, 28.3, 37.5, 44].forEach(function (x) { braseiro(x, -2.1); });
+
+    // Lua, estrelas, nuvens e névoa
+    var geoE = new T.BufferGeometry(), pe = [];
+    for (var e = 0; e < 320; e++) pe.push(-160 + rnd() * 360, 8 + rnd() * 75, -118);
+    geoE.setAttribute('position', new T.Float32BufferAttribute(pe, 3));
+    scene.add(new T.Points(geoE, new T.PointsMaterial({ color: 0xcfd6ff, size: 0.45, fog: false, transparent: true, opacity: 0.8 })));
+    for (var n = 0; n < 12; n++) {
+      var nv = brilho(0x8494c4, 9 + rnd() * 6, 0.07 + rnd() * 0.05, false);
+      nv.position.set(-6 + rnd() * 60, 0.5 + rnd() * 1.2, -7 + rnd() * 9); nv.scale.y *= 0.35;
+      scene.add(nv); nevoas.push({ s: nv, v: 0.15 + rnd() * 0.3 });
+    }
+  })();
+  var grupoLua = new T.Group(); scene.add(grupoLua);
+  (function () {
+    var disco = new T.Mesh(new T.CircleGeometry(7.5, 48), new T.MeshBasicMaterial({ color: cor(0xe6e9fb), fog: false }));
+    var h1 = brilho(0x9fb0ff, 46, 0.45), h2 = brilho(0xcfd8ff, 24, 0.5);
+    h1.position.z = h2.position.z = -1;
+    grupoLua.add(h1, h2, disco);
+    [[-13, 3, 34, 0.55], [9, -3.5, 28, 0.5], [-2, -7, 44, 0.4]].forEach(function (n) {
+      var nu = brilho(0x161a2e, n[2], n[3], false); nu.scale.y = n[2] * 0.2; nu.position.set(n[0], n[1], 1); grupoLua.add(nu);
+    });
+  })();
+  var geoCinza = new T.BufferGeometry(), posCinza = new Float32Array(140 * 3);
+  for (var ci = 0; ci < 140; ci++) { posCinza[ci * 3] = rnd() * 30; posCinza[ci * 3 + 1] = rnd() * 8; posCinza[ci * 3 + 2] = -5 + rnd() * 8; }
+  geoCinza.setAttribute('position', new T.BufferAttribute(posCinza, 3));
+  var cinzas = new T.Points(geoCinza, new T.PointsMaterial({ color: cor(0xffb070), size: 0.07, transparent: true, opacity: 0.75, depthWrite: false, blending: T.AdditiveBlending }));
+  cinzas.frustumCulled = false; scene.add(cinzas);
+
+  // ---------- Personagens ----------
+  function grupo(pai, x, y, z) { var g = new T.Group(); g.position.set(x || 0, y || 0, z || 0); pai.add(g); return g; }
+  function peca(pai, geo, mat, x, y, z, fino) {
+    var m = new T.Mesh(geo, mat); m.position.set(x || 0, y || 0, z || 0); m.castShadow = true;
+    if (fino !== null) m.add(new T.Mesh(geo, fino ? matContornoFino : matContorno));
+    pai.add(m); return m;
+  }
+  function membro(rTopo, rBase, comp) { var g = new T.CylinderGeometry(rTopo, rBase, comp, 10); g.translate(0, -comp / 2, 0); return g; }
+  function esfera(r, sx, sy, sz) { var g = new T.SphereGeometry(r, 14, 10); g.scale(sx || 1, sy || 1, sz || 1); return g; }
+
+  var PALETAS = [
+    { aco: 0x30333f, friso: 0xb9c0d2, pano: 0x17161f, capa: 0x7d1628, cabelo: 0xd6d3de, couro: 0x2a1c1a, lamina: 0xcdd5e8, brilho: 0x9ecbff },
+    { aco: 0x8d96ab, friso: 0xc9b278, pano: 0x161d33, capa: 0x1c2c5a, cabelo: 0x14121b, couro: 0x231c22, lamina: 0xe8edf7, brilho: 0xc4e2ff },
+    { aco: 0x4a3d33, friso: 0xb18e4b, pano: 0x241e1c, capa: 0xb9b09c, cabelo: 0x3a1418, couro: 0x2a1c14, lamina: 0xd8d0bd, brilho: 0xffc47a }
+  ];
+
+  function criarKael() {
+    var a = { raiz: new T.Group(), m: {} }, M = a.m, P = a.p = {};
+    ['aco', 'friso', 'pano', 'capa', 'cabelo', 'couro', 'lamina'].forEach(function (k) { M[k] = toon(0xffffff); });
+    M.pele = toon(0xe3cbbd); M.olho = new T.MeshBasicMaterial({ color: 0x0a0a10 });
+    M.brilho = new T.MeshBasicMaterial({ color: 0xffffff });
+    M.capa.side = T.DoubleSide; M.capa.alphaMap = texRasgada(false); M.capa.alphaTest = 0.5;
+    M.acoAberto = toon(0xffffff, { side: T.DoubleSide }); M.capa2 = toon(0xffffff, { side: T.DoubleSide });
+
+    P.quadril = grupo(a.raiz, 0, 1.0, 0);
+    peca(P.quadril, esfera(0.15, 0.95, 0.8, 1.2), M.pano, 0, -0.02, 0);
+    var saia = new T.CylinderGeometry(0.165, 0.25, 0.26, 14, 1, true); saia.scale(0.92, 1, 1.22);
+    peca(P.quadril, saia, M.acoAberto, 0, -0.1, 0, null);
+    var barra = new T.TorusGeometry(0.25, 0.012, 6, 20); barra.rotateX(PI / 2); barra.scale(0.92, 1, 1.22);
+    peca(P.quadril, barra, M.friso, 0, -0.23, 0, null);
+    P.tabardo = grupo(P.quadril, 0.15, -0.05, 0);
+    peca(P.tabardo, new T.BoxGeometry(0.015, 0.55, 0.2), M.capa2, 0, -0.27, 0, null);
+    peca(P.tabardo, new T.BoxGeometry(0.02, 0.03, 0.21), M.friso, 0, -0.5, 0, null);
+
+    P.tronco = grupo(P.quadril, 0, 0, 0);
+    var perfil = [[0.135, 0], [0.15, 0.05], [0.142, 0.16], [0.165, 0.3], [0.195, 0.42], [0.185, 0.5], [0.12, 0.565], [0.075, 0.6], [0.068, 0.66]].map(function (p) { return new T.Vector2(p[0], p[1]); });
+    var geoTronco = new T.LatheGeometry(perfil, 18); geoTronco.scale(0.86, 1, 1.28);
+    peca(P.tronco, geoTronco, M.aco);
+    var cinto = new T.TorusGeometry(0.152, 0.018, 6, 20); cinto.rotateX(PI / 2); cinto.scale(0.86, 1, 1.28);
+    peca(P.tronco, cinto, M.couro, 0, 0.06, 0, null);
+    peca(P.tronco, esfera(0.028), M.friso, 0.135, 0.06, 0, true);
+    var emblema = new T.OctahedronGeometry(0.045, 0); emblema.scale(0.35, 1.3, 0.8);
+    peca(P.tronco, emblema, M.friso, 0.165, 0.38, 0, null);
+    var gola = new T.CylinderGeometry(0.085, 0.1, 0.07, 12, 1, true);
+    peca(P.tronco, gola, M.friso, 0, 0.6, 0, null).material = M.friso;
+
+    // Cabeça
+    P.cabeca = grupo(P.tronco, 0, 0.66, 0);
+    peca(P.cabeca, esfera(0.112, 1.02, 1.14, 0.92), M.pele, 0.005, 0.125, 0, true);
+    peca(P.cabeca, esfera(0.06, 1.0, 0.9, 0.95), M.pele, 0.05, 0.045, 0, true);
+    var nariz = new T.ConeGeometry(0.014, 0.05, 4); nariz.rotateZ(-PI / 2 - 0.5);
+    peca(P.cabeca, nariz, M.pele, 0.118, 0.105, 0, null);
+    [0.047, -0.047].forEach(function (z) {
+      var o = new T.Mesh(new T.BoxGeometry(0.012, 0.014, 0.034), M.olho); o.position.set(0.103, 0.142, z); P.cabeca.add(o);
+      var s = new T.Mesh(new T.BoxGeometry(0.016, 0.01, 0.052), M.cabelo); s.position.set(0.104, 0.166, z); s.rotation.x = z > 0 ? -0.3 : 0.3; P.cabeca.add(s);
+    });
+    var calota = new T.SphereGeometry(0.124, 16, 10, 0, PI * 2, 0, PI * 0.58); calota.scale(1.04, 1.12, 0.98);
+    var cab = peca(P.cabeca, calota, M.cabelo, -0.004, 0.13, 0, true); cab.rotation.z = 0.3;
+    P.cabeloLongo = grupo(P.cabeca, -0.07, 0.17, 0);
+    var mecha = new T.CylinderGeometry(0.1, 0.03, 0.42, 8); mecha.translate(0, -0.21, 0); mecha.scale(0.7, 1, 1.05);
+    peca(P.cabeloLongo, mecha, M.cabelo, 0, 0, 0, true);
+
+    // Ombreiras
+    [0.27, -0.27].forEach(function (z) {
+      var g = grupo(P.tronco, 0, 0.53, z); g.rotation.x = z > 0 ? 0.35 : -0.35;
+      var o1 = new T.SphereGeometry(0.135, 14, 8, 0, PI * 2, 0, PI / 2); o1.scale(1.05, 0.85, 1.05);
+      peca(g, o1, M.aco, 0, 0, 0);
+      var aro = new T.TorusGeometry(0.14, 0.012, 6, 18); aro.rotateX(PI / 2);
+      peca(g, aro, M.friso, 0, 0.004, 0, null);
+      var o2 = new T.SphereGeometry(0.1, 12, 6, 0, PI * 2, 0, PI / 2); o2.scale(1.0, 0.7, 1.0);
+      peca(g, o2, M.aco, 0, 0.075, 0, true);
+      var ponta = new T.ConeGeometry(0.025, 0.11, 6);
+      peca(g, ponta, M.friso, 0, 0.17, 0, null);
+    });
+
+    function braco(z) {
+      var o = {};
+      o.ombro = grupo(P.tronco, 0, 0.5, z);
+      peca(o.ombro, membro(0.058, 0.05, 0.3), M.pano);
+      o.cotovelo = grupo(o.ombro, 0, -0.3, 0);
+      peca(o.cotovelo, esfera(0.056), M.friso, 0, 0, 0, true);
+      peca(o.cotovelo, membro(0.062, 0.046, 0.27), M.aco);
+      peca(o.cotovelo, new T.CylinderGeometry(0.066, 0.064, 0.03, 10), M.friso, 0, -0.05, 0, null);
+      o.mao = grupo(o.cotovelo, 0, -0.3, 0);
+      peca(o.mao, esfera(0.046, 1, 1.1, 0.9), M.couro, 0, 0, 0, true);
+      return o;
+    }
+    P.bracoEspada = braco(0.3); P.bracoEscudo = braco(-0.3);
+
+    // Espada longa
+    var E = P.espada = grupo(P.bracoEspada.mao, 0, 0, 0);
+    var fl = new T.Shape(); fl.moveTo(0, -0.036); fl.lineTo(0.96, -0.026); fl.lineTo(1.16, 0); fl.lineTo(0.96, 0.026); fl.lineTo(0, 0.036); fl.lineTo(0, -0.036);
+    var geoLamina = new T.ExtrudeGeometry(fl, { depth: 0.008, bevelEnabled: true, bevelThickness: 0.007, bevelSize: 0.008, bevelSegments: 1 }); geoLamina.translate(0.1, 0, -0.004);
+    peca(E, geoLamina, M.lamina, 0, 0, 0, true);
+    peca(E, new T.BoxGeometry(0.72, 0.009, 0.026), M.brilho, 0.5, 0, 0, null).castShadow = false;
+    peca(E, new T.BoxGeometry(0.04, 0.3, 0.05), M.friso, 0.085, 0, 0, true);
+    [0.16, -0.16].forEach(function (y) { var c = new T.ConeGeometry(0.03, 0.08, 6); c.rotateZ(-PI / 2); peca(E, c, M.friso, 0.11, y, 0, null); });
+    var punho = new T.CylinderGeometry(0.018, 0.018, 0.22, 8); punho.rotateZ(PI / 2);
+    peca(E, punho, M.couro, -0.03, 0, 0, null);
+    peca(E, esfera(0.032), M.friso, -0.15, 0, 0, true);
+    a.brilhoEspada = brilho(0xffffff, 0.5, 0.35); a.brilhoEspada.position.set(0.6, 0, 0); a.brilhoEspada.scale.set(1.5, 0.3, 1); E.add(a.brilhoEspada);
+
+    // Escudo em gota
+    var Sd = P.escudo = grupo(P.bracoEscudo.cotovelo, 0, -0.14, -0.085);
+    function formaEscudo(k) { var s = new T.Shape(); s.moveTo(-0.2 * k, 0.3 * k); s.quadraticCurveTo(0, 0.37 * k, 0.2 * k, 0.3 * k); s.lineTo(0.2 * k, 0); s.quadraticCurveTo(0.17 * k, -0.3 * k, 0, -0.5 * k); s.quadraticCurveTo(-0.17 * k, -0.3 * k, -0.2 * k, 0); s.lineTo(-0.2 * k, 0.3 * k); return s; }
+    peca(Sd, new T.ExtrudeGeometry(formaEscudo(1.08), { depth: 0.016, bevelEnabled: false }), M.friso, 0, 0, -0.012, true);
+    peca(Sd, new T.ExtrudeGeometry(formaEscudo(1), { depth: 0.03, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.008, bevelSegments: 1 }), M.aco, 0, 0, -0.034, null);
+    var cruz = new T.Shape(); cruz.moveTo(0, 0.22); cruz.lineTo(0.035, 0.08); cruz.lineTo(0.13, 0.06); cruz.lineTo(0.035, 0.03); cruz.lineTo(0, -0.33); cruz.lineTo(-0.035, 0.03); cruz.lineTo(-0.13, 0.06); cruz.lineTo(-0.035, 0.08); cruz.lineTo(0, 0.22);
+    [-0.048, 0.01].forEach(function (z) { peca(Sd, new T.ShapeGeometry(cruz), M.capa2, 0, 0, z, null).castShadow = false; });
+
+    function perna(z) {
+      var o = {};
+      o.coxa = grupo(P.quadril, 0, -0.06, z);
+      peca(o.coxa, membro(0.095, 0.068, 0.46), M.aco);
+      o.joelho = grupo(o.coxa, 0, -0.46, 0);
+      peca(o.joelho, esfera(0.074, 1.05, 1, 1), M.friso, 0.012, 0, 0, true);
+      peca(o.joelho, membro(0.07, 0.048, 0.42), M.aco);
+      peca(o.joelho, esfera(0.062, 2.0, 0.62, 0.95), M.aco, 0.055, -0.44, 0, true);
+      var bico = new T.ConeGeometry(0.035, 0.1, 6); bico.rotateZ(-PI / 2);
+      peca(o.joelho, bico, M.friso, 0.19, -0.45, 0, null);
+      return o;
+    }
+    P.pernaA = perna(0.105); P.pernaB = perna(-0.105);
+
+    // Capa de tecido: malha que ondula a cada quadro
+    var gc = new T.PlaneGeometry(1, 1, 6, 12), pp = gc.attributes.position;
+    a.capaUV = [];
+    for (var i = 0; i < pp.count; i++) a.capaUV.push([pp.getX(i), 0.5 - pp.getY(i)]);
+    a.capa = new T.Mesh(gc, M.capa); a.capa.castShadow = true; a.capa.position.set(-0.13, 0.57, 0); a.capa.frustumCulled = false;
+    P.tronco.add(a.capa);
+    peca(P.tronco, esfera(0.03), M.friso, -0.02, 0.585, 0.17, true);
+    peca(P.tronco, esfera(0.03), M.friso, -0.02, 0.585, -0.17, true);
+
+    a.rastro = new T.Mesh(new T.RingGeometry(0.8, 1.7, 24, 1, 0, 1), new T.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, side: T.DoubleSide, depthWrite: false, blending: T.AdditiveBlending }));
+    a.rastro.position.set(0.05, 1.5, 0.3); a.raiz.add(a.rastro);
+    scene.add(a.raiz);
+    return a;
+  }
+  function ondularCapa(a, t, vento) {
+    var p = a.capa.geometry.attributes.position, L = 1.22;
+    for (var i = 0; i < p.count; i++) {
+      var u = a.capaUV[i][0], v = a.capaUV[i][1];
+      var ang = (0.1 + vento * 1.05) * Math.pow(v, 0.75);
+      var onda = Math.sin(t * (4 + vento * 5) - v * 6 + u * 4) * 0.055 * v * (0.35 + vento);
+      var bolsa = (1 - 4 * u * u) * 0.06 * v;
+      p.setXYZ(i, -(0.02 + Math.sin(ang) * L * v) - onda - bolsa, -Math.cos(ang) * L * v, u * (0.44 + 0.42 * v));
+    }
+    p.needsUpdate = true; a.capa.geometry.computeVertexNormals();
+  }
+  function aplicarPaleta(n) {
+    var pl = PALETAS[n], M = heroi.m;
+    ['aco', 'friso', 'pano', 'capa', 'cabelo', 'couro', 'lamina'].forEach(function (k) { M[k].color.copy(cor(pl[k])); });
+    M.acoAberto.color.copy(cor(pl.aco)); M.capa2.color.copy(cor(pl.capa));
+    M.brilho.color.copy(cor(pl.brilho)); heroi.rastro.material.color.copy(cor(pl.brilho)); heroi.brilhoEspada.material.color.copy(cor(pl.brilho));
+    document.querySelectorAll('[data-paleta]').forEach(function (b) { b.setAttribute('aria-pressed', String(+b.getAttribute('data-paleta') === n)); });
+  }
+
+  function criarEspectro(x) {
+    var a = { raiz: new T.Group(), mats: [] }, P = a.p = {};
+    var manto = toon(0x1d2433, { side: T.DoubleSide, alphaMap: texRasgada(true), alphaTest: 0.5 }), mantoEsc = toon(0x121722), osso = toon(0xb9b3a2);
+    a.mats = [manto, mantoEsc, osso];
+    P.corpo = grupo(a.raiz, 0, 0.3, 0);
+    var perfil = [[0.001, 1.78], [0.09, 1.75], [0.165, 1.64], [0.185, 1.48], [0.15, 1.33], [0.2, 1.22], [0.29, 1.0], [0.31, 0.7], [0.36, 0.4], [0.44, 0.15], [0.5, -0.05]].map(function (p) { return new T.Vector2(p[0], p[1]); });
+    peca(P.corpo, new T.LatheGeometry(perfil, 16), manto, 0, 0, 0, null);
+    var capuz = new T.SphereGeometry(0.2, 14, 10, 0, PI * 2, 0, PI * 0.62); capuz.scale(1.05, 1.15, 1);
+    peca(P.corpo, capuz, mantoEsc, -0.02, 1.52, 0).rotation.z = 0.5;
+    var vazio = new T.Mesh(esfera(0.13), new T.MeshBasicMaterial({ color: 0x020205 })); vazio.position.set(0.07, 1.5, 0); P.corpo.add(vazio);
+    a.olhos = [];
+    [0.05, -0.05].forEach(function (z) { var o = brilho(0x7fe9ff, 0.2, 1); o.position.set(0.19, 1.52, z); P.corpo.add(o); a.olhos.push(o); });
+    var halo = brilho(0x4fd0ff, 1.6, 0.22); halo.position.set(0.1, 1.5, 0); P.corpo.add(halo); a.halo = halo;
+    function bracoE(z) {
+      var g = grupo(P.corpo, 0.02, 1.25, z);
+      var manga = new T.CylinderGeometry(0.06, 0.13, 0.62, 8, 1, true); manga.translate(0, -0.31, 0);
+      peca(g, manga, mantoEsc, 0, 0, 0, null).material = mantoEsc; mantoEsc.side = T.DoubleSide;
+      for (var i = -1; i <= 1; i++) { var d = new T.ConeGeometry(0.014, 0.2, 4); d.translate(0, -0.1, 0); var m = peca(g, d, osso, 0, -0.62, i * 0.04, null); m.rotation.x = i * 0.3; m.rotation.z = 0.25; }
+      return g;
+    }
+    P.bracoA = bracoE(0.2); P.bracoB = bracoE(-0.2);
+    a.raiz.position.set(x, 0, 0); scene.add(a.raiz);
+    a.x = a.x0 = x; a.y = 0; a.vx = 0; a.vy = 0; a.hp = 6; a.flash = 0; a.morto = 0; a.amasso = 0; a.fase = x; a.lado = -1;
+    return a;
+  }
+
+  var heroi = criarKael();
+  Object.assign(heroi, { x: 3, y: 0, vx: 0, vy: 0, lado: 1, giro: -0.42, noChao: true, pulos: 0, estado: 'idle', t: 0, passo: 0, fila: false, acertou: false, relogio: 0, vento: 0, J: null });
+  var espectros = [criarEspectro(8), criarEspectro(18.5), criarEspectro(25), criarEspectro(33)];
+  espectros[1].y = plataformas[1].y; espectros[3].y = plataformas[2].y;
+  espectros.forEach(function (e) { e.y0 = e.y; });
+
+  var faiscas = [], geoFaisca = new T.PlaneGeometry(0.05, 0.3);
+  function soltarFaiscas(x, y, forte) {
+    for (var i = 0; i < (forte ? 14 : 8); i++) {
+      var m = new T.Mesh(geoFaisca, new T.MeshBasicMaterial({ color: cor(i % 3 ? 0xbfe9ff : 0xffffff), transparent: true, blending: T.AdditiveBlending, depthWrite: false }));
+      m.position.set(x, y, 0.5);
+      var ang = rnd() * PI * 2, v = 4 + rnd() * (forte ? 9 : 5);
+      m.rotation.z = ang - PI / 2;
+      faiscas.push({ m: m, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, t: 0.26 }); scene.add(m);
+    }
+    var cl = brilho(0xcfefff, forte ? 3.2 : 2, 0.9); cl.position.set(x, y, 0.6); scene.add(cl);
+    faiscas.push({ m: cl, vx: 0, vy: 0, t: 0.12, clarao: true });
+  }
+
+  // ---------- Entrada ----------
+  var tecla = { left: false, right: false }, apertou = { jump: false, atk: false };
+  var MAPA = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', Space: 'jump', KeyX: 'jump', ArrowUp: 'jump', KeyW: 'jump', KeyZ: 'atk', KeyJ: 'atk' };
+  function baixar(k) { if (k === 'left' || k === 'right') tecla[k] = true; else apertou[k] = true; }
+  function soltar(k) { if (k === 'left' || k === 'right') tecla[k] = false; }
+  var camGirada = false, camAngulo = 0, zoom = false, zoomK = 0;
+  function alternar(id, v) { document.getElementById(id).setAttribute('aria-pressed', String(v)); }
+  window.addEventListener('keydown', function (e) {
+    if (e.code === 'Digit1' || e.code === 'Numpad1') return aplicarPaleta(0);
+    if (e.code === 'Digit2' || e.code === 'Numpad2') return aplicarPaleta(1);
+    if (e.code === 'Digit3' || e.code === 'Numpad3') return aplicarPaleta(2);
+    if (e.code === 'KeyC' && !e.repeat) { camGirada = !camGirada; return alternar('bt-cam', camGirada); }
+    if (e.code === 'KeyV' && !e.repeat) { zoom = !zoom; return alternar('bt-zoom', zoom); }
+    var k = MAPA[e.code]; if (!k) return;
+    e.preventDefault(); if (!e.repeat) baixar(k);
+  });
+  window.addEventListener('keyup', function (e) { var k = MAPA[e.code]; if (k) soltar(k); });
+  window.addEventListener('blur', function () { tecla.left = tecla.right = false; });
+  document.querySelectorAll('.toque button').forEach(function (b) {
+    var k = b.getAttribute('data-tecla');
+    b.addEventListener('pointerdown', function (e) { e.preventDefault(); baixar(k); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) { b.addEventListener(ev, function () { soltar(k); }); });
+  });
+  palco.addEventListener('pointerdown', function () { palco.focus(); });
+  document.querySelectorAll('[data-paleta]').forEach(function (b) { b.addEventListener('click', function () { aplicarPaleta(+b.getAttribute('data-paleta')); palco.focus(); }); });
+  document.getElementById('bt-cam').addEventListener('click', function () { camGirada = !camGirada; alternar('bt-cam', camGirada); palco.focus(); });
+  document.getElementById('bt-zoom').addEventListener('click', function () { zoom = !zoom; alternar('bt-zoom', zoom); palco.focus(); });
+
+  // ---------- Jogo ----------
+  var GRAV = 30, VEL = 5.4, PULO = 11.2;
+  var DUR = [0.32, 0.32, 0.54], ACERTO = [0.1, 0.1, 0.18];
+  var ARCO = [[2.75, 0.45], [-0.55, 2.55], [3.15, 0.1]];
+  var pausaImpacto = 0, tremor = 0, combo = 0, comboT = 0, elCombo = document.getElementById('combo');
+
+  function chaoEm(x, yAntes, yDepois) {
+    var melhor = 0;
+    for (var i = 0; i < plataformas.length; i++) { var p = plataformas[i]; if (x > p.x0 - 0.2 && x < p.x1 + 0.2 && yAntes >= p.y - 0.001 && yDepois <= p.y) melhor = Math.max(melhor, p.y); }
+    return melhor;
+  }
+  function iniciarGolpe(n) {
+    var h = heroi; h.estado = 'atk'; h.t = 0; h.passo = n; h.fila = false; h.acertou = false;
+    if (tecla.left) h.lado = -1; if (tecla.right) h.lado = 1;
+    var a = ARCO[n], ini = a[0] - PI / 2, fim = a[1] - PI / 2;
+    h.rastro.geometry.dispose();
+    h.rastro.geometry = new T.RingGeometry(n === 2 ? 0.75 : 0.9, n === 2 ? 2.05 : 1.85, 28, 1, Math.min(ini, fim), Math.abs(fim - ini));
+  }
+  function atualizarHeroi(dt) {
+    var h = heroi; h.relogio += dt;
+    var dir = (tecla.right ? 1 : 0) - (tecla.left ? 1 : 0);
+    if (h.estado === 'atk') {
+      h.t += dt;
+      if (apertou.atk && h.t > 0.1) h.fila = true;
+      if (h.noChao) h.vx = h.t < 0.11 ? h.lado * (h.passo === 2 ? 5.5 : 2.6) : h.vx * 0.8; else h.vx = dir * VEL * 0.8;
+      if (!h.acertou && h.t >= ACERTO[h.passo]) { h.acertou = true; aplicarGolpe(); }
+      if (h.t >= DUR[h.passo]) { if (h.fila && h.passo < 2) iniciarGolpe(h.passo + 1); else { h.estado = 'idle'; h.t = 0; } }
+      else if (h.fila && h.passo < 2 && h.t >= DUR[h.passo] * 0.72) iniciarGolpe(h.passo + 1);
+    } else {
+      h.vx = dir * VEL; if (dir) h.lado = dir;
+      if (apertou.atk) iniciarGolpe(0);
+    }
+    if (apertou.jump && h.pulos < 2 && h.estado !== 'atk') { h.vy = h.pulos ? PULO * 0.9 : PULO; h.pulos++; h.noChao = false; }
+    h.vy -= GRAV * dt;
+    var yAntes = h.y;
+    h.x = Math.max(NIVEL_MIN, Math.min(NIVEL_MAX, h.x + h.vx * dt)); h.y += h.vy * dt; h.noChao = false;
+    if (h.vy <= 0) { var c = chaoEm(h.x, yAntes, h.y); if (h.y <= c) { h.y = c; h.vy = 0; h.noChao = true; h.pulos = 0; } }
+    if (h.estado !== 'atk') h.estado = !h.noChao ? 'ar' : (dir ? 'run' : 'idle');
+    var alvoVento = h.estado === 'run' ? 0.75 : h.estado === 'ar' ? (h.vy > 0 ? 0.45 : 1.0) : h.estado === 'atk' ? 0.55 : 0;
+    h.vento += (alvoVento - h.vento) * Math.min(1, dt * 6);
+  }
+  function aplicarGolpe() {
+    var h = heroi, forte = h.passo === 2, pegou = false;
+    espectros.forEach(function (g) {
+      if (g.morto) return;
+      var dx = (g.x - h.x) * h.lado;
+      if (dx > -0.3 && dx < (forte ? 2.7 : 2.3) && Math.abs(g.y - h.y) < 1.7) {
+        pegou = true; g.hp -= forte ? 2 : 1; g.flash = 0.1; g.amasso = 1;
+        g.vx = h.lado * (forte ? 8 : 3.5); if (forte) g.vy = 6;
+        soltarFaiscas(g.x - h.lado * 0.3, g.y + 1.2, forte);
+        if (g.hp <= 0) { g.morto = 0.001; g.vy = 5; g.vx = h.lado * 5; }
+      }
+    });
+    if (pegou) {
+      pausaImpacto = forte ? 0.12 : 0.065; tremor = poucoMovimento ? 0 : (forte ? 0.22 : 0.09);
+      combo++; comboT = 2.2; elCombo.firstChild.nodeValue = combo; elCombo.style.opacity = 1;
+    }
+  }
+  function atualizarEspectro(g, dt) {
+    g.fase += dt; if (g.flash > 0) g.flash -= dt;
+    g.amasso = Math.max(0, g.amasso - dt * 5);
+    g.vy -= GRAV * dt; var yAntes = g.y;
+    g.x += g.vx * dt; g.y += g.vy * dt; g.vx *= Math.pow(0.004, dt);
+    if (g.vy <= 0) { var c = chaoEm(g.x, yAntes, g.y); if (g.y <= c) { g.y = c; g.vy = 0; } }
+    if (!g.morto && Math.abs(heroi.x - g.x) > 0.3) g.lado = heroi.x > g.x ? 1 : -1;
+    if (g.morto) { g.morto += dt; if (g.morto > 2.8) { g.morto = 0; g.hp = 6; g.x = g.x0; g.y = g.y0; g.vx = g.vy = 0; } }
+  }
+
+  // ---------- Poses ----------
+  function suave(k) { k = Math.max(0, Math.min(1, k)); return 1 - Math.pow(1 - k, 3); }
+  function posarHeroi(dt) {
+    var h = heroi, P = h.p, r = h.relogio, e = h.estado;
+    var A = { S: 0.3, E: 0.5, W: -1.3, S2: 0.35, E2: 1.25, cA: 0.28, jA: -0.2, cB: -0.3, jB: -0.12, inc: -0.03, tor: 0.12, sobe: -0.03, cab: 0 };
+    var taxa = 16;
+    if (e === 'idle') {
+      var b = Math.sin(r * 2.2);
+      A.sobe += b * 0.012; A.S += b * 0.03; A.E += b * 0.04; A.S2 += b * 0.02;
+    } else if (e === 'run') {
+      var p = r * 12.5, s = Math.sin(p), c = Math.cos(p);
+      A.cA = s * 0.95 + 0.1; A.cB = -s * 0.95 + 0.1;
+      A.jA = -Math.max(0, c) * 1.35 - 0.2; A.jB = -Math.max(0, -c) * 1.35 - 0.2;
+      A.S = -0.55 + s * 0.12; A.E = 0.35; A.W = -2.55; A.S2 = 0.5 + s * 0.2; A.E2 = 1.3;
+      A.inc = -0.22; A.tor = s * 0.14; A.sobe = Math.abs(c) * 0.055 - 0.06; A.cab = 0.12; taxa = 26;
+    } else if (e === 'ar') {
+      var sub = h.vy > 0;
+      A.cA = sub ? 0.95 : 0.4; A.jA = sub ? -1.35 : -0.55; A.cB = sub ? -0.25 : -0.35; A.jB = sub ? -0.5 : -0.25;
+      A.S = sub ? -0.7 : 2.3; A.E = 0.4; A.W = sub ? -2.2 : -1.2; A.S2 = sub ? 0.8 : 1.4; A.E2 = 0.8;
+      A.inc = sub ? -0.1 : 0.08; A.sobe = 0; taxa = 14;
+    } else {
+      var n = h.passo, k = suave(h.t / ACERTO[n]), a = ARCO[n];
+      var volta = Math.max(0, (h.t - ACERTO[n]) / (DUR[n] - ACERTO[n]));
+      A.S = a[0] + (a[1] - a[0]) * k + (a[1] > a[0] ? 1 : -1) * volta * 0.1; A.E = 0.1; A.W = -1.38;
+      A.inc = (n === 1 ? 0.16 : -0.28) * k; A.tor = (n === 1 ? -0.6 : 0.6) * (k - 0.45);
+      A.S2 = -0.45; A.E2 = 1.0; A.cA = 0.62; A.jA = -0.45; A.cB = -0.55; A.jB = -0.2; A.sobe = -0.09 * k - 0.03;
+      if (n === 2) { A.cA = 0.9; A.jA = -0.85; A.cB = -0.7; A.sobe = -0.2 * k; A.inc = -0.42 * k; }
+      taxa = 90;
+      h.rastro.material.opacity = h.t > ACERTO[n] - 0.06 ? Math.max(0, 0.75 - (h.t - ACERTO[n] + 0.06) * 4.5) : 0;
+    }
+    if (e !== 'atk') h.rastro.material.opacity = 0;
+    if (!h.J) h.J = A;
+    var J = h.J, f = Math.min(1, dt * taxa);
+    for (var kk in A) J[kk] += (A[kk] - J[kk]) * f;
+    P.quadril.position.y = 1.0 + J.sobe;
+    P.tronco.rotation.set(0, J.tor, J.inc);
+    P.cabeca.rotation.set(0, -J.tor * 0.7, -J.inc * 0.6 + J.cab);
+    P.cabeloLongo.rotation.z = -0.15 - h.vento * 0.75 + Math.sin(r * 7) * 0.05 * h.vento;
+    P.tabardo.rotation.z = -Math.max(J.cA, J.cB) * 0.55 + 0.05;
+    P.bracoEspada.ombro.rotation.z = J.S; P.bracoEspada.cotovelo.rotation.z = J.E; P.espada.rotation.z = J.W;
+    P.bracoEscudo.ombro.rotation.z = J.S2; P.bracoEscudo.cotovelo.rotation.z = J.E2; P.escudo.rotation.z = -(J.S2 + J.E2) - J.inc;
+    P.pernaA.coxa.rotation.z = J.cA; P.pernaA.joelho.rotation.z = J.jA;
+    P.pernaB.coxa.rotation.z = J.cB; P.pernaB.joelho.rotation.z = J.jB;
+    h.brilhoEspada.material.opacity = 0.25 + Math.sin(r * 3) * 0.08 + (e === 'atk' ? 0.4 : 0);
+    ondularCapa(h, r, h.vento);
+  }
+  function posarEspectro(g) {
+    var P = g.p, w = Math.sin(g.fase * 2.2), am = g.amasso;
+    var alvo = g.lado > 0 ? 0 : PI; g.raiz.rotation.y += (alvo - g.raiz.rotation.y) * 0.15;
+    P.corpo.position.y = 0.3 + w * 0.08;
+    P.corpo.scale.set(1 + am * 0.2, 1 - am * 0.22, 1 + am * 0.2);
+    P.corpo.rotation.z = g.morto ? g.morto * 1.5 : -Math.abs(g.vx) * 0.05 + w * 0.03;
+    P.bracoA.rotation.z = 1.0 + w * 0.15; P.bracoB.rotation.z = 0.8 - w * 0.15;
+    var s = g.morto ? Math.max(0.001, 1 - g.morto * 1.5) : 1;
+    g.raiz.scale.set(s, g.morto > 0.66 ? 0.001 : s, s);
+    g.mats.forEach(function (m) { m.emissive.setHex(g.flash > 0 ? 0xffffff : 0x000000); });
+    g.halo.material.opacity = 0.2 + w * 0.06;
+  }
+
+  // ---------- Laço ----------
+  var antes = performance.now(), tempo = 0, camX = heroi.x, camY = 2.4;
+  function ajustarTamanho() {
+    var w = palco.clientWidth || 800, h = palco.clientHeight || 450;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); renderer.setSize(w, h, false);
+    camera.aspect = w / h; camera.fov = w / h < 1.2 ? 40 : 28; camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', ajustarTamanho); ajustarTamanho(); aplicarPaleta(0);
+
+  function quadro(agora) {
+    requestAnimationFrame(quadro);
+    var dt = Math.min(0.033, (agora - antes) / 1000); antes = agora; tempo += dt;
+    var parado = pausaImpacto > 0;
+    if (parado) pausaImpacto -= dt; else { atualizarHeroi(dt); espectros.forEach(function (g) { atualizarEspectro(g, dt); }); }
+    apertou.jump = apertou.atk = false;
+    if (comboT > 0) { comboT -= dt; if (comboT <= 0) { combo = 0; elCombo.style.opacity = 0; } }
+
+    for (var i = faiscas.length - 1; i >= 0; i--) {
+      var f = faiscas[i]; f.t -= dt;
+      f.m.position.x += f.vx * dt; f.m.position.y += f.vy * dt;
+      f.m.material.opacity = Math.max(0, f.t / (f.clarao ? 0.12 : 0.26));
+      if (f.t <= 0) { scene.remove(f.m); f.m.material.dispose(); faiscas.splice(i, 1); }
+    }
+    chamas.forEach(function (c) {
+      var k = 0.85 + Math.sin(tempo * 11 + c.fase) * 0.08 + Math.sin(tempo * 23 + c.fase * 2) * 0.07;
+      if (c.luz) { c.luz.intensity = 1.5 * k; c.f1.scale.set(1.3 * k, 1.6 * k, 1); c.f2.scale.set(0.5 * k, 0.7 * k, 1); }
+      else c.f2.scale.set(c.base * k, c.base * 1.4 * k, 1);
+    });
+    nevoas.forEach(function (n) { n.s.position.x += n.v * dt; if (n.s.position.x > camX + 34) n.s.position.x = camX - 34; if (n.s.position.x < camX - 36) n.s.position.x = camX + 30; });
+    var pc = cinzas.geometry.attributes.position;
+    for (var q = 0; q < pc.count; q++) {
+      var y = pc.getY(q) + dt * (0.5 + (q % 5) * 0.12), x = pc.getX(q) + Math.sin(tempo + q) * dt * 0.3;
+      if (y > 8) y = 0; if (x < camX - 15) x += 30; if (x > camX + 15) x -= 30;
+      pc.setXY(q, x, y);
+    }
+    pc.needsUpdate = true;
+
+    var alvoGiro = heroi.lado > 0 ? -0.42 : -PI + 0.42;
+    heroi.giro += (alvoGiro - heroi.giro) * Math.min(1, dt * 18);
+    heroi.raiz.rotation.y = heroi.giro; heroi.raiz.position.set(heroi.x, heroi.y, 0);
+    espectros.forEach(function (g) { g.raiz.position.set(g.x, g.y, 0); });
+    if (!parado) { posarHeroi(dt); espectros.forEach(posarEspectro); }
+
+    zoomK += ((zoom ? 1 : 0) - zoomK) * Math.min(1, dt * 5);
+    var alvoX = Math.max(5, Math.min(NIVEL_MAX - 5, heroi.x + heroi.lado * 1.2)) * (1 - zoomK) + (heroi.x + heroi.lado * 0.3) * zoomK;
+    camX += (alvoX - camX) * Math.min(1, dt * 4);
+    var alvoY = (2.3 + heroi.y * 0.55) * (1 - zoomK) + (heroi.y + 1.15) * zoomK;
+    camY += (alvoY - camY) * Math.min(1, dt * 4);
+    camAngulo += ((camGirada ? 0.75 : 0) - camAngulo) * Math.min(1, dt * 4);
+    var dist = 15 - zoomK * 8.5, tx = 0, ty = 0;
+    if (tremor > 0) { tremor -= dt; tx = (Math.random() - 0.5) * tremor; ty = (Math.random() - 0.5) * tremor; }
+    camera.position.set(camX + Math.sin(camAngulo) * dist + tx, camY + 1.5 * (1 - zoomK) + 0.3 * zoomK + camAngulo * 2 + ty, Math.cos(camAngulo) * dist);
+    camera.lookAt(camX + tx, camY + ty, 0);
+    lua.position.set(camX - 9, 15, -9); lua.target.position.set(camX, 0, 0);
+    frente.position.set(camX + 5, 7, 12); frente.target.position.set(camX, 1, 0);
+    grupoLua.position.set(camX * 0.93 + 13, 32, -110);
+    renderer.render(scene, camera);
+  }
+  requestAnimationFrame(quadro);
+  palco.focus();
+})();
+</script>
+</body>
+</html>

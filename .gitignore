@@ -1,0 +1,16 @@
+# Godot 4
+.godot/
+export/
+export_presets.cfg
+mono_crash.*.json
+
+# Obsidian (configurações locais do app)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+.trash/
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
