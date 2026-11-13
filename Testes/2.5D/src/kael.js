@@ -39,7 +39,7 @@ function KaelLib(T) {
     };
     return m;
   }
-  var C_GROSSO = contorno(0.014), C_FINO = contorno(0.007), C_MEDIO = contorno(0.0095), C_CABECA = contorno(0.05), C_MECHA = contorno(0.035);
+  var C_GROSSO = contorno(0.014), C_FINO = contorno(0.007), C_MEDIO = contorno(0.0095), C_CABECA = contorno(0.05), C_MECHA = contorno(0.017);
 
   var texBrilho = (function () {
     var c = document.createElement('canvas'); c.width = c.height = 128; var g = c.getContext('2d');
@@ -223,12 +223,18 @@ function KaelLib(T) {
       g.stroke();
     }
   }
-  function pintarCabelo(g, w, h, pal) {
+  function pintarCabelo(g, w, h, pal, liso) { // mecha: raiz mais escura, faixa de brilho suave, ponta escura e muitos fios finos
     var gr = g.createLinearGradient(0, 0, 0, h), c = pal.cabelo;
-    gr.addColorStop(0, tom(c, 0.92)); gr.addColorStop(0.2, tom(c, 0.92)); gr.addColorStop(0.3, tom(c, 1.6)); gr.addColorStop(0.38, tom(c, 0.95)); gr.addColorStop(0.75, tom(c, 0.82)); gr.addColorStop(1, tom(c, 0.66));
+    if (liso) { gr.addColorStop(0, tom(c, 0.85)); gr.addColorStop(0.5, tom(c, 1.0)); gr.addColorStop(1, tom(c, 0.95)); }
+    else { gr.addColorStop(0, tom(c, 0.8)); gr.addColorStop(0.16, tom(c, 0.95)); gr.addColorStop(0.27, tom(c, 1.5)); gr.addColorStop(0.36, tom(c, 1.0)); gr.addColorStop(0.72, tom(c, 0.86)); gr.addColorStop(1, tom(c, 0.62)); }
     g.fillStyle = gr; g.fillRect(0, 0, w, h);
-    g.fillStyle = tom(c, 0.6); g.globalAlpha = 0.35;
-    for (var i = 0; i < 5; i++) g.fillRect(w * (i + 0.5) / 5, 0, 1.5, h);
+    var sm = 7;
+    function r() { sm = (sm * 16807) % 2147483647; return (sm - 1) / 2147483646; }
+    for (var i = 0; i < 46; i++) {
+      var x = r() * w, claro = r() > 0.6;
+      g.strokeStyle = tom(c, claro ? 1.5 : 0.55); g.globalAlpha = claro ? 0.3 : 0.16 + r() * 0.2; g.lineWidth = 0.6 + r() * 1.3;
+      g.beginPath(); g.moveTo(x, r() * h * 0.2); g.bezierCurveTo(x + (r() - 0.5) * 5, h * 0.35, x + (r() - 0.5) * 5, h * 0.7, x + (r() - 0.5) * 7, h); g.stroke();
+    }
     g.globalAlpha = 1;
   }
   function pintarMecha(g, w, h, pal) { pintarCabelo(g, w, h, { cabelo: pal.mecha }); }
@@ -285,7 +291,7 @@ function KaelLib(T) {
   function sup(y, z, k) { var x = Math.sqrt(Math.max(0.02, 1 - y * y - z * z)); var v = cabecaPt(x, y, z); return [v[0] * k, v[1] * k, v[2] * k]; }
   function geoMecha(pts, larg, esp) { // fita afilada ao longo de uma curva
     var curva = new T.CatmullRomCurve3(pts.map(function (p) { return new T.Vector3(p[0], p[1], p[2]); }));
-    var N = 16, R = 7, pos = [], uv = [], idx = [], centro = new T.Vector3(0, 0.1, 0), ant = new T.Vector3(0, 0, 1);
+    var N = 20, R = 7, pos = [], uv = [], idx = [], centro = new T.Vector3(0, 0.1, 0), ant = new T.Vector3(0, 0, 1);
     for (var i = 0; i <= N; i++) {
       var t = i / N, c = curva.getPoint(t), tan = curva.getTangent(t).normalize();
       var fora = c.clone().sub(centro); fora.sub(tan.clone().multiplyScalar(fora.dot(tan)));
@@ -336,8 +342,9 @@ function KaelLib(T) {
     M.pele = toon(null, GRAD_PELE); M.orelha = toon(null, GRAD_PELE); M.pescoco = toon(null, GRAD_PELE); M.acoDuplo = toon({ side: T.DoubleSide });
     M.rosto = toon({ map: tex(2048, 1024, function (g, w, h, p) { pintarRosto(g, w, h, p, false); }) }, GRAD_PELE);
     a.texAberto = M.rosto.map; a.texFechado = tex(2048, 1024, function (g, w, h, p) { pintarRosto(g, w, h, p, true); });
-    M.cabelo = toon({ map: tex(32, 256, pintarCabelo) }, GRAD_CABELO);
-    M.mecha = toon({ map: tex(32, 256, pintarMecha) }, GRAD_CABELO);
+    M.cabelo = toon({ map: tex(128, 512, pintarCabelo) }, GRAD_CABELO);
+    M.calota = toon({ map: tex(128, 512, function (g, w, h, p) { pintarCabelo(g, w, h, p, true); }) }, GRAD_CABELO); M.calota.map.wrapS = T.RepeatWrapping; M.calota.map.repeat.set(7, 1);
+    M.mecha = toon({ map: tex(128, 512, pintarMecha) }, GRAD_CABELO);
     M.cabeloLiso = toon(null, GRAD_CABELO);
     M.placa = toon({ map: tex(128, 256, pintarPlaca) });
     M.tronco = toon({ map: tex(512, 512, pintarTronco) });
@@ -429,38 +436,45 @@ function KaelLib(T) {
     })();
     var CAB_TRAS = 0.72; // o cabelo de trás acompanha o crânio menor
     // calota do cabelo
-    var calota = peca(cab, geoCabeca(1.045, PI * 0.6), M.cabeloLiso, 0, 0, 0, C_CABECA); calota.rotation.z = 0.5;
+    var calota = peca(cab, geoCabeca(1.045, PI * 0.6), M.calota, 0, 0, 0, C_CABECA); calota.rotation.z = 0.78;
     function mecha(pts, larg, esp, mat, pai) { if (!pai || pai.userData.cabeca) pts = pts.map(function (p) { return [p[0] < 0 ? p[0] * CAB_TRAS * (1 - 0.2 * Math.min(1, Math.max(0, -p[1]))) : p[0], p[1], p[2]]; }); return peca(pai || cab, geoMecha(pts, larg, esp || 0.38), mat || M.cabelo, 0, 0, 0, C_MECHA); }
-    // franja
-    [[-0.8, 0.1, 0.16], [-0.62, 0.3, 0.17], [-0.44, 0.2, 0.17], [-0.26, 0.4, 0.17], [-0.08, 0.02, 0.15], [0.1, 0.42, 0.16], [0.28, 0.28, 0.17], [0.46, 0.38, 0.17], [0.64, 0.2, 0.17], [0.8, 0.08, 0.15]].forEach(function (b, i) {
-      var z0 = b[0], fim = sup(b[1], z0 * 0.98, 1.1), meio = sup(0.62, z0 * 0.72, 1.14);
-      mecha([[0.1, 1.04, z0 * 0.25], [0.55, 1.0, z0 * 0.5], meio, [fim[0] + 0.02, fim[1], fim[2] + (z0 > 0 ? -0.06 : 0.06)]], b[2], 0.4, M.cabelo);
+    // ---- cabelo em mechas finas: muitas pontas de comprimentos diferentes, em camadas, saindo do alto da cabeça ----
+    // franja: mechas estreitas penteadas de leve para um lado, com pontas desencontradas
+    [0.05, 0.24, 0.32, 0.16, 0.38, 0.27, 0.4, 0.13, 0.03, 0.34, 0.2, 0.39, 0.17, 0.31, 0.21, 0.05].forEach(function (yt, i) {
+      var z0 = -0.84 + i * 0.112, fim = sup(yt, z0 * 0.97 - 0.05, 1.1), meio = sup(0.64, z0 * 0.72, 1.14);
+      mecha([[0.1, 1.04, z0 * 0.25], [0.55, 1.0, z0 * 0.5], meio, [fim[0] + 0.02, fim[1], fim[2] + (i % 2 ? -0.05 : 0.03)]], 0.125 + (i % 3) * 0.014, 0.42, M.cabelo);
     });
-    // segunda camada da franja: mechas finas cruzadas, para quebrar o efeito de capacete
-    [[-0.72, 0.36, 0.09, 1], [-0.4, 0.14, 0.1, -1], [-0.14, 0.3, 0.08, 1], [0.2, 0.1, 0.1, -1], [0.5, 0.32, 0.09, 1], [0.76, 0.18, 0.09, -1]].forEach(function (b) {
-      var z0 = b[0], fim = sup(b[1], z0 * 0.96 + b[3] * 0.11, 1.17), meio = sup(0.66, z0 * 0.7, 1.2);
-      mecha([[0.05, 1.07, z0 * 0.2], [0.5, 1.05, z0 * 0.45], meio, fim], b[2], 0.45, M.cabelo);
+    [[-0.7, 0.36, 1], [-0.46, 0.14, -1], [-0.2, 0.3, 1], [0.06, 0.1, -1], [0.3, 0.33, 1], [0.54, 0.16, -1], [0.76, 0.3, 1]].forEach(function (b) { // fios soltos por cima
+      var z0 = b[0], fim = sup(b[1], z0 * 0.96 + b[2] * 0.1, 1.17), meio = sup(0.66, z0 * 0.7, 1.2);
+      mecha([[0.05, 1.07, z0 * 0.2], [0.5, 1.05, z0 * 0.45], meio, fim], 0.058, 0.5, M.cabelo);
     });
-    // mechas laterais que emolduram o rosto
+    // laterais que emolduram o rosto: a mecha tingida fica do lado da espada
     [1, -1].forEach(function (s) {
-      mecha([[0.2, 0.98, s * 0.5], sup(0.45, s * 0.86, 1.12), [0.52, -0.3, s * 0.95], [0.5, -0.95, s * 0.8], [0.58, -1.35, s * 0.7]], s > 0 ? 0.13 : 0.2, 0.42, s > 0 ? M.mecha : M.cabelo);
-      mecha([[0.0, 1.0, s * 0.55], sup(0.3, s * 0.93, 1.12), [0.12, -0.5, s * 0.98], [0.05, -1.05, s * 0.92]], 0.24, 0.4);
+      mecha([[0.2, 0.98, s * 0.5], sup(0.45, s * 0.86, 1.12), [0.52, -0.3, s * 0.95], [0.5, -0.95, s * 0.8], [0.58, -1.35, s * 0.7]], 0.11, 0.45, s > 0 ? M.mecha : M.cabelo);
+      mecha([[0.16, 0.99, s * 0.52], sup(0.42, s * 0.89, 1.13), [0.4, -0.3, s * 0.98], [0.36, -0.8, s * 0.88], [0.44, -1.08, s * 0.8]], 0.085, 0.45);
+      [[-0.13, -1.05], [0.02, -0.82], [0.17, -1.2]].forEach(function (d) {
+        mecha([[d[0] * 0.4, 1.0, s * 0.55], sup(0.3, s * 0.93, 1.12), [0.12 + d[0], -0.5, s * 0.98], [0.05 + d[0] * 1.2, d[1], s * 0.9]], 0.115, 0.42);
+      });
     });
-    // cabelo de trás em camadas (num grupo próprio, que balança ao correr)
+    // cabelo de trás em três camadas (num grupo próprio, que balança ao correr)
     P.cabeloTras = grupo(cab, 0, 0, 0); P.cabeloTras.userData.cabeca = true;
-    for (var bi = 0; bi < 9; bi++) {
-      var ba = (bi / 8 - 0.5) * 3.6, bc = -Math.cos(ba), bs = Math.sin(ba), comp = 1.25 + (bi % 2) * 0.3 + rnd() * 0.15;
-      mecha([[-0.25 + bc * 0.1, 1.02, bs * 0.3], [bc * 1.12, 0.45, bs * 1.02], [bc * 1.08, -0.4, bs * 0.95], [bc * 1.0, -comp + 0.25, bs * 0.85], [bc * 1.22, -comp, bs * 0.95]], 0.3, 0.36, M.cabelo, P.cabeloTras);
+    for (var bi = 0; bi < 18; bi++) { // camada longa, por baixo
+      var ba = (bi / 17 - 0.5) * 3.7, bc = -Math.cos(ba), bs = Math.sin(ba), comp = 1.2 + rnd() * 0.45, jt = (rnd() - 0.5) * 0.12;
+      mecha([[-0.25 + bc * 0.1, 1.02, bs * 0.3], [bc * 1.1, 0.45, bs * 1.0], [bc * 1.07, -0.4, bs * 0.94], [bc * 1.0, -comp + 0.25, bs * 0.85 + jt], [bc * 1.1, -comp, bs * 0.86 + jt * 1.6]], 0.16 + rnd() * 0.05, 0.4, M.cabelo, P.cabeloTras);
     }
-    for (var b2 = 0; b2 < 8; b2++) { // camada de cima, mais curta, com as pontas viradas para fora
-      var a2 = ((b2 + 0.5) / 8 - 0.5) * 3.3, c2 = -Math.cos(a2), s2 = Math.sin(a2), cp2 = 0.45 + (b2 % 3) * 0.2;
-      mecha([[-0.2 + c2 * 0.1, 1.07, s2 * 0.25], [c2 * 1.2, 0.5, s2 * 1.07], [c2 * 1.2, -0.05, s2 * 1.04], [c2 * 1.36, -cp2, s2 * 1.14]], 0.22, 0.42, M.cabelo, P.cabeloTras);
+    for (var b2 = 0; b2 < 15; b2++) { // camada média
+      var a2 = ((b2 + 0.5) / 15 - 0.5) * 3.4, c2 = -Math.cos(a2), s2 = Math.sin(a2), cp2 = 0.5 + rnd() * 0.45, j2 = (rnd() - 0.5) * 0.1;
+      mecha([[-0.2 + c2 * 0.1, 1.06, s2 * 0.25], [c2 * 1.14, 0.5, s2 * 1.03], [c2 * 1.14, -0.05, s2 * 1.0 + j2], [c2 * 1.2, -cp2, s2 * 1.02 + j2 * 1.8]], 0.14 + rnd() * 0.03, 0.42, M.cabelo, P.cabeloTras);
     }
-    // rabo de cavalo baixo com fita
+    for (var b3 = 0; b3 < 12; b3++) { // camada curta do alto da cabeça
+      var a3 = (b3 / 11 - 0.5) * 3.1, c3 = -Math.cos(a3), s3 = Math.sin(a3), cp3 = rnd() * 0.3, j3 = (rnd() - 0.5) * 0.1;
+      mecha([[-0.15 + c3 * 0.1, 1.09, s3 * 0.2], [c3 * 0.92, 0.76, s3 * 0.8], [c3 * 1.18, 0.3, s3 * 1.06 + j3], [c3 * 1.22, -cp3, s3 * 1.07 + j3 * 1.8]], 0.12, 0.45, M.cabelo, P.cabeloTras);
+    }
+    // rabo de cavalo baixo com fita: mechas finas e onduladas, duas tingidas
     P.cabeloLongo = grupo(cab, -0.62, -0.55, 0);
-    for (var ri = 0; ri < 5; ri++) {
-      var rz = (ri - 2) * 0.13, rl = 2.5 + (ri % 2) * 0.4;
-      mecha([[0.1, 0.1, rz * 0.5], [-0.25, -0.6, rz], [-0.2, -rl * 0.5, rz * 1.6], [-0.45, -rl * 0.8, rz * 1.3], [-0.3, -rl, rz * 0.8]], 0.26, 0.5, ri === 1 ? M.mecha : M.cabelo, P.cabeloLongo);
+    for (var ri = 0; ri < 9; ri++) {
+      var rz = (ri - 4) * 0.075, rl = 2.25 + rnd() * 0.7, ow = (rnd() - 0.5) * 0.22;
+      mecha([[0.1, 0.1, rz * 0.5], [-0.25, -0.6, rz], [-0.2 + ow, -rl * 0.5, rz * 1.7], [-0.45 - ow, -rl * 0.8, rz * 1.4], [-0.3 + ow, -rl, rz * 0.9]], 0.15, 0.5, ri === 2 || ri === 5 ? M.mecha : M.cabelo, P.cabeloLongo);
     }
     var fita = new T.TorusGeometry(0.2, 0.07, 6, 14); fita.rotateX(PI / 2);
     peca(P.cabeloLongo, fita, M.capaLisa, -0.05, -0.2, 0, C_MECHA);

@@ -30,3 +30,4 @@ tags: [decisao, registro]
 | 2026-11-13 | Revisão do modelo base: fazer itens 1, 2, 3, 4 e 6. Item 5 descartado: o macacão fica liso de propósito, é o modelo "nu" | decidido |
 | 2026-11-13 | O repositório GitHub `MozaTatalo/liga-dos-guerreiros` guarda a versão mais recente do projeto | decidido |
 | 2026-11-13 | Mãos e pés do modelo base ficam simples: mão em forma única com polegar e pé arredondado, sem dedos nem tornozelo modelados | decidido |
+| 2026-11-13 | Cabelo dos personagens feito de muitas mechas finas em camadas, com fios desenhados e contorno fino, rente à cabeça | decidido |

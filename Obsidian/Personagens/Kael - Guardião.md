@@ -57,3 +57,5 @@ O Kael base veste só um **macacão liso de uma cor só**, de manga curta e shor
 **Cabeça e rosto (2026-11-13, rascunho 10):** cabeça assentada sobre os ombros, quase sem pescoço à mostra. Rosto redondo, sem queixo em V, e cabeça com 78% de largura. Olhos, cicatriz e cabelo não mudaram.
 
 **Cabeça sem cabelo (2026-11-13, rascunho 11):** crânio com a parte de trás menor, orelhas modeladas e pele uniforme. A vitrine tem o botão **Cabelo** para conferir. Regra: a cabeça tem de estar correta mesmo careca.
+
+**Cabelo (2026-11-13, rascunho 17):** refeito em mechas finas e camadas, com fios desenhados na textura e contorno fino, para parecer cabelo e não um bloco. Mesmo penteado: franja, laterais emoldurando o rosto, mecha tingida do lado da espada e rabo de cavalo baixo com fita.

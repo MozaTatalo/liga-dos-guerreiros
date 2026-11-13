@@ -28,3 +28,4 @@ tags: [pedido, registro]
 - **2026-11-13** — Adicionou o repositório https://github.com/MozaTatalo/liga-dos-guerreiros ao projeto e pediu para subir tudo nele, porque ia desligar o PC. #pedido #tecnologia
 - **2026-11-13** — Da [[Revisão do Modelo Base]] escolheu os itens 1, 2, 3, 4 e 6 por enquanto. Item 5 descartado: o macacão deve ficar realmente simples e liso, é o modelo "nu" e raramente será visto no jogo. Pediu também para subir tudo no GitHub (`MozaTatalo/liga-dos-guerreiros`), pois ia desligar o PC.
 - **2026-11-13** — Viu o rascunho 15 e preferiu as mãos e os pés como estavam antes (formas simples e grandes).
+- **2026-11-13** — Pediu para melhorar o cabelo e "literalmente tornar ele um cabelo": mechas, fios e volume natural, não um bloco.
