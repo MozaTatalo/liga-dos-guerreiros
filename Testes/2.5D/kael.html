@@ -510,8 +510,22 @@ function KaelLib(T) {
 
     // ----- tronco -----
     var perfil = (fem ? [[0.142, 0], [0.144, 0.07], [0.116, 0.21], [0.126, 0.31], [0.146, 0.4], [0.15, 0.465], [0.14, 0.497], [0.076, 0.512], [0.064, 0.53], [0.06, NK]] : [[0.136, 0], [0.138, 0.07], [0.128, 0.18], [0.14, 0.3], [0.166, 0.4], [0.17, 0.465], [0.158, 0.497], [0.08, 0.512], [0.066, 0.53], [0.062, NK]]).map(function (p) { return new T.Vector2(p[0], p[1]); });
-    var geoTronco = new T.LatheGeometry(perfil, 28); geoTronco.scale(0.8, 1, 0.94); // tronco estreito
-    peca(TG, geoTronco, M.macLiso, 0, 0, 0, C_GROSSO);
+    var geoTronco = new T.LatheGeometry(perfil, 28); geoTronco.scale(0.8, 1, fem ? 0.88 : 1.04); // tronco estreito; ombros para fora no masculino, para dentro no feminino
+    if (fem) { // roupa base feminina: top e short, com a barriga à mostra. Busto discreto, só uma curva suave
+      var busto = function (geo, q) {
+        var pb = geo.attributes.position;
+        for (var i = 0; i < pb.count; i++) {
+          var bx = pb.getX(i), by = pb.getY(i), bz = pb.getZ(i), br = Math.sqrt(bx * bx + bz * bz) || 1;
+          if (bx > 0) pb.setX(i, bx + q * Math.exp(-Math.pow((by - 0.395) / 0.05, 2)) * Math.pow(bx / br, 1.5));
+        }
+        geo.computeVertexNormals(); return geo;
+      };
+      var lat = function (pts, k) { var g = new T.LatheGeometry(pts.map(function (p) { return new T.Vector2(p[0] * k, p[1]); }), 28); g.scale(0.8, 1, 0.88); return g; };
+      busto(geoTronco, 0.026);
+      peca(TG, geoTronco, M.pele, 0, 0, 0, C_GROSSO);
+      peca(TG, busto(lat([[0.122, 0.3], [0.127, 0.315], [0.146, 0.4], [0.15, 0.465], [0.14, 0.497], [0.076, 0.512], [0.064, 0.53], [0.06, NK]], 1.05), 0.028), M.macLiso, 0, 0, 0, C_GROSSO);
+      peca(TG, lat([[0.142, 0], [0.144, 0.07], [0.136, 0.115], [0.128, 0.125]], 1.05), M.macLiso, 0, 0, 0, C_FINO);
+    } else peca(TG, geoTronco, M.macLiso, 0, 0, 0, C_GROSSO);
     var golaBase = new T.CylinderGeometry(0.088, 0.07, 0.07, 16, 1, true);
     peca(TG, golaBase, M.macDuplo, -0.006, NK - 0.04, 0);
     slot('armadura');
@@ -612,9 +626,10 @@ function KaelLib(T) {
       var o = {};
       o.ombro = grupo(P.tronco, 0, 0.42 * TS, z * TW);
       // base lisa: manga curta do macacão, braço e mão de pele
-      peca(o.ombro, esfera(0.054, 1, 1.05, 1), M.macLiso, 0, 0.004, 0, C_MEDIO);
+      peca(o.ombro, esfera(fem ? 0.05 : 0.056, 1, 1.05, 1), fem ? M.pele : M.macLiso, 0, 0.004, 0, C_MEDIO);
       peca(o.ombro, membro(0.041, 0.04, LU, true), M.pele, 0, 0, 0, C_MEDIO);
-      peca(o.ombro, membro(0.051, 0.048, LU * 0.62), M.macLiso, 0, 0, 0, C_MEDIO);
+      if (!fem) peca(o.ombro, membro(0.051, 0.048, LU * 0.62), M.macLiso, 0, 0, 0, C_MEDIO); // o top feminino não tem manga
+      o.ombro.rotation.x = (z > 0 ? -1 : 1) * (fem ? 0.03 : 0.13); // braços afastados no masculino, junto ao corpo no feminino
       o.cotovelo = grupo(o.ombro, 0, -LU, 0);
       peca(o.cotovelo, esfera(0.04), M.pele, 0, 0, 0, C_MEDIO); // junta do mesmo raio do braço: sem emenda
       peca(o.cotovelo, membro(0.04, 0.056, LF, true), M.pele, 0, 0, 0, C_MEDIO);
@@ -635,7 +650,7 @@ function KaelLib(T) {
       slot(null);
       return o;
     }
-    P.bracoEspada = braco(fem ? 0.172 : 0.19); P.bracoEscudo = braco(fem ? -0.172 : -0.19);
+    P.bracoEspada = braco(fem ? 0.162 : 0.212); P.bracoEscudo = braco(fem ? -0.162 : -0.212);
 
     // ----- espada longa com runas -----
     var E = P.espada = grupo(P.bracoEspada.mao, 0, 0, 0); a.slots.espada.push(E);
@@ -684,6 +699,7 @@ function KaelLib(T) {
     function perna(z) {
       var o = {};
       o.coxa = grupo(P.quadril, 0, -0.06, z);
+      o.coxa.rotation.x = (z > 0 ? -1 : 1) * (fem ? -0.03 : 0.14); // pernas abertas no masculino, juntas no feminino
       // base lisa: short do macacão, perna e pé de pele
       peca(o.coxa, membro(0.066, 0.058, L1, true), M.pele, 0, 0, 0, C_MEDIO);
       peca(o.coxa, esfera(0.077), M.macLiso, 0, 0, 0, C_MEDIO); // raiz da coxa, une a perna ao quadril
@@ -710,7 +726,7 @@ function KaelLib(T) {
       slot(null);
       return o;
     }
-    P.pernaA = perna(0.08); P.pernaB = perna(-0.08);
+    P.pernaA = perna(fem ? 0.066 : 0.092); P.pernaB = perna(fem ? -0.066 : -0.092);
 
     // ----- capa -----
     var gcapa = new T.PlaneGeometry(1, 1, 8, 14), pp = gcapa.attributes.position;
@@ -762,6 +778,8 @@ function KaelLib(T) {
     if (e === 'idle') {
       var b = Math.sin(r * 2.2);
       A.sobe += b * 0.012; A.S += b * 0.03; A.E += b * 0.04; A.S2 += b * 0.02;
+      if (h.corpo === 'f') { A.cA = 0.1; A.cB = -0.1; A.jA = -0.06; A.jB = -0.04; A.tor = 0.06; } // parada com as pernas juntas
+      else { A.cA = 0.34; A.cB = -0.36; } // base firme, pernas abertas
     } else if (e === 'run') {
       var p = r * 12.5, s = Math.sin(p), c = Math.cos(p);
       A.cA = s * 0.95 + 0.1; A.cB = -s * 0.95 + 0.1;

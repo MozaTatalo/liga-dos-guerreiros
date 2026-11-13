@@ -17,6 +17,7 @@ atualizado: 2026-11-13
 - **Masculino** e **feminino**, com o mesmo esqueleto e as mesmas animações. Todo personagem usa um dos dois.
 - Corpo estreito: ombros quase na largura da cabeça, tronco fino, pernas juntas.
 - O feminino muda só a silhueta: ombros um pouco mais estreitos, cintura mais marcada, quadril um pouco mais largo, mãos e pés 10% menores. Mesmo macacão liso.
+- **Ajuste de 2026-11-13 (rascunho 19):** o masculino tem ombros para fora, braços afastados e fica parado com as pernas abertas. O feminino tem ombros para dentro, braços junto ao corpo e fica parada com as pernas juntas. A roupa base feminina é um **top sem manga e short**, com a barriga à mostra e busto discreto. O masculino segue de macacão.
 - No teste: `Kael.criar()` (masculino) e `Kael.criar({ corpo: "f" })` (feminino).
 
 ## Peças de equipamento (camadas separadas)
