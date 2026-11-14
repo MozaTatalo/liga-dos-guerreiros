@@ -2,7 +2,7 @@ class_name GameData
 extends RefCounted
 ## Dados do jogo: classes, inimigos, fases e dificuldades. Ajuste números aqui para balancear.
 
-const VERSAO := "0.7"
+const VERSAO := "0.8"
 const W := 480.0
 const H := 270.0
 const GROUND := 230.0
