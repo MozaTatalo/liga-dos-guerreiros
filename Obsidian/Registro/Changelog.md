@@ -47,3 +47,18 @@ tags: [changelog, registro]
   - **Lodo** e **Morcego** agora em 3D: lodo de ectoplasma translúcido que treme e estica no pulo, com olhos e ossinhos dentro; morcego com asas de membrana que batem, orelhas, presas, olhos vermelhos e brasas caindo.
   - Golpes: lâminas de luz em meia-lua, estrela de impacto em cada acerto, faíscas com rastro, projéteis brilhantes e itens em forma de gema.
   - Cena de teste `scenes/vitrine_inimigos.tscn` com todos os inimigos de perto.
+
+## 2026-11-14
+- Notas novas: [[Análise Completa do Jogo]] (tudo que o jogo precisa, por área) e [[Roteiro de Versões]] (ordem de construção até a 1.0). Também [[Interface e Menus]], [[Áudio]] e [[Multijogador]]. [[Combate]] e [[Progressão]] reescritas.
+- **Projeto Godot v0.6** (combate, menus, progressão e som):
+  - **Combate de um botão:** combo de 4, lançador (↓ + Z), golpe de corrida, combo aéreo de 3, mergulho, corrida com toque duplo, cancelar golpe em esquiva ou pulo. Cada classe faz esses golpes do seu jeito (Kael com espada e escudo, Lyra com flechas e chutes, Oren com magia).
+  - **Carga de mana:** segurar o ataque carrega a barra em 3 níveis; soltar usa a habilidade 1, 2 ou 3. A de nível 3 é a suprema, com a tela escurecida e o nome na faixa. Habilidades novas e ajustadas: Tempestade de Aço (Kael), Flecha Perfurante (Lyra).
+  - **Inimigos reagem:** são lançados, mantidos no ar, cravados no chão, quicam, ficam caídos e levantam. Dano pelas costas, experiência e ouro por inimigo. Espectros não ferem mais só por encostar.
+  - **Menus:** título, lobby com o herói em destaque, seleção de personagem (Brann aparece travado), mapa de fases com 5 fases planejadas e 3 dificuldades, lista de golpes, opções, pausa.
+  - **HUD gótica:** retrato em losango, vida com rastro, mana em 3 níveis, experiência, ícones de habilidade, combo com rank, barra de chefe em 3 camadas, dicas de comando no começo da fase.
+  - **Progressão:** nível e experiência por personagem, ouro, recordes por fase e dificuldade, jogo salvo.
+  - **Som:** 24 efeitos e 3 músicas provisórias feitos por síntese.
+  - **Fontes:** Cinzel e Alegreya Sans.
+  - Poses novas no boneco (tiro de arco, chute, rasteira, escudada, conjuração, carga, vitória) sem mudar o corpo base.
+  - Chefe com 1500 de vida. Tecla de pulo continua X, Espaço ou ↑.
+  - Mesmo link: https://claude.ai/artifact/DbFEAxdA1fhGAuE5BqX7fa

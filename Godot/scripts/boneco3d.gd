@@ -36,6 +36,8 @@ var passo := 0
 var t := 0.0           # segundos dentro do golpe
 var vento := 0.0
 var relogio := 0.0
+var alvo := {}         # estado "livre": ângulos das juntas pedidos por quem usa (S, E, W, S2, E2, cA, jA, cB, jB, inc, tor, sobe, cab)
+var taxa_livre := 30.0
 
 var J := {}
 var N := {}            # juntas por nome
@@ -189,6 +191,10 @@ func posar(dt: float) -> void:
 		A.inc = -0.1 if sub else 0.08; A.sobe = 0.0; taxa = 14.0
 	elif e == "dor":
 		A.inc = 0.35; A.tor = -0.2; A.S = 1.2; A.E = 0.9; A.S2 = 1.1; A.E2 = 0.6; A.cA = 0.1; A.cB = -0.5; A.jA = -0.5; A.cab = -0.25; taxa = 22.0
+	elif e == "livre":
+		A.cA = 0.5; A.jA = -0.4; A.cB = -0.5; A.jB = -0.2
+		for kk in alvo: A[kk] = alvo[kk]
+		taxa = taxa_livre
 	else:
 		var n := passo
 		var k := suave(t / ACERTO[n])

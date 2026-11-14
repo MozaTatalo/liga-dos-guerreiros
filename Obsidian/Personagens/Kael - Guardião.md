@@ -8,12 +8,12 @@ papel: Corpo a corpo, equilibrado
 Soldado da guarda de Arvália. Linha de frente, resistente, controla a luta com investidas e golpes que lançam inimigos ao ar.
 
 - **Arma (fixa da classe):** espada longa + escudo
-- **Atributos base:** Vida 240 · Mana 100 · Velocidade média
-- **Combo básico (Z ×3):** corte, corte, golpe pesado que empurra
-- **Habilidades:**
-  - **A — Investida de Escudo** (15 MP): avança derrubando inimigos, invulnerável durante a investida
-  - **S — Corte Giratório** (30 MP): giro contínuo que acerta várias vezes ao redor
-  - **D — Lâmina Ascendente** (20 MP): golpe para cima que lança inimigos ao ar
+- **Atributos base:** Vida 240 · Velocidade média
+- **Golpes (v0.6):** combo de 4 cortes (o último empurra longe) · ↓+Z corte ascendente que lança · corrida: escudada que atravessa · no ar: 3 cortes, o último crava no chão · mergulho com a espada e onda de choque ao pousar
+- **Habilidades (carga de mana):**
+  - **Nível 1 — Investida de Escudo:** avança invulnerável, derruba e empurra
+  - **Nível 2 — Lâmina Ascendente:** sobe cortando e lança todos para o alto
+  - **Nível 3 — Tempestade de Aço (suprema):** gira a lâmina puxando os inimigos e termina numa explosão
 - **Estilo:** fácil de aprender, bom para iniciar combos e proteger aliados.
 
 Ver [[Combate]] · [[Classes e Armas]]

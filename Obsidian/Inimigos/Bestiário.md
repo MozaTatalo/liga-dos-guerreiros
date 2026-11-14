@@ -3,6 +3,8 @@ tags: [inimigo]
 ---
 # Bestiário
 
+Desde a v0.6 todos os inimigos comuns podem ser **lançados, mantidos no ar, cravados e derrubados** (ver [[Combate]]). Cada um dá experiência e ouro (ver [[Progressão]]). Os espectros não ferem mais só por encostar.
+
 ## Lodo #inimigo
 Gosma de ectoplasma verde-azulada e translúcida, com olhos e ossinhos boiando dentro; treme e estica ao pular (3D), pula na direção do jogador. Fraco, aparece em grupo.
 ## Espectro (antigo Saqueador) #inimigo
@@ -12,7 +14,7 @@ Morcego 3D de asas de membrana roxa, olhos vermelhos e brasas caindo das asas. V
 ## Espectro Conjurador (antigo Atirador) #inimigo
 Espectro de manto roxo e olhos violeta. Mantém distância em cima das plataformas e dispara projéteis.
 ## Espectro Ancião (antigo Colosso de Pedra) #chefe
-Espectro gigante de manto cor de sangue seco e olhos âmbar, 1100 de vida, super armadura. Os golpes continuam os do Colosso.
+Espectro gigante de manto cor de sangue seco e olhos âmbar, 1500 de vida (barra em 3 camadas), super armadura. Os golpes continuam os do Colosso.
 - **Pisão:** salta e solta ondas de choque pelo chão para os dois lados
 - **Investida:** prepara e corre até a parede
 - **Arremesso de rochas:** joga pedras em arco

@@ -6,26 +6,32 @@
 3. Aperte **F5** para jogar.
 
 ## Controles
-Setas: mover · X ou Espaço: pular (2x) · ↓ + X: descer da plataforma · Z: atacar (combo de 3)
-C: esquiva · A / S / D: habilidades · P ou Esc: pausar · R: reiniciar · Enter: menu
+Setas: andar · → → (toque duplo): correr · X, Espaço ou ↑: pular (2x) · ↓ + X: descer da plataforma
+Z: atacar (combo de 4) · ↓ + Z: lançador · correndo + Z: golpe de corrida · no ar: Z (3 golpes) e ↓ + Z (mergulho)
+Segurar Z: carrega a mana (níveis 1, 2 e 3); soltar usa a habilidade · C: esquiva · P ou Esc: pausa
+Menus: setas escolhem, Z ou Enter confirma, C ou Esc volta.
 
 ## Organização
 | Arquivo | O que faz |
 |---|---|
-| `scripts/game_data.gd` | Números do jogo: classes, habilidades, inimigos, plataformas e inimigos da fase |
-| `scripts/hero.gd` | Personagem jogável: movimento, combo e habilidades de cada classe |
-| `scripts/enemy.gd` | Inimigos e chefe (IA e desenho) |
-| `scripts/game.gd` | A partida: lista de jogadores, golpes, projéteis, câmera, barreiras, portal |
+| `scripts/game_data.gd` | Números do jogo: classes, habilidades, inimigos, fases, dificuldades |
+| `scripts/hero.gd` | Personagem jogável: golpes de cada classe (tabela `GOLPES`), poses (`POSE`), carga de mana e habilidades |
+| `scripts/enemy.gd` | Inimigos e chefe: IA e reações (lançado, caído) |
+| `scripts/game.gd` | A partida: jogadores, golpes, projéteis, câmera, recompensas, pausa, resultado |
+| `scripts/main.gd`, `menus.gd` | Fluxo do jogo e todos os menus (título, lobby, personagens, fases, golpes, opções) |
+| `scripts/hud.gd` | Interface da fase, pausa, derrota e resultado |
+| `scripts/ui.gd` | Peças da interface gótica: fontes, painéis, barras, botões, ícones, teclas |
+| `scripts/save.gd` | Jogo salvo (`user://liga.json`) e opções |
+| `scripts/som.gd` | Efeitos e música (autoload `Som`) |
 | `scripts/player_input.gd` | De onde vêm os comandos de cada jogador (base para multijogador) |
-| `scripts/cenario3d.gd` | Mapa gótico 3D (ruínas de catedral) atrás da fase, com a câmera 3D presa à câmera do jogo |
-| `scripts/espectro3d.gd` | Espectros 3D (Saqueador, Atirador e chefe) |
-| `scripts/boneco3d.gd` | Boneco 3D (corpo base) vindo do `kael.js`: cel-shading, contorno e animação das juntas |
-| `scripts/hero_view.gd` | Mostra o boneco 3D dentro do jogo 2D (SubViewport transparente desenhado como sprite) |
-| `scenes/vitrine.tscn` | Cena de teste com os três bonecos grandes (abra e aperte F6) |
-| `assets/personagens/` | Modelos `.glb` exportados do three.js e a textura do rosto de olhos fechados |
-| `shaders/` | `toon.gdshader` (luz em degraus) e `contorno.gdshader` (casca invertida) |
-| `scripts/gfx.gd` | Arte provisória desenhada em código (Lodo, Morcego e efeitos) |
-| `scripts/hud.gd`, `title.gd`, `world.gd`, `fx_layer.gd` | Interface, título, cenário e efeitos |
+| `scripts/cenario3d.gd` | Mapa gótico 3D atrás da fase, com a câmera 3D presa à câmera do jogo |
+| `scripts/inimigo3d.gd`, `espectro3d.gd`, `lodo3d.gd`, `morcego3d.gd` | Corpos 3D dos inimigos |
+| `scripts/boneco3d.gd`, `hero_view.gd` | Boneco 3D do herói (corpo base) e como ele aparece no jogo 2D |
+| `scripts/gfx.gd`, `fx_layer.gd`, `world.gd` | Efeitos de golpe, projéteis, itens, barreiras e portal |
+| `assets/fontes/` | Cinzel e Alegreya Sans (licença aberta OFL, textos das licenças na pasta) |
+| `assets/som/` | Efeitos e músicas provisórios, gerados por `ferramentas/gerar_som.py` |
+| `ferramentas/publicar.sh` | Gera a versão web e prepara os arquivos para publicar |
+| `scenes/vitrine.tscn`, `vitrine_inimigos.tscn` | Cenas de teste dos bonecos e dos inimigos (F6) |
 
 ## Preparado para multijogador
 - O jogo trabalha com uma **lista de jogadores** (`game.players`). A IA mira o jogador mais próximo e a câmera segue o grupo.

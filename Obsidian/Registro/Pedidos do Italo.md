@@ -36,3 +36,5 @@ tags: [pedido, registro]
 - **2026-11-13** — Pediu para levar os bonecos novos (corpo masculino e feminino) para o jogo no Godot e para trazer o jogo para jogar direto no chat. #pedido #tecnologia
 - **2026-11-13** — Adorou os bonecos no jogo, mas achou o mapa feio. Pediu para trazer para o jogo o mapa e o inimigo (espectro) do teste gótico. #pedido #mapa #inimigo
 - **2026-11-13** — Gostou do mapa gótico. Pediu para deixar todos os personagens, inimigos e mapas bem mais bonitos, "com carinho", no estilo visual dos jogos de ação anime do gênero (só o estilo, nada copiado). #pedido #arte
+- **2026-11-14** — Achou que está ficando muito legal. Pediu uma análise completa de **tudo** que o jogo precisa para ser um jogo no gênero de Grand Chase e Elsword (visual, interface, tudo) e pediu para transformar o jogo, com liberdade para construir; só perguntar quando houver escolha entre alternativas. Ver [[Análise Completa do Jogo]]. #pedido #planejamento
+- **2026-11-14** — Escolheu o combate de **um botão com barra carregada** e o lobby em **menu com o herói em destaque**. #pedido #decisao

@@ -1,14 +1,15 @@
 extends Node
-## Raiz do jogo: alterna entre a tela de título e a partida.
+## Raiz do jogo: alterna entre os menus (título, lobby, seleções) e a partida.
 
-const TitleScript := preload("res://scripts/title.gd")
+const MenuScript := preload("res://scripts/menus.gd")
 const GameScript := preload("res://scripts/game.gd")
 
 var bg
 var current: Node
-var last_sel := 0
 
 func _ready() -> void:
+	if Save.d.is_empty(): Save.carregar()
+	Save.aplicar()
 	bg = Cenario3D.new()   # mapa gótico em 3D, atrás de tudo que é 2D
 	add_child(bg)
 	var moldura := CanvasLayer.new()   # cantos escurecidos por cima do jogo, por baixo da interface
@@ -20,31 +21,30 @@ func _ready() -> void:
 	r.material = m
 	moldura.add_child(r)
 	add_child(moldura)
-	show_title()
+	var direto := OS.get_environment("LIGA_TESTE")   # só para testes: "jogo" pula os menus
+	if direto.begins_with("jogo"): start_game()
+	else: show_menu(direto if direto != "" else "titulo")
 
 func _clear() -> void:
 	if current:
 		current.queue_free()
 		current = null
 
-func show_title() -> void:
+func show_menu(tela := "lobby") -> void:
 	_clear()
-	var tt = TitleScript.new()
-	tt.sel = last_sel
-	tt.bg = bg
-	tt.start_game.connect(func(idx): start_game.call_deferred(idx))
-	add_child(tt)
-	current = tt
+	var mn = MenuScript.new()
+	mn.bg = bg
+	mn.tela = tela
+	mn.jogar.connect(func(): start_game.call_deferred())
+	add_child(mn)
+	current = mn
 
-func start_game(indexes: Array) -> void:
+func start_game() -> void:
 	_clear()
-	last_sel = indexes[0]
 	var g = GameScript.new()
 	add_child(g)
-	g.setup(indexes, bg)
-	g.finished.connect(func(to_title, idx):
-		if to_title:
-			show_title.call_deferred()
-		else:
-			start_game.call_deferred(idx))
+	g.setup([int(Save.d.sel)], bg, int(Save.d.fase), int(Save.d.dif))
+	g.finished.connect(func(acao):
+		if acao == "repetir": start_game.call_deferred()
+		else: show_menu.call_deferred("lobby"))
 	current = g

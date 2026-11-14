@@ -12,3 +12,6 @@ Fluxo: **Início (acampamento) → Área 1 → Área 2 → Arena do chefe → Po
 3. **Área 2 — Colunas Partidas:** plataformas em várias alturas, Atiradores em cima, Morcegos e Saqueadores embaixo.
 4. **Arena do chefe:** a câmera trava, as barreiras fecham, o [[Bestiário#Espectro Ancião (antigo Colosso de Pedra)|Espectro Ancião]] surge.
 5. **Portal (fim):** aparece ao vencer o chefe. Tela de resultado com tempo, combo máximo, dano recebido e ranking.
+
+## v0.6
+É a fase 1 de 5 do primeiro mundo (Reino Caído de Arvália), escolhida na tela de fases, com três dificuldades. As próximas: Cripta dos Sussurros, Floresta Morta, Torre do Relógio e Catedral Afundada. Ver [[Roteiro de Versões]].

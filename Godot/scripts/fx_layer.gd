@@ -20,6 +20,12 @@ func _process(_d: float) -> void:
 func _draw() -> void:
 	for k in game.pickups:
 		var b := sin(k.t * 0.15) * 1.5
+		if k.kind == "ouro":
+			var pm := Vector2(k.x + 3, k.y + 3)
+			var lg := absf(cos(k.t * 0.2)) * 2.4 + 0.6
+			draw_colored_polygon(PackedVector2Array([pm + Vector2(0, -3), pm + Vector2(lg, 0), pm + Vector2(0, 3), pm + Vector2(-lg, 0)]), Color("#e8b93a"))
+			draw_colored_polygon(PackedVector2Array([pm + Vector2(0, -3), pm + Vector2(lg, 0), pm + Vector2(0, 0)]), Color("#fff0a8"))
+			continue
 		var c := Color("#ff4060") if k.kind == "hp" else Color("#4a8bff")
 		var p := Vector2(k.x + 4, k.y + 4 + b)
 		draw_colored_polygon(PackedVector2Array([p + Vector2(0, -5), p + Vector2(4, 0), p + Vector2(0, 5), p + Vector2(-4, 0)]), c)
@@ -31,13 +37,14 @@ func _draw() -> void:
 			f.draw.call(self, f.t / float(f.life))
 	draw_set_transform_matrix(Transform2D.IDENTITY)
 	for n in game.nums:
-		Gfx.text(self, n.v, n.x, n.y - n.t * 0.5, n.c, 12 if n.big else 9, 1, minf(1.0, (45 - n.t) / 15.0))
+		var sz: int = (13 if n.big else 9) + (3 if n.t < 4 else 0)
+		Ui.txt(self, n.v, n.x, n.y - n.t * 0.5, n.c, sz, 1, minf(1.0, (45 - n.t) / 15.0), Ui.neg())
 
 func _draw_luz() -> void:
 	for k in game.pickups:
 		var b := sin(k.t * 0.15) * 1.5
-		var c := Color("#ff4060") if k.kind == "hp" else Color("#4a8bff")
-		luz.draw_circle(Vector2(k.x + 4, k.y + 4 + b), 8, Color(c.r, c.g, c.b, 0.25 + 0.1 * sin(k.t * 0.2)))
+		var c := Color("#ff4060") if k.kind == "hp" else (Color("#4a8bff") if k.kind == "mp" else Color("#e8b93a"))
+		luz.draw_circle(Vector2(k.x + 4, k.y + 4 + b), 8 if k.kind != "ouro" else 4, Color(c.r, c.g, c.b, 0.25 + 0.1 * sin(k.t * 0.2)))
 	for q in game.parts:
 		var a: float = q.get("a", minf(1.0, q.life / 10.0))
 		var c := Gfx.col(q.c, a)
@@ -58,11 +65,14 @@ func _proj(o: Dictionary) -> void:
 	var y: float = o.y
 	match o.kind:
 		"arrow":
-			var f := signf(o.vx)
 			var c := Color(o.get("color", "#e8dcc0"))
-			draw_line(Vector2(x, y + 1.5), Vector2(x + o.w, y + 1.5), c.darkened(0.3), 1.0)
-			var ponta := Vector2(x + o.w, y + 1.5) if f > 0 else Vector2(x, y + 1.5)
-			draw_colored_polygon(PackedVector2Array([ponta + Vector2(f * 3, 0), ponta + Vector2(0, -1.8), ponta + Vector2(0, 1.8)]), Color("#e8eef8"))
+			var meio := Vector2(x + o.w / 2, y + o.h / 2)
+			var dv := Vector2(o.vx, o.vy).normalized()
+			var nv := Vector2(-dv.y, dv.x)
+			var comp: float = o.w / 2
+			draw_line(meio - dv * comp, meio + dv * comp, c.darkened(0.3), 1.0 if o.h < 4 else 1.8)
+			var ponta := meio + dv * comp
+			draw_colored_polygon(PackedVector2Array([ponta + dv * 3, ponta + nv * 1.8, ponta - nv * 1.8]), Color("#e8eef8"))
 		"rain":
 			draw_line(Vector2(x + 1.5, y), Vector2(x + 1.5, y + o.h), Color("#e8dcc0"), 1.0)
 		"rock":

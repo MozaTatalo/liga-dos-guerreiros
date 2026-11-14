@@ -7,7 +7,7 @@ extends Node2D
 const PX := 31.0        # pixels do jogo por unidade do modelo (o boneco tem ~1,5 de altura = ~46 px; herói em destaque, como nos jogos de ação anime)
 const CAMPO := 2.8      # tamanho da área renderizada, em unidades do modelo
 const CENTRO_Y := 0.85  # altura do centro da câmera
-const RES := 384        # resolução do SubViewport
+var RES := 384          # resolução do SubViewport (os menus pedem mais, para o herói grande)
 
 var boneco: Boneco3D
 var vp: SubViewport
@@ -17,7 +17,8 @@ var virado := 1:
 		virado = v
 		if spr: spr.flip_h = v < 0
 
-func _init(def: Dictionary) -> void:
+func _init(def: Dictionary, res := 384) -> void:
+	RES = res
 	var visual: Dictionary = MODELO.get(def.id, MODELO.guardiao)
 	boneco = Boneco3D.new(visual.nome, visual.corpo, visual.arma)
 
@@ -48,7 +49,7 @@ func _ready() -> void:
 	spr = Sprite2D.new()
 	spr.texture = vp.get_texture()
 	spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	spr.scale = Vector2.ONE * (CAMPO * PX / RES)
+	spr.scale = Vector2.ONE * (CAMPO * PX / float(RES))
 	spr.position = Vector2(0, -CENTRO_Y * PX)
 	spr.flip_h = virado < 0
 	add_child(spr)

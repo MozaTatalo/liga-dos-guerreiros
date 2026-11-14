@@ -1,23 +1,27 @@
 ---
 tags: [tecnologia, godot, multijogador]
-versao: 0.5
+versao: 0.6
 ---
 # Projeto Godot
 
 - **Pasta:** `B:\Antigravity\Liga Dos Guerreiros\Godot` (abrir `project.godot` no Godot 4.5, F5 para jogar)
-- **Versão:** 0.5 (2026-11-13): polimento visual (luz, efeitos, Lodo e Morcego em 3D). 0.4: mapa gótico 3D e espectros. 0.3 trouxe os heróis com os bonecos 3D do modelo base. 0.2 foi a migração completa do [[Protótipo]] HTML5
+- **Versão:** 0.6 (2026-11-14): combate de um botão com carga de mana, menus completos, HUD gótica, progressão, som. 0.5: polimento visual. 0.4: mapa gótico 3D e espectros. 0.3: heróis com os bonecos 3D. 0.2: migração do [[Protótipo]] HTML5
 - **Jogar no navegador:** https://claude.ai/artifact/DbFEAxdA1fhGAuE5BqX7fa
-- **Conteúdo:** [[Kael - Guardião]], [[Lyra - Caçadora]], [[Oren - Arcanista]] · [[Fase 1 - Ruínas de Arvália]] · [[Bestiário]] · controles em [[Combate]]
-- **Resolução:** 480×270 ampliada (pixel art nítida), janela 1440×810, 60 passos fixos por segundo.
+- **Conteúdo:** [[Kael - Guardião]], [[Lyra - Caçadora]], [[Oren - Arcanista]] · [[Fase 1 - Ruínas de Arvália]] · [[Bestiário]] · [[Combate]] · [[Progressão]] · [[Interface e Menus]] · [[Áudio]]
+- **Resolução:** base 480×270 ampliada com texto e formas nítidos, janela 1440×810, 60 passos fixos por segundo.
 
 ## Scripts
-- `game_data.gd`: todos os números (classes, habilidades, inimigos, fase). Balanceamento é aqui.
-- `hero.gd`: personagem, combo e habilidades. `enemy.gd`: inimigos e chefe.
-- `game.gd`: partida, lista de jogadores, golpes, projéteis, câmera, barreiras, portal.
+- `game_data.gd`: todos os números (classes, habilidades, inimigos, fases, dificuldades). Balanceamento é aqui.
+- `hero.gd`: personagem. Tabela `GOLPES` (duração, quadro do acerto, golpe seguinte, animação) e `POSE` (ângulos das juntas de cada pose) por classe; carga de mana; habilidades.
+- `enemy.gd`: inimigos e chefe, com as reações (lançado, quicando, caído, levantando).
+- `game.gd`: partida, lista de jogadores, golpes, projéteis, câmera, barreiras, portal, experiência, ouro, pausa e resultado.
+- `main.gd` e `menus.gd`: fluxo e menus (título, lobby, personagens, fases, golpes, opções).
+- `hud.gd`: interface da fase. `ui.gd`: peças da interface (fontes, painéis, barras, ícones, teclas).
+- `save.gd`: jogo salvo em `user://liga.json` e opções. `som.gd`: efeitos e música (autoload `Som`).
 - `player_input.gd`: comandos por jogador (`p1_`, `p2_`...).
-- `gfx.gd`: arte provisória em código (inimigos e cenário).
-- `boneco3d.gd`: boneco 3D vindo do `kael.js` (glTF). Troca os materiais por cel-shading e contorno e anima as juntas com a mesma lógica do `posar()`.
-- `hero_view.gd`: mostra o boneco no jogo 2D. SubViewport transparente com câmera ortográfica de lado (3/4), desenhado como sprite; espelha quando o herói vira.
+- `boneco3d.gd`: boneco 3D vindo do `kael.js` (glTF). Estado novo `livre`: quem usa o boneco passa os ângulos das juntas (é assim que os golpes novos são animados, sem mexer no corpo).
+- `hero_view.gd`: mostra o boneco no jogo 2D; os menus pedem resolução maior para o herói grande.
+- `ferramentas/gerar_som.py` (sons por síntese) e `ferramentas/publicar.sh` (versão web).
 
 ## Mapa e inimigos 3D #arte #mapa
 - `cenario3d.gd` (substitui o antigo `background.gd`): carrega `assets/cenario/catedral.glb`, junta as peças por material (poucas chamadas de desenho), aplica `shaders/cenario.gdshader` (luz em degraus, luz dos braseiros, névoa) e cria céu (`ceu.gdshader`), chamas e halos (`brilho.gdshader`), névoa (`nevoa.gdshader`) e cinzas.
@@ -38,8 +42,4 @@ versao: 0.5
 Estrutura pronta: lista de jogadores, IA mira o mais próximo, câmera segue o grupo, entrada separada por jogador. Ver [[Engine e Plataforma]].
 
 ## Próximos passos #pendente
-- Armadura e equipamentos nos bonecos do jogo ([[Equipamentos]])
-- Cabeça e rosto próprios da Lyra e do Oren
-- Cooperativo local para 2 jogadores
-- Sons e música
-- 4º personagem: [[Brann - Berserker]]
+Ver [[Roteiro de Versões]]. A seguir (v0.7): barra de Fúria, defesa do Kael, tutorial, fase 2 com salas e portais, introdução de chefe.

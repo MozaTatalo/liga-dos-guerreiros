@@ -29,12 +29,19 @@ var still := false
 var anim := 0.0
 var air := false
 var landed := false
+var imune := 0          # passos sem poder ser atingido (ao levantar)
+var juggle := 0         # golpes levados no ar; cada um levanta menos
+var otg := 0            # vezes que foi relançado do chão
+var quicou := false
+var tombo := 0.0        # inclinação do corpo 3D (lançado, caído)
+var peso := 1.0
 var esp: Inimigo3D   # corpo 3D do inimigo (espectro, lodo ou morcego), vive no Cenario3D
 
 func setup(g, k: String, px: float, s: int, plat_y = null) -> void:
 	game = g; kind = k; sec = s; x = px
 	var def: Dictionary = GameData.ENEMIES[k]
-	w = def.w; h = def.h; hp = def.hp; maxhp = def.hp; dmg = def.dmg; fly = def.fly
+	w = def.w; h = def.h; dmg = def.dmg; fly = def.fly; peso = def.peso
+	hp = roundf(def.hp * g.D.vida); maxhp = hp
 	boss = k == "boss"
 	still = plat_y != null
 	if plat_y != null:
@@ -59,6 +66,30 @@ func tick() -> void:
 	var alive := p != null
 	anim += 1
 	if flash_t > 0: flash_t -= 1
+	if imune > 0: imune -= 1
+	if state == "launched":
+		t += 1
+		var queda := vy
+		game.physics(self)
+		vx *= 0.985
+		game.apply_barriers(self)
+		if on_ground and t > 2:
+			game.dust(x + w / 2, y + h, 5)
+			if not quicou and queda > 4.2:
+				quicou = true; vy = -queda * 0.42; on_ground = false
+				Som.tocar("queda", 0.7)
+			else:
+				state = "down"; t = 0; vx *= 0.4
+				Som.tocar("queda", 0.5, 0.8)
+		return
+	if state == "down":
+		t += 1; vx *= 0.8
+		game.physics(self)
+		game.apply_barriers(self)
+		if t > 44:
+			state = "walk"; t = 0; imune = 14; atk_cd = maxi(atk_cd, 36); juggle = 0; otg = 0; quicou = false; hurt_t = 0
+			if fly: vy = -2.0
+		return
 	if not active:
 		if alive and dist < 260:
 			active = true
@@ -180,6 +211,50 @@ func boss_ai(p, dx: float, dist: float) -> void:
 			if t > (28 if enr else 48):
 				state = "idle"; t = 0
 
+## Reação a um golpe do jogador: atordoa, lança para o ar, mantém no ar (juggle) ou crava no chão.
+func apanhar(src: Dictionary, lado: int, pesado: bool) -> void:
+	var lanca: float = src.get("launch", 0.0)
+	var kbx: float = src.get("kbx", 1.0)
+	if boss:
+		vx += lado * kbx * 0.1
+		return
+	if state == "down":
+		if lanca >= 4.0 and otg < 1:
+			otg += 1; state = "launched"; t = 0; quicou = true
+			vy = -lanca * 0.6 / peso; vx = lado * kbx * 0.5; on_ground = false
+		else:
+			vx = lado * kbx * 0.4
+		return
+	if state == "launched":
+		juggle += 1
+		var k := maxf(0.3, 1.0 - juggle * 0.07)
+		if lanca < 0:
+			vy = -lanca; quicou = false
+		else:
+			vy = -maxf(lanca, 2.7) * k / peso
+		vx = lado * kbx * 0.7
+		on_ground = false; t = 0
+		return
+	if lanca >= 3.0 or (fly and pesado):
+		state = "launched"; t = 0; juggle = 0; otg = 0; quicou = false
+		vy = -maxf(lanca, 3.0) / peso; vx = lado * kbx; on_ground = false
+		return
+	vx = lado * kbx
+	if lanca > 0:
+		vy = -lanca; on_ground = false
+	hurt_t = 30 if pesado else 18
+	state = "walk"; t = 0
+
+## Só alguns inimigos machucam ao encostar (os que atacam com o corpo).
+func toca() -> bool:
+	if state == "launched" or state == "down" or state == "intro" or imune > 0:
+		return false
+	match kind:
+		"lodo": return not on_ground
+		"morcego": return true
+		"boss": return state != "recover"
+	return false
+
 func contact_damage() -> float:
 	return 20.0 if (boss and state == "charge") else dmg
 
@@ -210,14 +285,22 @@ func _sync_esp() -> void:
 		"morcego": prep = state == "dive" or state == "swoop"
 		"boss": prep = (state == "charge" and t < 35) or (state == "slam" and t < 20)
 	esp.preparo += ((1.0 if prep else 0.0) - esp.preparo) * 0.25
+	var alvo_t := 0.0
+	if state == "launched": alvo_t = clampf(0.5 + t * 0.06, 0.5, 1.25)
+	elif state == "down": alvo_t = 1.5
+	tombo += (alvo_t - tombo) * 0.3
 	esp.posar(1.0 / 60.0)
+	esp.rotation.z = tombo
 
 func _draw() -> void:
 	if esp:
 		_sync_esp()
 		if not boss and hp < maxhp:
-			Gfx.rect(self, roundf(x) - 1, roundf(y) - 14, w + 2, 3, "#000000")
-			Gfx.rect(self, roundf(x), roundf(y) - 13, w * (hp / maxhp), 1, "#ff4d4d")
+			var bw := maxf(w + 4, 18.0)
+			var bx := roundf(x + w / 2 - bw / 2)
+			Gfx.rect(self, bx - 0.6, roundf(y) - 14.6, bw + 1.2, 3.2, "#0b0914", 0.9)
+			Gfx.rect(self, bx, roundf(y) - 14, bw * (hp / maxhp), 2, "#e0413a")
+			Gfx.rect(self, bx, roundf(y) - 14, bw * (hp / maxhp), 0.7, "#ff9a8a")
 		return
 	var fl := flash_t > 0
 	var R := func(a, b, c, e, col): Gfx.rect(self, a, b, c, e, "#ffffff" if fl else col)

@@ -8,12 +8,12 @@ papel: Distância, mobilidade
 Batedora das florestas do norte. Mantém distância e pune de longe.
 
 - **Arma:** arco longo
-- **Atributos base:** Vida 170 · Mana 120 · Velocidade alta
-- **Combo básico (Z ×3):** duas flechas rápidas + flecha forte perfurante
-- **Habilidades:**
-  - **A — Rajada Tripla** (15 MP): três flechas em leque
-  - **S — Salto Evasivo** (20 MP): salto para trás invulnerável disparando uma flecha perfurante
-  - **D — Chuva de Flechas** (40 MP): flechas caem do céu sobre a área à frente
+- **Atributos base:** Vida 170 · Velocidade alta
+- **Golpes (v0.6):** duas flechas, chute que afasta e flecha perfurante · ↓+Z chute alto que lança (ela sobe junto) · corrida: rasteira que levanta · no ar: tiros em diagonal para baixo, o terceiro em leque · mergulho: leque de 5 flechas para baixo que a joga de volta para cima
+- **Habilidades (carga de mana):**
+  - **Nível 1 — Rajada Tripla:** três flechas em leque
+  - **Nível 2 — Flecha Perfurante:** salto para trás invulnerável e uma flecha enorme que atravessa tudo
+  - **Nível 3 — Chuva de Flechas (suprema):** 36 flechas caem numa área enorme
 - **Estilo:** controle de espaço, recuar e atirar.
 
 Ver [[Combate]] · [[Classes e Armas]]

@@ -19,3 +19,5 @@ Começa com 1 jogador, mas a estrutura já nasce preparada para vários jogadore
 - O jogo trabalha com uma **lista de jogadores**, não com "o jogador": inimigos miram o mais próximo, a câmera enquadra todos.
 - A lógica de combate roda em passos fixos de 60 por segundo, o que facilita sincronizar pela rede depois.
 - Próximos passos possíveis: cooperativo local (2 jogadores no mesmo PC) e depois online com o sistema de rede do Godot.
+
+Plano completo em [[Multijogador]].
