@@ -1,11 +1,11 @@
 ---
 tags: [tecnologia, godot, multijogador]
-versao: 0.6
+versao: 0.7
 ---
 # Projeto Godot
 
 - **Pasta:** `B:\Antigravity\Liga Dos Guerreiros\Godot` (abrir `project.godot` no Godot 4.5, F5 para jogar)
-- **Versão:** 0.6 (2026-11-14): combate de um botão com carga de mana, menus completos, HUD gótica, progressão, som. 0.5: polimento visual. 0.4: mapa gótico 3D e espectros. 0.3: heróis com os bonecos 3D. 0.2: migração do [[Protótipo]] HTML5
+- **Versão:** 0.7 parte 1 (2026-11-14): Fúria com corte de cena, defesa do Kael, teleporte do Oren, apresentação do chefe, golpes avisados, postura. 0.6 (2026-11-14): combate de um botão com carga de mana, menus completos, HUD gótica, progressão, som. 0.5: polimento visual. 0.4: mapa gótico 3D e espectros. 0.3: heróis com os bonecos 3D. 0.2: migração do [[Protótipo]] HTML5
 - **Jogar no navegador:** https://claude.ai/artifact/DbFEAxdA1fhGAuE5BqX7fa
 - **Conteúdo:** [[Kael - Guardião]], [[Lyra - Caçadora]], [[Oren - Arcanista]] · [[Fase 1 - Ruínas de Arvália]] · [[Bestiário]] · [[Combate]] · [[Progressão]] · [[Interface e Menus]] · [[Áudio]]
 - **Resolução:** base 480×270 ampliada com texto e formas nítidos, janela 1440×810, 60 passos fixos por segundo.
@@ -42,4 +42,4 @@ versao: 0.6
 Estrutura pronta: lista de jogadores, IA mira o mais próximo, câmera segue o grupo, entrada separada por jogador. Ver [[Engine e Plataforma]].
 
 ## Próximos passos #pendente
-Ver [[Roteiro de Versões]]. A seguir (v0.7): barra de Fúria, defesa do Kael, tutorial, fase 2 com salas e portais, introdução de chefe.
+Ver [[Roteiro de Versões]]. A seguir (resto da v0.7): tutorial, fase 2 com salas e portais, golpe de Fúria próprio por classe.

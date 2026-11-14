@@ -29,6 +29,8 @@ const POSE := {
 	"pilar_pos": {"S": 2.9, "E": 0.05, "W": -1.38, "S2": 2.6, "E2": 0.1, "inc": 0.18, "sobe": 0.05, "cA": 0.25, "cB": -0.3, "cab": -0.25},
 	"carga": {"S": 0.95, "E": 1.7, "W": -1.5, "S2": 0.9, "E2": 1.6, "inc": -0.16, "sobe": -0.12, "cA": 0.62, "jA": -0.7, "cB": -0.6, "jB": -0.35, "cab": 0.15},
 	"vitoria": {"S": 3.0, "E": 0.08, "W": -1.38, "S2": 0.5, "E2": 1.5, "inc": 0.1, "cA": 0.3, "cB": -0.3, "cab": -0.2, "tor": -0.2},
+	"furia": {"S": 2.95, "E": 0.1, "W": -1.38, "S2": 0.3, "E2": 1.2, "inc": 0.05, "tor": -0.3, "cab": 0.0, "cA": 0.45, "jA": -0.3, "cB": -0.4, "jB": -0.2},
+	"guarda": {"S2": 1.3, "E2": 1.25, "S": -0.45, "E": 0.55, "inc": -0.12, "sobe": -0.14, "cA": 0.55, "jA": -0.7, "cB": -0.5, "jB": -0.4, "tor": 0.25},
 	"giro": {"S": 1.55, "E": 0.02, "W": -1.38, "S2": -0.6, "E2": 0.8, "inc": -0.05, "cA": 0.4, "cB": -0.4, "sobe": -0.05},
 }
 
@@ -46,6 +48,7 @@ const GOLPES := {
 		"ar2": {"dur": 15, "hit": [4], "next": "ar3", "anim": 1},
 		"ar3": {"dur": 22, "hit": [7], "next": "", "anim": 2},
 		"mergulho": {"dur": 999, "hit": [3], "next": "", "anim": ["mergulho", "mergulho"]},
+		"contra": {"dur": 28, "hit": [4], "next": "", "anim": ["escudo_pos", "lanca_pos"]},
 	},
 	"cacadora": {
 		"g1": {"dur": 15, "hit": [5], "next": "g2", "anim": ["tiro_pre", "tiro_pos"]},
@@ -114,8 +117,12 @@ var dead := false
 var dead_t := 0
 var anim := 0
 var deny_t := 0
+var furia := 0.0           # barra de Fúria, 0 a 1
+var desperto := 0          # passos restantes do despertar
+var contra_t := 0          # janela do contra-ataque depois da defesa perfeita
 var subiu_t := 0           # efeito de subir de nível
 var view: HeroView
+var view_corte: HeroView   # o mesmo boneco em resolução alta, só para o corte de cena da Fúria
 
 func _exit_tree() -> void:
 	if game and game.bg is Cenario3D:
@@ -131,10 +138,16 @@ func setup(g, def: Dictionary, inp: PlayerInput, index := 0) -> void:
 	hp = maxhp; hp_rastro = hp
 	view = HeroView.new(d)
 	add_child(view)
+	view_corte = HeroView.new(d, 768)
+	add_child(view_corte)
+	view_corte.visible = false
+
+func _ready() -> void:
+	view_corte.vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
 
 func _atributos() -> void:
 	maxhp = roundf(d.hp * Save.mult_vida(lvl))
-	atk = Save.mult_dano(lvl)
+	atk = Save.mult_dano(lvl) * (1.3 if desperto > 0 else 1.0)
 
 func cx() -> float:
 	return x + w / 2.0
@@ -169,6 +182,41 @@ func ganhar_xp(n: int) -> void:
 
 func ganhar_mana(n: float) -> void:
 	mp = minf(GameData.MANA_MAX, mp + n)
+
+func ganhar_furia(n: float) -> void:
+	if desperto > 0 or furia >= 1.0: return
+	furia = minf(1.0, furia + n)
+	if furia >= 1.0:
+		Som.tocar("carga_nivel", 0.9, 0.6, 0.0)
+		game.callout(cx(), y - 24, "FÚRIA PRONTA!", GameData.FURIA[d.id].c)
+		game.anel(cx(), y + h / 2, GameData.FURIA[d.id].c, 40.0)
+
+## Solta a Fúria: corte de cena, golpe em toda a tela e despertar por alguns segundos.
+func despertar() -> void:
+	var f: Dictionary = GameData.FURIA[d.id]
+	state = "furia"; state_t = 0; mv = ""; queued = ""; skill = -1; charge = 0.0; charge_lv = 0
+	desperto = GameData.FURIA_DUR; furia = 1.0
+	invuln = maxi(invuln, 100); vx = 0.0; vy = minf(vy, 0.0)
+	_atributos()
+	var b := view_corte.boneco
+	b.estado = "livre"; b.alvo = POSE.furia; b.taxa_livre = 60.0
+	for i in 12: view_corte.animar(1.0 / 60.0)
+	view_corte.vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	game.corte_furia(self, f)
+
+func _golpe_furia() -> void:
+	var f: Dictionary = GameData.FURIA[d.id]
+	var c: String = f.c
+	game.spawn_hitbox({"owner": "p", "src": self, "skill": true, "dmg": 55 * atk, "kbx": 3.0, "launch": 7.0, "life": 6, "dir": 0, "heavy": true, "postura": 4.0,
+		"x": cx() - 240, "y": -60.0, "w": 480.0, "h": GameData.GROUND + 60})
+	for r in [50.0, 110.0, 190.0]:
+		game.anel(cx(), y + h / 2, c, r)
+	game.anel(cx(), y + h, "#ffffff", 150.0, 0.3)
+	game.sparks(cx(), y + h / 2, c, 50, 6); game.sparks(cx(), y + h / 2, "#ffffff", 20, 4)
+	var g = game
+	game.add_fx(12, func(cv, k): cv.draw_rect(Rect2(g.cam_x - 20, -40, GameData.W + 40, GameData.H + 80), Gfx.col("#ffffff", 0.55 * (1.0 - k))))
+	if game.tremor_ligado(): game.shake = 12.0
+	Som.tocar("explosao", 1.0, 0.7); Som.tocar("critico", 0.9, 0.8)
 
 # ---------------- Golpes ----------------
 func start_move(id: String) -> void:
@@ -210,7 +258,21 @@ func tick() -> void:
 		vx *= 0.8; state = "idle"
 		game.physics(self)
 		return
-	ganhar_mana(0.0009)
+	if game.intro_t > 0:
+		# apresentação do chefe: o herói espera
+		vx *= 0.8; invuln = maxi(invuln, 2)
+		if state != "idle": set_idle()
+		game.physics(self)
+		return
+	if contra_t > 0: contra_t -= 1
+	if desperto > 0:
+		desperto -= 1; furia = float(desperto) / GameData.FURIA_DUR
+		if anim % 5 == 0: game.ghost(self, GameData.FURIA[d.id].c)
+		if desperto == 0:
+			_atributos(); Som.tocar("volta", 0.6, 0.7)
+	elif furia >= 1.0 and input.tapped("skill1") and state != "hurt":
+		despertar()
+	ganhar_mana(0.0036 if desperto > 0 else 0.0009)
 	state_t += 1
 	hold_t = hold_t + 1 if input.held("attack") else 0
 	var L := input.held("left")
@@ -228,19 +290,40 @@ func tick() -> void:
 			_tick_golpe()
 		"charge":
 			_tick_carga(L, R)
+		"furia":
+			vx *= 0.7; vy = minf(vy, 0.4)
+			if state_t == 4: _golpe_furia()
+			if state_t > 30:
+				view_corte.vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
+				set_idle()
+		"guard":
+			vx *= 0.6
+			if L and not R: facing = -1
+			if R and not L: facing = 1
+			if input.tapped("attack"):
+				start_move("contra" if contra_t > 0 else "lanca")
+			elif input.tapped("jump"):
+				set_idle(); _pular()
+			elif input.tapped("dash") and dash_cd <= 0:
+				_esquivar()
+			elif not input.held("down") or not on_ground:
+				set_idle()
 		"skill":
 			if on_ground and not skill_moves(skill): vx *= 0.7
 			skill_update(skill, state_t)
 			if state == "skill" and state_t >= d.skills[skill].dur: set_idle()
 		"dash":
-			vx = 4.8 * facing
-			if state_t % 2 == 1: game.ghost(self)
+			if d.id == "arcanista":
+				vx = 0.8 * facing; vy = minf(vy, 0.3)
+			else:
+				vx = 4.8 * facing
+				if state_t % 2 == 1: game.ghost(self)
 			if input.tapped("attack") and state_t > 2 and on_ground:
 				start_move("corrida")
 			elif state_t > 12:
 				set_idle(); vx = 1.5 * facing; running = L or R
 		_:
-			var veloc: float = float(d.speed) * (1.65 if running else 1.0)
+			var veloc: float = float(d.speed) * (1.65 if running else 1.0) * (1.15 if desperto > 0 else 1.0)
 			var tv := ((1.0 if R else 0.0) - (1.0 if L else 0.0)) * veloc
 			vx += (tv - vx) * 0.3
 			if L and not R: facing = -1
@@ -260,6 +343,8 @@ func tick() -> void:
 				_esquivar()
 			elif hold_t >= CARGA_INI:
 				_comecar_carga()
+			elif d.id == "guardiao" and on_ground and input.held("down") and state != "jump":
+				state = "guard"; state_t = 0; running = false
 	var was_air := not on_ground
 	var vy_ant := vy
 	game.physics(self)
@@ -286,6 +371,17 @@ func _esquivar() -> void:
 	if input.held("left"): facing = -1
 	if input.held("right"): facing = 1
 	invuln = maxi(invuln, 14); vy = minf(vy, 0.0)
+	if d.id == "arcanista":
+		# teleporte: some e reaparece mais à frente, atravessando os inimigos
+		game.sparks(cx(), y + 12, "#b58cff", 14, 3); game.anel(cx(), y + 12, "#b58cff", 16.0)
+		game.ghost(self)
+		for i in 9:
+			x += facing * 9.0
+			game.apply_barriers(self)
+		invuln = maxi(invuln, 18); dash_cd = 46; state_t = 4; vx = 0.0
+		game.sparks(cx(), y + 12, "#e6d9ff", 14, 3); game.anel(cx(), y + 12, "#e6d9ff", 20.0)
+		Som.tocar("magia", 0.6, 1.8)
+		return
 	Som.tocar("esquiva")
 
 func _tick_golpe() -> void:
@@ -422,6 +518,12 @@ func _hit_guardiao(f: int) -> void:
 		"mergulho":
 			golpe(8, [-6, 4, 24, 26], {"kbx": 0.4, "launch": -4.0, "life": 40, "rehit": 8, "place": follow(-6, 4, 24, 26)})
 			Som.tocar("esquiva", 0.8, 0.7)
+		"contra":
+			invuln = maxi(invuln, 16); contra_t = 0
+			if on_ground: vx = f * 2.4
+			golpe(34, [-6, -14, 34, 40], {"kbx": 1.2, "launch": 7.6, "heavy": true, "postura": 3.0})
+			corte(30.0, 1, "#ffe9a8"); game.anel(cx() + f * 14, y + 8, "#ffe9a8", 30.0)
+			Som.tocar("golpe2", 1.0, 0.85); Som.tocar("critico", 0.7)
 
 func _pouso_mergulho(queda: float) -> void:
 	# onda de choque ao cair com a espada
@@ -641,6 +743,21 @@ func _draw() -> void:
 		for i in charge_lv:
 			var p := Vector2(-6 * (charge_lv - 1) / 2.0 + i * 6, -54)
 			Ui.losango(self, p, 2.6, Ui.TINTA); Ui.losango(self, p, 1.8, c)
+	if desperto > 0:
+		# aura do despertar: chamas subindo em volta do herói
+		var cf := Color(GameData.FURIA[d.id].c)
+		var fim := minf(1.0, desperto / 60.0)
+		for i in 7:
+			var fx_ := -10.0 + i * 3.4 + sin(anim * 0.21 + i * 1.7) * 1.5
+			var alt := 20.0 + 16.0 * absf(sin(anim * 0.13 + i * 2.1))
+			draw_rect(Rect2(fx_, -alt - 2, 2.2, alt), Color(cf.r, cf.g, cf.b, 0.16 * fim))
+			draw_rect(Rect2(fx_ + 0.6, -alt * 0.6 - 2, 1.0, alt * 0.6), Color(1, 1, 1, 0.18 * fim))
+		draw_set_transform(Vector2(0, -1), 0.0, Vector2(1, 0.32))
+		draw_arc(Vector2.ZERO, 13.0 + sin(anim * 0.2) * 1.5, 0, TAU, 28, Color(cf.r, cf.g, cf.b, 0.7 * fim), 1.4)
+		draw_set_transform_matrix(Transform2D.IDENTITY)
+	if state == "guard":
+		var cg := Color(1.0, 0.92, 0.6, 0.85) if state_t <= 10 else Color(0.75, 0.88, 1.0, 0.5)
+		draw_arc(Vector2(facing * 9.0, -22), 15.0, -1.1 if facing > 0 else PI - 1.1, 1.1 if facing > 0 else PI + 1.1, 14, cg, 1.6)
 	if subiu_t > 0:
 		var a := subiu_t / 90.0
 		draw_rect(Rect2(-9, -60, 18, 60), Color(1, 0.85, 0.3, 0.22 * a))
@@ -648,7 +765,8 @@ func _draw() -> void:
 func sync_node() -> void:
 	position = Vector2(roundf(cx()), roundf(y + h))
 	view.rotation = (-PI / 2 * clampf(dead_t / 20.0, 0, 1) * facing) if dead else 0.0
-	view.visible = dead or not (invuln > 0 and state in ["idle", "run", "jump", "hurt"] and invuln % 6 < 3)
+	view.visible = dead or not (invuln > 0 and state in ["idle", "run", "jump", "hurt"] and invuln % 6 < 3 and game.intro_t <= 0)
+	if d.id == "arcanista" and state == "dash" and state_t < 8: view.visible = false
 	_animar_boneco()
 	if game and game.bg is Cenario3D:
 		game.bg.sombra(self, cx(), y + h, 22.0)
@@ -684,6 +802,10 @@ func _animar_boneco() -> void:
 			b.taxa_livre = 26.0 if state_t < hit else 55.0
 	elif state == "charge":
 		b.estado = "livre"; b.alvo = POSE.carga; b.taxa_livre = 14.0
+	elif state == "furia":
+		b.estado = "livre"; b.alvo = POSE.furia; b.taxa_livre = 22.0
+	elif state == "guard":
+		b.estado = "livre"; b.alvo = POSE.guarda; b.taxa_livre = 40.0
 	elif state == "skill":
 		b.estado = "livre"; b.taxa_livre = 50.0
 		if d.id == "guardiao":

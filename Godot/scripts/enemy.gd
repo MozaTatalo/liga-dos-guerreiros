@@ -35,6 +35,7 @@ var otg := 0            # vezes que foi relançado do chão
 var quicou := false
 var tombo := 0.0        # inclinação do corpo 3D (lançado, caído)
 var peso := 1.0
+var postura := 100.0    # só o chefe: golpes pesados gastam; em zero ele fica atordoado
 var esp: Inimigo3D   # corpo 3D do inimigo (espectro, lodo ou morcego), vive no Cenario3D
 
 func setup(g, k: String, px: float, s: int, plat_y = null) -> void:
@@ -117,7 +118,7 @@ func tick() -> void:
 			if state == "windup":
 				vx = 0
 				if t >= 22:
-					game.spawn_hitbox({"owner": "e", "dmg": 12, "kbx": 3.0, "kby": 2.0, "life": 6, "dir": dir,
+					game.spawn_hitbox({"owner": "e", "de": self, "dmg": 12, "kbx": 3.0, "kby": 2.0, "life": 6, "dir": dir,
 						"x": (x + w) if dir > 0 else (x - 24), "y": y + 8, "w": 24.0, "h": 8.0})
 					state = "recover"; t = 0
 			elif state == "recover":
@@ -142,7 +143,7 @@ func tick() -> void:
 				vx = 0
 				if t >= 24:
 					game.spawn_proj({"owner": "e", "x": x + w / 2 + dir * 6, "y": y + 9, "w": 9.0, "h": 3.0, "vx": 2.8 * dir, "vy": 0.0,
-						"dmg": 9, "kbx": 2.0, "kby": 1.0, "life": 160, "kind": "ebolt", "no_ground": true})
+						"dmg": 9, "kbx": 2.0, "kby": 1.0, "life": 160, "kind": "ebolt", "no_ground": true, "de": self})
 					state = "walk"; t = 0; atk_cd = 110
 			else:
 				if still:
@@ -159,7 +160,34 @@ func tick() -> void:
 func boss_ai(p, dx: float, dist: float) -> void:
 	var enr := hp < maxhp * 0.5
 	var sp := 1.3 if enr else 1.0
+	var meio := x + w / 2
+	if state != "quebrado": postura = minf(100.0, postura + 0.035)
 	match state:
+		"quebrado":
+			vx *= 0.8
+			if t % 20 == 0: game.sparks(meio, y + 6, "#ffe9a8", 4, 1.5)
+			if t > 210:
+				postura = 100.0; state = "idle"; t = 0
+		"pilares":
+			vx = 0
+			if (t == 12 or t == 38 or t == 64) and p:
+				var tx: float = clampf(p.cx() + p.vx * 14.0, GameData.ARENA_L + 20, GameData.ARENA_R - 20)
+				game.aviso(tx, 40.0, 40)
+				var g = game
+				var eu := self
+				g.timers.append({"t": 40, "fn": func():
+					if g.boss_dead or not is_instance_valid(eu): return
+					g.spawn_hitbox({"owner": "e", "de": eu, "dmg": 16, "kbx": 1.5, "kby": 5.5, "life": 8, "x": tx - 15, "y": GameData.GROUND - 78, "w": 30.0, "h": 78.0})
+					g.add_fx(20, func(cv, k):
+						var a: float = 1.0 - k
+						var alt: float = 84.0 * minf(1.0, k * 5.0)
+						cv.draw_rect(Rect2(tx - 15 * a, GameData.GROUND - alt, 30 * a, alt), Color(0.62, 0.3, 1.0, 0.5 * a))
+						cv.draw_rect(Rect2(tx - 7 * a, GameData.GROUND - alt, 14 * a, alt), Color(0.95, 0.85, 1.0, 0.85 * a)))
+					g.sparks(tx, GameData.GROUND - 20, "#b58cff", 14, 4); g.dust(tx, GameData.GROUND, 6)
+					if g.tremor_ligado(): g.shake = maxf(g.shake, 4)
+					Som.tocar("explosao", 0.7, 1.5)})
+			if t > 110:
+				state = "recover"; t = 0
 		"intro":
 			vx = 0
 			if on_ground and not landed:
@@ -171,26 +199,32 @@ func boss_ai(p, dx: float, dist: float) -> void:
 			vx = 0.5 * dir * sp
 			if t > (40 if enr else 70):
 				var r := randf()
-				if dist > 150:
-					state = "charge" if r < 0.5 else "rocks"
+				if enr and r < 0.28:
+					state = "pilares"
+				elif dist > 150:
+					state = "charge" if r < 0.6 else "rocks"
 				else:
-					state = "slam" if r < 0.45 else ("charge" if r < 0.75 else "rocks")
+					state = "slam" if r < 0.5 else ("charge" if r < 0.8 else "rocks")
 				t = 0
 		"slam":
 			if t < 20:
 				vx = 0
 			elif t == 20:
 				vy = -7; vx = clampf(dx / 40.0, -3, 3); air = true
+				game.aviso(clampf(meio + vx * 46.0, GameData.ARENA_L + 20, GameData.ARENA_R - 20), 76.0, 46)
 			elif on_ground and air and t > 24:
 				air = false; game.shake = 9.0; game.dust(x + w / 2, GameData.GROUND, 14); vx = 0
 				for s in [-1, 1]:
 					game.spawn_proj({"owner": "e", "x": x + w / 2 - 5, "y": GameData.GROUND - 14, "w": 10.0, "h": 14.0, "vx": 3.3 * s * sp, "vy": 0.0,
-						"dmg": 15, "kbx": 3.0, "kby": 4.0, "life": 80, "kind": "wave", "no_ground": true})
+						"dmg": 15, "kbx": 3.0, "kby": 4.0, "life": 80, "kind": "wave", "no_ground": true, "de": self})
 				state = "recover"; t = 0
 		"charge":
 			if t < 35:
 				vx = 0
 				if dx != 0: dir = 1 if dx > 0 else -1
+				if t == 6:
+					var borda := GameData.ARENA_R if dir > 0 else GameData.ARENA_L
+					game.aviso((meio + borda) / 2.0, absf(borda - meio), 30, true)
 			elif t < 100:
 				vx = 4.3 * dir * sp
 				if t % 3 == 0: game.dust(x + w / 2, GameData.GROUND, 2)
@@ -202,8 +236,13 @@ func boss_ai(p, dx: float, dist: float) -> void:
 			vx = 0
 			if (t == 20 or t == 36 or (enr and t == 52)) and p:
 				var ddx: float = p.cx() - (x + w / 2) + randf_range(-20, 20)
+				# onde a pedra vai cair
+				var py := y; var pvy := -6.0; var n := 0
+				while py + 10 < GameData.GROUND and n < 200:
+					pvy += 0.3; py += pvy; n += 1
+				game.aviso(meio + clampf(ddx / 40.0, -5, 5) * n, 26.0, n)
 				game.spawn_proj({"owner": "e", "x": x + w / 2 - 5, "y": y, "w": 10.0, "h": 10.0, "vx": clampf(ddx / 40.0, -5, 5), "vy": -6.0, "grav": 0.3,
-					"dmg": 12, "kbx": 2.0, "kby": 2.0, "life": 200, "kind": "rock", "on_end": func(o): game.dust(o.x + 5, GameData.GROUND, 6)})
+					"dmg": 12, "kbx": 2.0, "kby": 2.0, "life": 200, "kind": "rock", "de": self, "on_end": func(o): game.dust(o.x + 5, GameData.GROUND, 6)})
 			if t > (66 if enr else 56):
 				state = "recover"; t = 0
 		"recover":
@@ -217,6 +256,8 @@ func apanhar(src: Dictionary, lado: int, pesado: bool) -> void:
 	var kbx: float = src.get("kbx", 1.0)
 	if boss:
 		vx += lado * kbx * 0.1
+		if state != "quebrado" and state != "intro":
+			perder_postura((7.0 if pesado else 2.2) * float(src.get("postura", 1.0)))
 		return
 	if state == "down":
 		if lanca >= 4.0 and otg < 1:
@@ -245,6 +286,19 @@ func apanhar(src: Dictionary, lado: int, pesado: bool) -> void:
 	hurt_t = 30 if pesado else 18
 	state = "walk"; t = 0
 
+## Quebra de postura do chefe: fica atordoado e leva mais dano por alguns segundos.
+func perder_postura(n: float) -> void:
+	if state == "quebrado" or state == "intro": return
+	postura -= n
+	if postura > 0: return
+	postura = 0.0; state = "quebrado"; t = 0; vx = 0.0; air = false
+	game.hitstop = maxi(game.hitstop, 14)
+	if game.tremor_ligado(): game.shake = maxf(game.shake, 8)
+	game.callout(x + w / 2, y - 12, "POSTURA QUEBRADA!", "#ffe9a8")
+	game.anel(x + w / 2, y + h / 2, "#ffe9a8", 60.0)
+	game.sparks(x + w / 2, y + h / 2, "#ffe9a8", 30, 5)
+	Som.tocar("critico", 1.0, 0.7); Som.tocar("queda", 0.9, 0.7)
+
 ## Só alguns inimigos machucam ao encostar (os que atacam com o corpo).
 func toca() -> bool:
 	if state == "launched" or state == "down" or state == "intro" or imune > 0:
@@ -252,7 +306,7 @@ func toca() -> bool:
 	match kind:
 		"lodo": return not on_ground
 		"morcego": return true
-		"boss": return state != "recover"
+		"boss": return state != "recover" and state != "quebrado"
 	return false
 
 func contact_damage() -> float:
@@ -288,6 +342,7 @@ func _sync_esp() -> void:
 	var alvo_t := 0.0
 	if state == "launched": alvo_t = clampf(0.5 + t * 0.06, 0.5, 1.25)
 	elif state == "down": alvo_t = 1.5
+	elif state == "quebrado": alvo_t = 0.32 + sin(t * 0.08) * 0.04
 	tombo += (alvo_t - tombo) * 0.3
 	esp.posar(1.0 / 60.0)
 	esp.rotation.z = tombo

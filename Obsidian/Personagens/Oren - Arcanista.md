@@ -17,3 +17,7 @@ Estudioso das pedras rúnicas. Frágil, mas com o maior dano em área.
 - **Estilo:** posicionamento e gerenciamento de mana.
 
 Ver [[Combate]] · [[Classes e Armas]]
+
+## Movimentos próprios (v0.7) #combate
+- **Teleporte:** no lugar da esquiva (C). Some e reaparece à frente, atravessando inimigos. Regras em [[Combate]].
+- **Fúria:** Eclipse Arcano (violeta).

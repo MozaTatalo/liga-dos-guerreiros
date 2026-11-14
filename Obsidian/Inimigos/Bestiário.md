@@ -19,3 +19,7 @@ Espectro gigante de manto cor de sangue seco e olhos âmbar, 1500 de vida (barra
 - **Investida:** prepara e corre até a parede
 - **Arremesso de rochas:** joga pedras em arco
 - Abaixo de 50% de vida fica mais rápido e agressivo, e os olhos ficam vermelhos.
+- **Pilares sombrios (v0.7, só abaixo de 50%):** três pilares roxos sobem do chão, um de cada vez, onde o jogador está indo.
+- **Apresentação (v0.7):** ao entrar na arena, faixas de cinema, o chefe cai do alto e aparece "Guardião das Ruínas · Espectro Ancião". O herói espera 2,5 s.
+- **Golpes avisados (v0.7):** área vermelha no chão mostra onde o pisão vai cair, por onde a investida passa, onde cada rocha cai e onde os pilares sobem.
+- **Postura (v0.7):** ver [[Combate]]. Quebrada, ele fica atordoado e leva mais dano.

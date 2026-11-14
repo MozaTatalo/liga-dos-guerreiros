@@ -10,6 +10,22 @@ func _draw() -> void:
 	# tela escurecida durante a habilidade suprema (fica atrás dos personagens)
 	if game.dim_t > 0:
 		Gfx.rect(self, cx - 20, -40, W + 40, GameData.H + 80, "#05030c", 0.62 * minf(1.0, game.dim_t / 14.0))
+	# avisos de golpe no chão
+	for av in game.avisos:
+		var k: float = clampf(float(av.t) / av.dur, 0.0, 1.0)
+		var a: float = 1.0 if av.t < av.dur else maxf(0.0, 1.0 - (av.t - av.dur) / 6.0)
+		var pisca: float = 0.75 + 0.25 * sin(av.t * 0.5)
+		if av.faixa:
+			var r := Rect2(av.x - av.w / 2, GameData.GROUND - 5, av.w, 7)
+			draw_rect(r, Color(1.0, 0.16, 0.12, 0.2 * a * pisca))
+			draw_rect(Rect2(r.position, Vector2(r.size.x, 1.2)), Color(1.0, 0.4, 0.3, 0.8 * a * pisca))
+			draw_rect(Rect2(r.position + Vector2(0, 5.8), Vector2(r.size.x, 1.2)), Color(1.0, 0.4, 0.3, 0.8 * a * pisca))
+		else:
+			draw_set_transform(Vector2(av.x, GameData.GROUND - 1), 0.0, Vector2(1, 0.22))
+			draw_circle(Vector2.ZERO, av.w / 2, Color(1.0, 0.16, 0.12, 0.26 * a))
+			draw_circle(Vector2.ZERO, av.w / 2 * k, Color(1.0, 0.25, 0.15, 0.4 * a * pisca))
+			draw_arc(Vector2.ZERO, av.w / 2, 0, TAU, 36, Color(1.0, 0.45, 0.35, 0.95 * a), 1.4)
+			draw_set_transform_matrix(Transform2D.IDENTITY)
 	# placa de início
 	Gfx.rect(self, 30, 196, 3, 34, "#3a2a20"); Gfx.rect(self, 18, 198, 28, 12, "#4a3528")
 	Gfx.text(self, "INÍCIO", 32, 204, "#e8d9b0", 5, 1)

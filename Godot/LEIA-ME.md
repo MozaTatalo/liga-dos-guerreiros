@@ -8,7 +8,7 @@
 ## Controles
 Setas: andar · → → (toque duplo): correr · X, Espaço ou ↑: pular (2x) · ↓ + X: descer da plataforma
 Z: atacar (combo de 4) · ↓ + Z: lançador · correndo + Z: golpe de corrida · no ar: Z (3 golpes) e ↓ + Z (mergulho)
-Segurar Z: carrega a mana (níveis 1, 2 e 3); soltar usa a habilidade · C: esquiva · P ou Esc: pausa
+Segurar Z: carrega a mana (níveis 1, 2 e 3); soltar usa a habilidade · C: esquiva (Oren: teleporte) · A: Fúria com a barra cheia · segurar ↓: Kael defende · P ou Esc: pausa
 Menus: setas escolhem, Z ou Enter confirma, C ou Esc volta.
 
 ## Organização

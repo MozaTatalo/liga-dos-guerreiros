@@ -59,3 +59,7 @@ O Kael base veste só um **macacão liso de uma cor só**, de manga curta e shor
 **Cabeça sem cabelo (2026-11-13, rascunho 11):** crânio com a parte de trás menor, orelhas modeladas e pele uniforme. A vitrine tem o botão **Cabelo** para conferir. Regra: a cabeça tem de estar correta mesmo careca.
 
 **Cabelo (2026-11-13, rascunho 17):** refeito em mechas finas e camadas, com fios desenhados na textura e contorno fino, para parecer cabelo e não um bloco. Mesmo penteado: franja, laterais emoldurando o rosto, mecha tingida do lado da espada e rabo de cavalo baixo com fita.
+
+## Movimentos próprios (v0.7) #combate
+- **Defesa:** segurar ↓ levanta o escudo. Defesa perfeita abre o **contra-ataque** com Z. Regras em [[Combate]].
+- **Fúria:** Juramento da Rosácea (dourado).

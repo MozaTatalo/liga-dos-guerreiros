@@ -6,7 +6,7 @@ atualizado: 2026-11-14
 
 Ordem de construção que sai da [[Análise Completa do Jogo]]. Cada versão sai jogável no mesmo link do navegador.
 
-## v0.6 — Combate de verdade e fluxo de menus (em construção)
+## v0.6 — Combate de verdade e fluxo de menus (pronta, 2026-11-14)
 - Combate: ataque leve e pesado, combos no ar, lançador, mergulho, ataque correndo, corrida, inimigos lançados e derrubados, rank de combo
 - Menus: título, menu principal, seleção de personagem, seleção de fase, pausa com lista de golpes, opções de volume
 - HUD nova em estilo gótico, ícones de habilidade, barra de chefe em camadas
@@ -14,12 +14,16 @@ Ordem de construção que sai da [[Análise Completa do Jogo]]. Cada versão sai
 - Som: efeitos e música provisória
 - Fonte serifada própria
 
-## v0.7 — Profundidade
-- Barra de Fúria e habilidade suprema com corte de câmera
-- Defesa do Kael, teleporte do Oren
+## v0.7 — Profundidade (em construção)
+Primeira parte, pronta em 2026-11-14:
+- ✅ Barra de Fúria e habilidade suprema com corte de cena
+- ✅ Defesa do Kael com defesa perfeita e contra-ataque, teleporte do Oren
+- ✅ Introdução de chefe, golpes avisados no chão, quebra de postura, golpe novo do chefe (pilares)
+
+Falta:
 - Fase de treino (tutorial)
 - Fase 2 (Cripta dos Sussurros) com salas ligadas por portais, 3 inimigos novos e chefe novo
-- Introdução de chefe, golpes avisados no chão
+- Golpe de Fúria próprio para cada classe
 
 ## v0.8 — Equipamentos e habilidades
 - Itens que caem, raridade, inventário e tela de equipar

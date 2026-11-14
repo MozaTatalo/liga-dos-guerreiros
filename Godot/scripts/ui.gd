@@ -194,7 +194,9 @@ const AJUDA := [
 	[["X", "Z"], "No ar: combo aéreo de 3 golpes"],
 	[["X", "baixo", "Z"], "No ar: mergulho"],
 	[["segure", "Z"], "Carrega a mana. Solte no nível 1, 2 ou 3"],
-	[["C"], "Esquiva (atravessa golpes)"],
+	[["A"], "Fúria: com a barra cheia, explode e desperta"],
+	[["baixo"], "Kael: defender. No tempo certo, Z contra-ataca"],
+	[["C"], "Esquiva (atravessa golpes). Oren: teleporte"],
 	[["X"], "Pular (duas vezes). Com ↓, desce da plataforma"],
 	[["P"], "Pausar"],
 ]

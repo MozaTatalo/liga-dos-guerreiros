@@ -11,16 +11,20 @@ func _ready() -> void:
 func _draw() -> void:
 	var W := GameData.W
 	var H := GameData.H
+	var chefe: Enemy = null
+	for e in game.enemies:
+		if e.boss: chefe = e
+	if game.intro_t > 0:
+		_intro_chefe()
+		return
 	for i in game.players.size():
 		_painel(game.players[i], 6 + i * 170.0)
 	_habilidades(game.players[0])
 	_topo_direita()
 	_combo()
-	var chefe: Enemy = null
-	for e in game.enemies:
-		if e.boss: chefe = e
 	if chefe: _chefe(chefe)
 	else: _progresso()
+	if not game.corte.is_empty(): _corte()
 	if game.msg_t > 0 and game.result == null:
 		var a := minf(1.0, game.msg_t / 20.0)
 		Ui.filete(self, W / 2 - 110, 62, 220, a * 0.8)
@@ -115,10 +119,109 @@ func _habilidades(p: Hero) -> void:
 		if not liberado:
 			draw_rect(r, Color(0.02, 0.01, 0.05, 0.55))
 			Ui.txt(self, "Nv %d" % (i + 1), r.get_center().x, r.get_center().y, Ui.CLARO, 6, 1, 1.0, Ui.neg())
-	var hx := Ui.teclas(self, ["segure", "Z"], 94, H - 14, 5)
+	_furia(p, 10.0 + 3 * 27.0 + 4.0, y)
+	var hx := Ui.teclas(self, ["segure", "Z"], 126, H - 14, 5)
 	Ui.txt(self, "carrega a habilidade", hx + 1, H - 14, Ui.APAGADO, 5)
-	Ui.teclas(self, ["P"], 94, H - 23, 5)
-	Ui.txt(self, "golpes e pausa", 105, H - 23, Ui.APAGADO, 5)
+	Ui.teclas(self, ["P"], 126, H - 23, 5)
+	Ui.txt(self, "golpes e pausa", 137, H - 23, Ui.APAGADO, 5)
+
+## Barra de Fúria: um losango que enche de baixo para cima. Cheio, pulsa e mostra a tecla.
+func _furia(p: Hero, x: float, y: float) -> void:
+	var f: Dictionary = GameData.FURIA[p.d.id]
+	var cf := Color(f.c)
+	var c := Vector2(x + 12, y + 11)
+	var cheia: bool = p.furia >= 1.0 and p.desperto == 0
+	var ativa: bool = p.desperto > 0
+	var R := 13.0 + (sin(game.t * 0.2) * 0.8 if (cheia or ativa) else 0.0)
+	Ui.losango(self, c, R + 1.6, Ui.TINTA)
+	Ui.losango(self, c, R + 0.6, Color.WHITE if cheia else (cf if ativa else Ui.OURO_ESC))
+	Ui.losango(self, c, R - 0.6, Color("#140d22"))
+	# enchimento recortado no losango
+	var k := clampf(p.furia, 0.0, 1.0)
+	if k > 0.0:
+		var r := R - 1.2
+		var yc := c.y + r - 2.0 * r * k          # altura do nível
+		var meia := r - absf(yc - c.y)           # meia largura do losango nessa altura
+		var pts := PackedVector2Array([Vector2(c.x - meia, yc), Vector2(c.x + meia, yc)])
+		if yc < c.y: pts.append_array([Vector2(c.x + r, c.y), Vector2(c.x, c.y + r), Vector2(c.x - r, c.y)])
+		else: pts.append(Vector2(c.x, c.y + r))
+		var base := Color("#ff5a2a").lerp(cf, k)
+		draw_colored_polygon(pts, Color(base.r, base.g, base.b, 0.95 if (cheia or ativa) else 0.75))
+		draw_line(Vector2(c.x - meia, yc), Vector2(c.x + meia, yc), Color(1, 1, 1, 0.7), 0.8)
+	# chama no centro
+	var cc := Color.WHITE if (cheia or ativa) else Color(1, 1, 1, 0.35)
+	draw_colored_polygon(PackedVector2Array([c + Vector2(0, -6.5), c + Vector2(3.6, 0.5), c + Vector2(2.2, 4.5), c + Vector2(-2.2, 4.5), c + Vector2(-3.6, 0.5)]), Color(cc.r, cc.g, cc.b, cc.a * 0.9))
+	draw_colored_polygon(PackedVector2Array([c + Vector2(0, -1.5), c + Vector2(1.6, 2.0), c + Vector2(0, 4.2), c + Vector2(-1.6, 2.0)]), Color("#140d22", 0.8))
+	if cheia:
+		Ui.teclas(self, ["A"], c.x - 4.5, y - 7.5, 6)
+	elif ativa:
+		Ui.txt(self, "%d" % ceili(p.desperto / 60.0), c.x, y - 10, cf, 7, 1, 1.0, Ui.neg())
+	Ui.txt(self, "FÚRIA", c.x, y + 27.5, cf if (cheia or ativa) else Ui.APAGADO, 4, 1, 1.0, Ui.tit(), 1)
+
+## Corte de cena da Fúria: faixa inclinada com o herói de perto e o nome do golpe.
+func _corte() -> void:
+	var W := GameData.W
+	var k: Dictionary = game.corte
+	var t: float = k.t
+	var a := clampf(t / 5.0, 0, 1) * clampf((52 - t) / 8.0, 0, 1)
+	var abre := 1.0 - pow(1.0 - clampf(t / 8.0, 0, 1), 3.0)
+	var c := Color(k.c)
+	var y0 := 70.0
+	var alt := 96.0 * abre
+	var inc := 26.0
+	var topo := y0 + (96.0 - alt) / 2
+	var faixa := PackedVector2Array([Vector2(0, topo + inc), Vector2(W, topo), Vector2(W, topo + alt), Vector2(0, topo + alt + inc)])
+	draw_colored_polygon(faixa, Color(0.03, 0.02, 0.08, 0.92 * a))
+	var esc := c.darkened(0.55)
+	draw_polygon(faixa, PackedColorArray([Color(esc.r, esc.g, esc.b, 0.85 * a), Color(esc.r, esc.g, esc.b, 0.15 * a), Color(c.r, c.g, c.b, 0.25 * a), Color(c.r, c.g, c.b, 0.55 * a)]))
+	# riscos de velocidade
+	for i in 9:
+		var ly := topo + 8 + i * 10.0
+		var lx := fmod(i * 97.0 + t * (18.0 + i * 3.0), W + 160.0) - 80.0
+		var dy := inc * (1.0 - lx / W)
+		draw_line(Vector2(lx, ly + dy), Vector2(lx + 70, ly + dy - 70.0 * inc / W), Color(1, 1, 1, 0.22 * a), 0.8)
+	draw_polyline(PackedVector2Array([faixa[0], faixa[1]]), Color(c.r, c.g, c.b, a), 1.4)
+	draw_polyline(PackedVector2Array([faixa[3], faixa[2]]), Color(c.r, c.g, c.b, a), 1.4)
+	# o herói de perto (recorte do boneco 3D ao vivo)
+	var p: Hero = k.p
+	if is_instance_valid(p) and p.view_corte and p.view_corte.vp and alt > 30:
+		var chega := 1.0 - pow(1.0 - clampf(t / 12.0, 0, 1), 3.0)
+		var hx := -60.0 + chega * 128.0 + t * 0.5
+		var hy := topo + inc * (1.0 - hx / W) + alt / 2
+		var hh := alt - 4.0
+		var hw := hh * 1.15
+		var uv0 := Vector2(110, 70) / 384.0
+		var uv1 := Vector2(262, 202) / 384.0
+		var q := PackedVector2Array([Vector2(hx - hw / 2, hy - hh / 2), Vector2(hx + hw / 2, hy - hh / 2), Vector2(hx + hw / 2, hy + hh / 2), Vector2(hx - hw / 2, hy + hh / 2)])
+		var uvs := PackedVector2Array([uv0, Vector2(uv1.x, uv0.y), uv1, Vector2(uv0.x, uv1.y)])
+		var br := Color(1, 1, 1, a)
+		draw_polygon(q, PackedColorArray([br, br, br, br]), uvs, p.view_corte.vp.get_texture())
+	var tx := W - 26.0 - (1.0 - abre) * 60.0
+	Ui.txt(self, "FÚRIA DE %s" % String(p.d.name).to_upper() if is_instance_valid(p) else "FÚRIA", tx, topo + alt / 2 - 14, c, 7, 2, a, Ui.tit())
+	Ui.txt(self, String(k.n).to_upper(), tx, topo + alt / 2 + 2, Color.WHITE, 19, 2, a, Ui.deco(), 3)
+
+## Apresentação do chefe: faixas de cinema e o nome dele.
+func _intro_chefe() -> void:
+	var W := GameData.W
+	var H := GameData.H
+	var t: float = 150 - game.intro_t
+	var k := clampf(t / 14.0, 0, 1) * clampf(game.intro_t / 14.0, 0, 1)
+	draw_rect(Rect2(0, 0, W, 26 * k), Color("#05030c"))
+	draw_rect(Rect2(0, H - 26 * k, W, 26 * k), Color("#05030c"))
+	draw_rect(Rect2(0, 26 * k - 0.8, W, 0.8), Ui.cor(Ui.OURO_ESC, k)); draw_rect(Rect2(0, H - 26 * k, W, 0.8), Ui.cor(Ui.OURO_ESC, k))
+	var a := clampf((t - 46) / 14.0, 0, 1) * clampf(game.intro_t / 16.0, 0, 1)
+	if a <= 0: return
+	var def: Dictionary = GameData.ENEMIES.boss
+	var abre := 1.0 - pow(1.0 - clampf((t - 46) / 24.0, 0, 1), 3.0)
+	var y := 62.0
+	var larg := 120.0 + abre * 60.0
+	Ui.grad_h(self, Rect2(W / 2 - 200, y - 22, 200, 46), Color(0.03, 0.02, 0.07, 0.0), Color(0.03, 0.02, 0.07, 0.7 * a))
+	Ui.grad_h(self, Rect2(W / 2, y - 22, 200, 46), Color(0.03, 0.02, 0.07, 0.7 * a), Color(0.03, 0.02, 0.07, 0.0))
+	Ui.filete(self, W / 2 - larg / 2, y - 16, larg, a)
+	Ui.txt(self, String(def.titulo), W / 2, y - 9, "#ffcf8a", 7, 1, a, Ui.tit())
+	Ui.txt(self, String(def.nome).to_upper(), W / 2, y + 6, Color.WHITE, 22, 1, a, Ui.deco(), 3)
+	Ui.filete(self, W / 2 - larg / 2, y + 21, larg, a)
+
 
 func _topo_direita() -> void:
 	var W := GameData.W
@@ -183,6 +286,16 @@ func _chefe(e: Enemy) -> void:
 	Ui.txt(self, GameData.ENEMIES[e.kind].nome.to_upper(), bx, by - 6, "#ffcf8a", 7, 0, 1.0, Ui.tit())
 	Ui.txt(self, "x%d" % atual, bx + bw, by - 6, Color.WHITE, 7, 2, 1.0, Ui.neg())
 	Ui.losango(self, Vector2(bx - 5, by + 3), 4.2, Ui.TINTA); Ui.losango(self, Vector2(bx - 5, by + 3), 3.2, Ui.SANGUE)
+	# postura: gasta com golpes pesados; vazia, o chefe fica atordoado
+	var rp := Rect2(bx, by + 8, bw * 0.5, 2.2)
+	draw_rect(rp.grow(0.5), Color(0, 0, 0, 0.7))
+	if e.state == "quebrado":
+		var kq := 1.0 - clampf(e.t / 210.0, 0, 1)
+		draw_rect(Rect2(rp.position, Vector2(rp.size.x * kq, rp.size.y)), Color(1, 1, 1, 0.6 + 0.4 * sin(game.t * 0.4)))
+		Ui.txt(self, "ATORDOADO", rp.end.x + 5, rp.get_center().y + 2.5, "#ffe9a8", 6, 0, 1.0, Ui.tit())
+	else:
+		draw_rect(Rect2(rp.position, Vector2(rp.size.x * e.postura / 100.0, rp.size.y)), Color("#ffe08a"))
+		Ui.txt(self, "postura", rp.end.x + 4, rp.get_center().y, Ui.APAGADO, 4)
 
 ## Faixa com o nome da habilidade suprema, atravessando a tela.
 func _faixa() -> void:
@@ -196,7 +309,7 @@ func _faixa() -> void:
 	draw_rect(Rect2(0, y - 13, W, 0.8), Ui.cor(c, a)); draw_rect(Rect2(0, y + 12.2, W, 0.8), Ui.cor(c, a))
 	var x := 60.0 + (1.0 - pow(1.0 - clampf(t / 14.0, 0, 1), 3.0)) * 40.0 + t * 0.4
 	Ui.txt(self, f.n.to_upper(), x, y + 1, Color.WHITE, 17, 0, a, Ui.tit(), 3)
-	Ui.txt(self, "Habilidade suprema de %s" % f.heroi, x + 1, y - 9, c, 5, 0, a)
+	Ui.txt(self, "Habilidade máxima de %s" % f.heroi, x + 1, y - 9, c, 5, 0, a)
 
 # ---------------- Pausa ----------------
 func _pausa() -> void:
@@ -223,7 +336,7 @@ func _pausa() -> void:
 	Ui.painel(self, Rect2(200, 44, 240, 182), 0.95)
 	Ui.titulo(self, "GOLPES", 320, 60, Ui.OURO, 13)
 	Ui.filete(self, 250, 72, 140)
-	Ui.ajuda(self, 212, 86, 12.6, 6)
+	Ui.ajuda(self, 212, 84, 11.4, 6)
 	Ui.txt(self, "Setas: escolher e ajustar   ·   Z: confirmar   ·   P: voltar ao jogo", W / 2, H - 14, Ui.APAGADO, 6, 1)
 
 func _derrota() -> void:
@@ -299,7 +412,7 @@ func _resultado() -> void:
 func _dicas() -> void:
 	var a := clampf(game.t / 30.0, 0, 1) * clampf((720 - game.t) / 40.0, 0, 1)
 	var y := GameData.H - 44.0
-	var itens := [[["Z"], "atacar"], [["baixo", "Z"], "lançar"], [["X"], "pular"], [["C"], "esquiva"], [["dir", "dir"], "correr"], [["segure", "Z"], "habilidade"]]
+	var itens := [[["Z"], "atacar"], [["baixo", "Z"], "lançar"], [["X"], "pular"], [["C"], "esquiva"], [["dir", "dir"], "correr"], [["segure", "Z"], "habilidade"], [["A"], "fúria"]]
 	var total := 0.0
 	for it in itens:
 		total += it[0].size() * 10.0 + Ui.largura(it[1], 6) + 12.0

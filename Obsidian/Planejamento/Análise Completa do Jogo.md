@@ -32,11 +32,11 @@ O coração do gênero. É o que mais muda a sensação do jogo.
 | Derrubada e levantar | 🔨 | Inimigo derrubado fica um instante no chão; pesa menos a cada golpe para o combo não ser infinito |
 | Corrida (toque duplo) | 🔨 | → → corre mais rápido, como no gênero |
 | Rank de combo | 🔨 | Palavras que sobem com o combo (Bom, Ótimo, Brutal, Lendário) e bônus de experiência |
-| Barra de Fúria (despertar) | ❌ v0.7 | Enche batendo e apanhando; ativa um estado forte por alguns segundos, com visual próprio |
-| Defesa e contra-ataque | ❌ v0.7 | Kael defende com o escudo; defesa no tempo certo abre contra-ataque |
+| Barra de Fúria (despertar) | ✅ v0.7 | Enche batendo e apanhando; ativa um estado forte por alguns segundos, com visual próprio |
+| Defesa e contra-ataque | ✅ v0.7 | Kael defende com o escudo; defesa no tempo certo abre contra-ataque |
 | Golpe pelas costas e crítico | 🟡 | Crítico existe. Falta bônus por acertar pelas costas |
 | Agarrão, golpe de levantar | ❌ depois | Para variedade e para o modo contra jogadores |
-| Super armadura visível | 🟡 | Chefe já tem. Falta mostrar (brilho) e ter "quebra de postura" |
+| Super armadura visível | 🟡 | Chefe tem super armadura e, desde a v0.7, quebra de postura. Falta o brilho |
 | Elementos e estados (fogo, gelo, veneno, atordoar) | ❌ depois | Entra com equipamentos e inimigos novos |
 | Cancelamentos | 🟡 | Golpe em habilidade já cancela. Falta golpe em esquiva e em pulo |
 
@@ -49,7 +49,7 @@ Cada classe precisa de **moveset próprio**, não só habilidades diferentes:
 
 ## 3. Habilidades #combate #classe
 - 🟡 3 habilidades por classe com mana e recarga
-- ❌ 4º espaço para a **habilidade suprema** (gasta a barra de Fúria, com corte de câmera e tela escurecida)
+- ✅ (v0.7) 4º espaço para a **habilidade suprema** (gasta a barra de Fúria, com corte de cena e tela escurecida)
 - ❌ Árvore de habilidades: desbloquear e melhorar com pontos ao subir de nível
 - ❌ Escolher quais habilidades levar para a fase (espaços A, S, D, F)
 - 🔨 Ícones desenhados para cada habilidade, no lugar dos quadrados coloridos
@@ -102,7 +102,7 @@ Estilo da interface: gótico elegante. Molduras escuras com filete dourado, vitr
 - ❌ Perigos de cenário: espinhos, plataformas que caem, fogo, vento
 - ❌ Objetos quebráveis com ouro e itens
 - ❌ Dificuldades (normal, difícil, pesadelo) com recompensa melhor
-- ❌ Introdução do chefe com corte de câmera e nome na tela
+- ✅ (v0.7) Introdução do chefe com faixas de cinema e nome na tela
 - ❌ Cidade/lobby andável (ver decisão abaixo)
 
 ## 8. Inimigos e chefes #inimigo #chefe
@@ -111,7 +111,7 @@ Estilo da interface: gótico elegante. Molduras escuras com filete dourado, vitr
 - ❌ Variedade: esqueleto com escudo (obriga golpe pesado), gárgula que mergulha, necromante que invoca, cão espectral rápido, armadura viva lenta
 - ❌ Elites (versão brilhante, mais forte, com um poder extra)
 - ❌ Mini chefe no meio da fase
-- ❌ Chefes com fases, golpes avisados no chão (área vermelha) e quebra de postura
+- 🟡 (v0.7) Golpes avisados no chão (área vermelha) e quebra de postura prontos no Espectro Ancião. Falta chefe com fases de verdade
 - ❌ Um chefe por fase
 
 ## 9. Áudio #audio
@@ -126,7 +126,7 @@ Estilo da interface: gótico elegante. Molduras escuras com filete dourado, vitr
 - 🔨 Fonte própria (serifada gótica) no lugar da fonte padrão
 - 🔨 Efeitos de golpe por classe (rastro da espada, flecha com luz, runas)
 - ❌ Rastro da arma em 3D, poeira ao correr e cair
-- ❌ Corte de câmera nas habilidades supremas
+- ✅ (v0.7) Corte de cena na habilidade suprema (Fúria)
 - ❌ Zoom e câmera lenta no golpe final do chefe
 - ❌ Retratos desenhados para diálogos
 - ❌ Ícone e nome final do jogo, tela de carregamento

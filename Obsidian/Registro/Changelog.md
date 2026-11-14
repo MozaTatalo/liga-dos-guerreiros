@@ -62,3 +62,9 @@ tags: [changelog, registro]
   - Poses novas no boneco (tiro de arco, chute, rasteira, escudada, conjuração, carga, vitória) sem mudar o corpo base.
   - Chefe com 1500 de vida. Tecla de pulo continua X, Espaço ou ↑.
   - Mesmo link: https://claude.ai/artifact/DbFEAxdA1fhGAuE5BqX7fa
+- **Projeto Godot v0.7, primeira parte** (2026-11-14):
+  - **Fúria:** barra nova que enche batendo, apanhando e defendendo. Com ela cheia, a tecla A solta a habilidade suprema com corte de cena (herói de perto, nome do golpe), acerta a tela toda e deixa o herói desperto por 10 s.
+  - **Kael defende** segurando ↓. Defesa no tempo certo não leva dano e abre contra-ataque com Z.
+  - **Oren teleporta** no lugar da esquiva.
+  - **Chefe:** apresentação com faixas de cinema e nome, áreas vermelhas no chão avisando cada golpe, barra de postura que quebra e deixa o chefe atordoado, e um golpe novo (pilares sombrios) abaixo de metade da vida.
+  - Detalhes em [[Combate]], [[Bestiário]] e [[Interface e Menus]]. Mesmo link: https://claude.ai/artifact/DbFEAxdA1fhGAuE5BqX7fa

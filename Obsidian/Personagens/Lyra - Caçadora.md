@@ -17,3 +17,6 @@ Batedora das florestas do norte. Mantém distância e pune de longe.
 - **Estilo:** controle de espaço, recuar e atirar.
 
 Ver [[Combate]] · [[Classes e Armas]]
+
+## Movimentos próprios (v0.7) #combate
+- **Fúria:** Olho da Tempestade (verde). Movimento só dela ainda #pendente (ideia da análise: salto para trás).

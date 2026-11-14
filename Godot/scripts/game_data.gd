@@ -2,7 +2,7 @@ class_name GameData
 extends RefCounted
 ## Dados do jogo: classes, inimigos, fases e dificuldades. Ajuste números aqui para balancear.
 
-const VERSAO := "0.6"
+const VERSAO := "0.7"
 const W := 480.0
 const H := 270.0
 const GROUND := 230.0
@@ -35,6 +35,14 @@ const CLASSES := [
 				{"n": "Meteoro", "dur": 44, "c": "#ff4d2e", "ico": "meteoro", "d": "Um meteoro cai do céu e devasta a área."}]},
 ]
 
+## Fúria: enche batendo e apanhando. Com a barra cheia, A solta um golpe em área e deixa o herói desperto.
+const FURIA_DUR := 600    # passos que o despertar dura (10 s)
+const FURIA := {
+	"guardiao": {"n": "Juramento da Rosácea", "c": "#ffd76a"},
+	"cacadora": {"n": "Olho da Tempestade", "c": "#8fe388"},
+	"arcanista": {"n": "Eclipse Arcano", "c": "#b58cff"},
+}
+
 ## Personagens planejados, mostrados travados na seleção.
 const FUTUROS := [{"name": "Brann", "cls": "Berserker", "weapon": "Machado de duas mãos"}]
 
@@ -43,7 +51,7 @@ const ENEMIES := {
 	"saqueador": {"nome": "Espectro", "w": 12, "h": 22, "hp": 80, "dmg": 10, "fly": false, "xp": 16, "ouro": 4, "peso": 1.0},
 	"morcego": {"nome": "Morcego de Cinzas", "w": 12, "h": 8, "hp": 30, "dmg": 7, "fly": true, "xp": 7, "ouro": 2, "peso": 0.8},
 	"atirador": {"nome": "Espectro Conjurador", "w": 12, "h": 22, "hp": 60, "dmg": 8, "fly": false, "xp": 14, "ouro": 4, "peso": 1.0},
-	"boss": {"nome": "Espectro Ancião", "w": 36, "h": 46, "hp": 1500, "dmg": 14, "fly": false, "xp": 260, "ouro": 120, "peso": 3.0},
+	"boss": {"nome": "Espectro Ancião", "titulo": "Guardião das Ruínas", "w": 36, "h": 46, "hp": 1500, "dmg": 14, "fly": false, "xp": 260, "ouro": 120, "peso": 3.0},
 }
 
 const DIFS := [

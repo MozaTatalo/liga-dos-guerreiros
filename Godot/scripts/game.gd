@@ -44,6 +44,9 @@ var paused := false
 var pausa_sel := 0
 var all_dead_t := 0
 var dim_t := 0               # tela escurecida durante a habilidade suprema
+var corte := {}              # corte de cena da Fúria (retrato do herói atravessando a tela)
+var intro_t := 0             # apresentação do chefe: jogo em espera, faixas de cinema
+var avisos: Array = []       # áreas vermelhas no chão que avisam onde um golpe vai cair
 var faixa := {}              # faixa com o nome da habilidade suprema
 
 var bg
@@ -189,8 +192,18 @@ func dust(px: float, py: float, n := 4) -> void:
 	for i in n:
 		parts.append({"x": px + randf_range(-4, 4), "y": py, "vx": randf_range(-1, 1), "vy": randf_range(-1, -0.2), "life": randf_range(12, 22), "c": "#9a94c8", "s": 2.0, "g": 0.0})
 
-func ghost(p: Hero) -> void:
-	parts.append({"x": p.cx(), "y": p.y + 12, "vx": 0.0, "vy": 0.0, "life": 10.0, "c": p.d.body, "s": 7.0, "g": 0.0, "a": 0.35})
+func ghost(p: Hero, c = null) -> void:
+	parts.append({"x": p.cx(), "y": p.y + 12, "vx": 0.0, "vy": 0.0 if c == null else -0.5, "life": 10.0, "c": p.d.body if c == null else c, "s": 7.0, "g": 0.0, "a": 0.35})
+
+## Aviso no chão: uma área vermelha que enche até o golpe cair. `larg` é a largura; `dur` em passos.
+func aviso(px: float, larg: float, dur: int, faixa_ := false) -> void:
+	avisos.append({"x": px, "w": larg, "t": 0, "dur": dur, "faixa": faixa_})
+
+## Corte de cena da Fúria: o tempo para, a tela escurece e o herói atravessa a tela num retrato.
+func corte_furia(p: Hero, f: Dictionary) -> void:
+	dim_t = 80; hitstop = maxi(hitstop, 44)
+	corte = {"t": 0, "p": p, "n": f.n, "c": f.c}
+	Som.tocar("chefe", 0.7, 1.6); Som.tocar("carga_nivel", 1.0, 0.5, 0.0)
 
 func num(px: float, py: float, v, c, big := false) -> void:
 	nums.append({"x": px + randf_range(-5, 5), "y": py, "v": str(v), "c": c, "big": big, "t": 0})
@@ -208,7 +221,7 @@ func hit(target, src: Dictionary, cxv: float) -> void:
 	if dir == 0:
 		dir = 1 if target.x + target.w / 2 >= cxv else -1
 	if target is Hero:
-		hurt_player(target, src.dmg, dir, src.get("kbx", 2.0), src.get("kby", 2.0))
+		hurt_player(target, src.dmg, dir, src.get("kbx", 2.0), src.get("kby", 2.0), src.get("de"))
 	else:
 		damage_enemy(target, src, dir)
 
@@ -219,6 +232,7 @@ func damage_enemy(e: Enemy, src: Dictionary, dir: int) -> void:
 	var crit := randf() < 0.12
 	var costas: bool = not e.boss and dir == e.dir and e.state != "launched" and e.state != "down"
 	var v: float = src.dmg * randf_range(0.92, 1.08) * (1.5 if crit else 1.0) * (1.25 if costas else 1.0)
+	if e.state == "quebrado": v *= 1.4
 	if e.state == "down": v *= 0.6
 	var amount := maxi(1, int(roundf(v)))
 	e.hp -= amount; e.flash_t = 6; e.active = true
@@ -240,6 +254,7 @@ func damage_enemy(e: Enemy, src: Dictionary, dir: int) -> void:
 	var quem = src.get("src")
 	if quem is Hero:
 		quem.ganhar_mana((0.012 if src.get("skill", false) else 0.05) * (1.4 if heavy else 1.0))
+		quem.ganhar_furia((0.005 if src.get("skill", false) else 0.013) * (1.5 if heavy else 1.0))
 	if e.hp <= 0:
 		kill_enemy(e)
 
@@ -273,21 +288,45 @@ func kill_enemy(e: Enemy) -> void:
 	elif randf() < 0.3:
 		pickups.append({"x": ex - 4, "y": e.y, "w": 8.0, "h": 8.0, "vx": 0.0, "vy": -2.0, "kind": "hp" if randf() < 0.6 else "mp", "t": 0})
 
-func hurt_player(p: Hero, dmg: float, dir: int, kbx := 2.0, kby := 2.0) -> void:
+func hurt_player(p: Hero, dmg: float, dir: int, kbx := 2.0, kby := 2.0, de = null) -> void:
 	if p.invuln > 0 or p.dead or result != null:
 		return
 	dmg = roundf(dmg * D.dano)
+	if p.state == "guard" and dir == -p.facing:
+		_defender(p, dmg, dir, de)
+		return
 	p.hp -= dmg; dmg_taken += int(dmg)
 	num(p.cx(), p.y - 4, int(dmg), "#ff5b5b")
 	sparks(p.cx(), p.y + 10, "#ff5b5b", 8)
 	if tremor_ligado(): shake = maxf(shake, 5)
 	hitstop = maxi(hitstop, 4); combo = 0
-	p.ganhar_mana(0.08)
+	p.ganhar_mana(0.08); p.ganhar_furia(0.09)
 	Som.tocar("dano")
 	if p.hp <= 0:
 		p.hp = 0; p.dead = true; p.state = "dead"; p.vx = dir * 2; p.vy = -3
 		return
 	p.state = "hurt"; p.state_t = 0; p.vx = dir * kbx; p.vy = -kby; p.invuln = 60; p.skill = -1; p.mv = ""; p.charge = 0.0; p.charge_lv = 0
+
+## Defesa do Guardião. No tempo certo (logo depois de levantar o escudo) não leva dano e abre contra-ataque.
+func _defender(p: Hero, dmg: float, dir: int, de) -> void:
+	var px := p.cx() + p.facing * 9.0
+	var py := p.y + 10
+	if p.state_t <= 10:
+		p.invuln = 22; p.contra_t = 45; p.ganhar_mana(0.3); p.ganhar_furia(0.07)
+		hitstop = maxi(hitstop, 9)
+		callout(p.cx(), p.y - 18, "DEFESA PERFEITA!", "#ffe9a8")
+		impacto(px, py, "#ffe9a8", true); anel(px, py, "#ffe9a8", 26.0)
+		Som.tocar("critico", 0.9, 1.3); Som.tocar("acerto2", 0.8, 1.4)
+		if de is Enemy and is_instance_valid(de) and de.hp > 0:
+			if de.boss: de.perder_postura(30.0)
+			else:
+				de.hurt_t = 55; de.state = "walk"; de.t = 0; de.vx = dir * -2.0
+	else:
+		var v := maxf(1.0, roundf(dmg * 0.2))
+		p.hp = maxf(1.0, p.hp - v); dmg_taken += int(v)
+		num(p.cx(), p.y - 4, int(v), "#bfe4ff")
+		p.vx = dir * 1.6; p.invuln = 10; p.ganhar_furia(0.03)
+		impacto(px, py, "#bfe4ff"); Som.tocar("acerto", 0.8, 0.7)
 
 func explode(px: float, py: float, w: float, h: float, dmg: float, launch: float, c: String, quem = null) -> void:
 	spawn_hitbox({"owner": "p", "src": quem, "skill": true, "x": px - w / 2, "y": py - h / 2, "w": w, "h": h, "dmg": dmg, "kbx": 2.6, "launch": launch, "life": 6, "heavy": true})
@@ -393,6 +432,9 @@ func step() -> void:
 			if Ui.ok():
 				sair("lobby"); return
 	if dim_t > 0: dim_t -= 1
+	if not corte.is_empty():
+		corte.t += 1
+		if corte.t > 52: corte = {}
 	if not faixa.is_empty():
 		faixa.t += 1
 		if faixa.t > 70: faixa = {}
@@ -401,6 +443,9 @@ func step() -> void:
 		return
 	if result == null and not everyone_dead:
 		t += 1
+	if intro_t > 0: intro_t -= 1
+	for av in avisos: av.t += 1
+	avisos = avisos.filter(func(av): return av.t < av.dur + 6)
 	for p in players:
 		p.tick()
 	var lead := nearest_player(0) # quem está mais à frente define gatilhos
@@ -410,7 +455,9 @@ func step() -> void:
 		boss_started = true
 		var b := add_enemy("boss", 2660, 2)
 		b.y = -80; b.state = "intro"; b.active = true
-		show_msg("%s despertou!" % GameData.ENEMIES.boss.nome, 150)
+		intro_t = 150
+		hitboxes = hitboxes.filter(func(hb): return hb.owner == "p")
+		projs = projs.filter(func(o): return o.owner == "p")
 		Som.tema("chefe"); Som.tocar("chefe")
 	for e in enemies:
 		if e.hp > 0: e.tick()
@@ -418,7 +465,7 @@ func step() -> void:
 	for p in alive_players():
 		for e in enemies:
 			if e.hp > 0 and e.hurt_t <= 0 and e.toca() and overlap(e, p):
-				hurt_player(p, e.contact_damage(), 1 if p.x >= e.x else -1, 2.5, 2.5)
+				hurt_player(p, e.contact_damage(), 1 if p.cx() >= e.x + e.w / 2 else -1, 2.5, 2.5, e)
 	# golpes
 	for hb in hitboxes:
 		if hb.has("place"): hb.place.call(hb)

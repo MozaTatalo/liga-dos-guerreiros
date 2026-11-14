@@ -33,3 +33,10 @@ Setas escolhem, Z ou Enter confirma, C ou Esc volta.
 
 ## Pendente #pendente
 Mouse nos menus, suporte a controle, remapear teclas, inventário, árvore de habilidades, loja, tutorial.
+
+## Novidades da v0.7
+- **Fúria:** losango ao lado das três habilidades, enche de baixo para cima. Cheio, pulsa e mostra a tecla A. Desperto, mostra os segundos que faltam.
+- **Corte de cena da Fúria:** faixa inclinada na cor da classe, com o herói de perto (o mesmo boneco 3D, renderizado em resolução maior só nesse momento), riscos de velocidade e o nome do golpe.
+- **Apresentação do chefe:** faixas de cinema em cima e embaixo, título e nome no alto, HUD escondida enquanto dura.
+- **Postura do chefe:** barra amarela fina embaixo da vida. Mostra "ATORDOADO" quando quebra.
+- Lista de golpes e dicas do começo da fase ganharam Fúria, defesa e teleporte.
