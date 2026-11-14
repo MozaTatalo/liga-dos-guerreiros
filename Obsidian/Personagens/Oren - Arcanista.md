@@ -8,12 +8,16 @@ papel: Magia, dano em área
 Estudioso das pedras rúnicas. Frágil, mas com o maior dano em área.
 
 - **Arma:** cajado rúnico
-- **Atributos base:** Vida 150 · Mana 170 · Velocidade baixa
-- **Combo básico (Z ×3):** dois golpes de cajado + projétil mágico
-- **Habilidades:**
-  - **A — Orbe Flamejante** (20 MP): orbe lento que explode ao acertar
-  - **S — Corrente de Raios** (35 MP): raio que salta entre até 4 inimigos próximos
-  - **D — Meteoro** (55 MP): meteoro cai em diagonal e explode em área grande
+- **Atributos base:** Vida 150 · Velocidade baixa
+- **Golpes (v0.6):** dois golpes de cajado, rajada arcana e explosão curta · ↓+Z pilar de runas que lança · corrida: estocada com faísca · no ar: rajadas arcanas (flutua enquanto atira) · mergulho: solta uma bola de fogo para baixo e sobe
+- **Habilidades (carga de mana):**
+  - **Nível 1 — Orbe Flamejante:** bola de fogo que explode no impacto
+  - **Nível 2 — Corrente de Raios:** raio que salta entre até 5 inimigos e os lança
+  - **Nível 3 — Meteoro (suprema):** meteoro cai em diagonal e devasta a área
 - **Estilo:** posicionamento e gerenciamento de mana.
 
 Ver [[Combate]] · [[Classes e Armas]]
+
+## Movimentos próprios (v0.7) #combate
+- **Teleporte:** no lugar da esquiva (C). Some e reaparece à frente, atravessando inimigos. Regras em [[Combate]].
+- **Fúria:** Eclipse Arcano (violeta).

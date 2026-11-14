@@ -35,3 +35,11 @@ tags: [decisao, registro]
 | 2026-11-13 | Corpo feminino: mesmo esqueleto e animações do masculino. Muda só a silhueta: ombros um pouco mais estreitos, cintura mais marcada, quadril um pouco mais largo, mãos e pés 10% menores | aguardando reação do Italo #pendente |
 | 2026-11-13 | Masculino: ombros para fora, braços afastados, parado com as pernas abertas. Feminino: ombros para dentro, braços junto ao corpo, parada com as pernas juntas | decidido |
 | 2026-11-13 | Roupa base feminina: top sem manga e short, com a barriga à mostra. Busto discreto, uma curva suave no estilo chibi. Masculino segue de macacão | aguardando reação do Italo #pendente |
+| 2026-11-13 | No Godot, os heróis são os bonecos 3D do `kael.js` exportados em glTF, renderizados num SubViewport e desenhados como sprite no jogo 2D (inimigos e cenário seguem 2D por enquanto). Kael e Oren usam o corpo masculino, Lyra o feminino, cada um com a arma base de madeira da classe e uma paleta | decidido |
+| 2026-11-13 | A Fase 1 usa o cenário do teste gótico em 3D (ruínas de catedral) atrás do jogo 2D, com a câmera 3D presa à câmera do jogo (1 unidade = 26 px no plano de jogo). Saqueador, Atirador e chefe viram espectros 3D; Lodo e Morcego seguem 2D, recoloridos | decidido |
+| 2026-11-13 | Direção visual do jogo: anime de ação colorido (cel-shading limpo, brilho nas luzes, efeitos de golpe chamativos) dentro do clima gótico noturno. Heróis um pouco maiores que a escala do cenário, para ficarem em destaque | decidido |
+| 2026-11-14 | Combate: um botão de ataque com variações por direção e situação; habilidades saem segurando o ataque até a barra de mana carregar no nível 1, 2 ou 3 (escolha do Italo entre três opções). Ver [[Combate]] | decidido |
+| 2026-11-14 | Lobby em menu, com o herói escolhido em destaque. Sem cidade andável (escolha do Italo). Ver [[Interface e Menus]] | decidido |
+| 2026-11-14 | Ordem de construção das próximas versões definida em [[Roteiro de Versões]] | decidido |
+| 2026-11-14 | Som e música provisórios feitos por síntese em código, sem amostras de terceiros, até existir trilha de verdade | decidido |
+| 2026-11-14 | Fontes da interface: Cinzel (títulos) e Alegreya Sans (texto), ambas de licença aberta | decidido |

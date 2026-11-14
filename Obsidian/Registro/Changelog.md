@@ -38,3 +38,33 @@ tags: [changelog, registro]
 - **Rascunho 18** (corpo estreito e corpo feminino): tronco 28% mais estreito de lado a lado, ombros e pernas mais próximos do eixo, braços e pernas mais finos, pés mais estreitos. `Kael.criar({ corpo: "f" })` gera o corpo feminino. A vitrine mostra os dois lado a lado, com botões Corpo (Os dois, Masculino, Feminino) e Armas (esconde as armas para ver o corpo). A armadura ainda não foi reajustada ao corpo estreito.
 - **Rascunho 19** (masculino e feminino mais diferentes): masculino com tronco e ombros mais largos, braços afastados e pernas abertas na pose parada. Feminino com ombros para dentro, braços junto ao corpo, pernas juntas, top sem manga e short com a barriga à mostra, e busto discreto. Cada corpo tem a sua pose parada.
 - **Rascunho 20**: corpo feminino cerca de 8% mais largo (tronco, ombros, quadril e distância entre as pernas). Pose, top, short e busto mantidos.
+- **Projeto Godot v0.3** (bonecos 3D no jogo): os três heróis trocaram a arte provisória pelos corpos base do `kael.js`, exportados em glTF (`Godot/assets/personagens/`). Cel-shading em degraus e contorno grosso refeitos em shader (`Godot/shaders/`), animações (parado, correndo, pulo, combo de 3 golpes, dano) portadas do `posar()` para `boneco3d.gd`, com piscar de olhos. Kael: corpo masculino, espada e escudo de madeira. Lyra: corpo feminino, arco de madeira. Oren: corpo masculino, cajado de madeira. Retrato do painel de vida virou a cabeça do boneco ao vivo. Cena de teste `scenes/vitrine.tscn`. Versão web jogável: https://claude.ai/artifact/DbFEAxdA1fhGAuE5BqX7fa. Ver [[Projeto Godot]].
+- **Projeto Godot v0.4** (mapa e inimigos góticos): o céu e as montanhas 2D deram lugar às ruínas de catedral do `gotico.html` em 3D (arcada, vitrais, árvores mortas, lápides, braseiros com luz que tremula, velas, névoa, cinzas, lua e estrelas), estendidas pela fase inteira, com as plataformas de pedra no lugar exato das plataformas de colisão. Saqueador virou o **Espectro**, Atirador virou o **Espectro Conjurador** (manto roxo) e o chefe virou o **Espectro Ancião** (gigante, olhos que ficam vermelhos com pouca vida). Os espectros erguem os braços antes de atacar, piscam e amassam ao levar golpe e se desfazem ao morrer. Lodo e Morcego recoloridos. Mesma regra de jogo de antes. Versão web atualizada no mesmo link. Ver [[Projeto Godot]] e [[Bestiário]].
+- **Projeto Godot v0.5** (polimento visual, estilo anime de ação + gótico):
+  - Mapa: chão de lajotas pintado (chanfro de luz, rachaduras, musgo), estandartes carmesim da Ordem com a rosácea ondulando nos pilares, feixes de luz coloridos descendo dos vitrais com poeira brilhante e poças de luz no chão, névoa rasteira viva em três camadas, correntes com lanternas acesas no primeiro plano, céu violeta com lua de crateras, halo e nuvens com a borda acesa, brilho (bloom) nas luzes, mais cor e contraste, cantos escurecidos, contorno de luz da lua nas silhuetas.
+  - Heróis: maiores na tela (cerca de 46 px), contorno mais grosso, luz de contorno da lua, luz quente do braseiro mais perto e sombra no chão. Corpo base não mudou.
+  - Espectros: chama da alma no peito, manto que ondula, fiapos de névoa subindo, garras que acendem antes do golpe, cores mais vivas (azul, roxo e carmesim), morte que se desfaz.
+  - **Lodo** e **Morcego** agora em 3D: lodo de ectoplasma translúcido que treme e estica no pulo, com olhos e ossinhos dentro; morcego com asas de membrana que batem, orelhas, presas, olhos vermelhos e brasas caindo.
+  - Golpes: lâminas de luz em meia-lua, estrela de impacto em cada acerto, faíscas com rastro, projéteis brilhantes e itens em forma de gema.
+  - Cena de teste `scenes/vitrine_inimigos.tscn` com todos os inimigos de perto.
+
+## 2026-11-14
+- Notas novas: [[Análise Completa do Jogo]] (tudo que o jogo precisa, por área) e [[Roteiro de Versões]] (ordem de construção até a 1.0). Também [[Interface e Menus]], [[Áudio]] e [[Multijogador]]. [[Combate]] e [[Progressão]] reescritas.
+- **Projeto Godot v0.6** (combate, menus, progressão e som):
+  - **Combate de um botão:** combo de 4, lançador (↓ + Z), golpe de corrida, combo aéreo de 3, mergulho, corrida com toque duplo, cancelar golpe em esquiva ou pulo. Cada classe faz esses golpes do seu jeito (Kael com espada e escudo, Lyra com flechas e chutes, Oren com magia).
+  - **Carga de mana:** segurar o ataque carrega a barra em 3 níveis; soltar usa a habilidade 1, 2 ou 3. A de nível 3 é a suprema, com a tela escurecida e o nome na faixa. Habilidades novas e ajustadas: Tempestade de Aço (Kael), Flecha Perfurante (Lyra).
+  - **Inimigos reagem:** são lançados, mantidos no ar, cravados no chão, quicam, ficam caídos e levantam. Dano pelas costas, experiência e ouro por inimigo. Espectros não ferem mais só por encostar.
+  - **Menus:** título, lobby com o herói em destaque, seleção de personagem (Brann aparece travado), mapa de fases com 5 fases planejadas e 3 dificuldades, lista de golpes, opções, pausa.
+  - **HUD gótica:** retrato em losango, vida com rastro, mana em 3 níveis, experiência, ícones de habilidade, combo com rank, barra de chefe em 3 camadas, dicas de comando no começo da fase.
+  - **Progressão:** nível e experiência por personagem, ouro, recordes por fase e dificuldade, jogo salvo.
+  - **Som:** 24 efeitos e 3 músicas provisórias feitos por síntese.
+  - **Fontes:** Cinzel e Alegreya Sans.
+  - Poses novas no boneco (tiro de arco, chute, rasteira, escudada, conjuração, carga, vitória) sem mudar o corpo base.
+  - Chefe com 1500 de vida. Tecla de pulo continua X, Espaço ou ↑.
+  - Mesmo link: https://claude.ai/artifact/DbFEAxdA1fhGAuE5BqX7fa
+- **Projeto Godot v0.7, primeira parte** (2026-11-14):
+  - **Fúria:** barra nova que enche batendo, apanhando e defendendo. Com ela cheia, a tecla A solta a habilidade suprema com corte de cena (herói de perto, nome do golpe), acerta a tela toda e deixa o herói desperto por 10 s.
+  - **Kael defende** segurando ↓. Defesa no tempo certo não leva dano e abre contra-ataque com Z.
+  - **Oren teleporta** no lugar da esquiva.
+  - **Chefe:** apresentação com faixas de cinema e nome, áreas vermelhas no chão avisando cada golpe, barra de postura que quebra e deixa o chefe atordoado, e um golpe novo (pilares sombrios) abaixo de metade da vida.
+  - Detalhes em [[Combate]], [[Bestiário]] e [[Interface e Menus]]. Mesmo link: https://claude.ai/artifact/DbFEAxdA1fhGAuE5BqX7fa

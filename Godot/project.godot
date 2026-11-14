@@ -4,7 +4,8 @@ config_version=5
 [application]
 
 config/name="Liga dos Guerreiros"
-config/description="Ação e plataforma 2D com classes. Protótipo."
+config/description="Ação lateral 2.5D com classes, combos e habilidades."
+config/version="0.6"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 
@@ -78,3 +79,7 @@ common/max_physics_steps_per_frame=8
 textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+
+[autoload]
+
+Som="*res://scripts/som.gd"
