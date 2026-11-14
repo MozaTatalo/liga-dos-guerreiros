@@ -77,3 +77,4 @@ tags: [changelog, registro]
   - **Interface:** retrato do painel segue a cabeça; corte de cena da Fúria com pose nova.
   - Corpo base, rosto e macacão não mudaram. Regras de jogo não mudaram (dano, alcance, tempos dos golpes).
   - Mesmo link: https://claude.ai/artifact/DbFEAxdA1fhGAuE5BqX7fa
+- **Inimigos só ferem com golpe** (2026-11-14, em cima da v0.8): saiu o dano por encostar. Lodo ganhou o bote, Morcego o mergulho, e o chefe só fere no pisão, na investida e nos projéteis. Todo inimigo pisca branco antes de atacar. Ver [[Bestiário]].

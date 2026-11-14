@@ -47,3 +47,4 @@ tags: [decisao, registro]
 | 2026-11-14 | Sombreamento dos personagens no estilo anime: sombra colorida por material, contorno tingido e luz de recorte, tudo em shader próprio, porque o renderizador do navegador não tem os efeitos prontos. Ver [[Pesquisa - Arte e Animação]] | decidido |
 | 2026-11-14 | O rastro dos golpes é medido na arma 3D de verdade; arcos pintados à mão saem | decidido |
 | 2026-11-14 | A passada de arte não mexe em regra de jogo (dano, alcance, duração dos golpes); só em pausa de impacto, câmera e efeitos | decidido |
+- **2026-11-14** — Inimigo nunca fere por contato; só com golpe, e todo golpe é avisado com brilho branco. #decisao #combate

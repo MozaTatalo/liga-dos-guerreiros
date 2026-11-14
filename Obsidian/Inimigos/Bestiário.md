@@ -23,3 +23,16 @@ Espectro gigante de manto cor de sangue seco e olhos âmbar, 1500 de vida (barra
 - **Apresentação (v0.7):** ao entrar na arena, faixas de cinema, o chefe cai do alto e aparece "Guardião das Ruínas · Espectro Ancião". O herói espera 2,5 s.
 - **Golpes avisados (v0.7):** área vermelha no chão mostra onde o pisão vai cair, por onde a investida passa, onde cada rocha cai e onde os pilares sobem.
 - **Postura (v0.7):** ver [[Combate]]. Quebrada, ele fica atordoado e leva mais dano.
+
+## Regra de dano dos inimigos (Italo, 2026-11-14) #combate #decisao
+Nenhum inimigo dá dano só de encostar. Cada um tem golpes próprios, e só o golpe ativo fere. Antes de todo golpe o inimigo **pisca branco** e solta um anel de luz, para o jogador saber que o golpe vem. Vale para todo inimigo novo.
+
+| Inimigo | Golpe | Preparo | Depois |
+|---|---|---|---|
+| Lodo | **Bote:** encolhe e salta no herói. Só fere durante o salto | 0,43 s | fica parado 0,75 s |
+| Morcego de Cinzas | **Mergulho:** para no ar e desce em linha reta no herói | 0,4 s | sobe de volta por 0,65 s |
+| Espectro | Golpe de garra na frente | 0,37 s | 0,5 s |
+| Espectro Conjurador | Projétil | 0,4 s | |
+| Espectro Ancião | Pisão (fere na queda e nas ondas), investida (fere só correndo), rochas, pilares | 0,2 a 0,6 s | |
+
+Fora do golpe, o Lodo anda em pulinhos que não ferem e o Morcego ronda por cima do herói.

@@ -35,6 +35,7 @@ var otg := 0            # vezes que foi relançado do chão
 var quicou := false
 var tombo := 0.0        # inclinação do corpo 3D (lançado, caído)
 var peso := 1.0
+var avisou := false     # já mostrou o brilho de aviso deste golpe
 var postura := 100.0    # só o chefe: golpes pesados gastam; em zero ele fica atordoado
 var esp: Inimigo3D   # corpo 3D do inimigo (espectro, lodo ou morcego), vive no Cenario3D
 
@@ -109,11 +110,30 @@ func tick() -> void:
 	if atk_cd > 0: atk_cd -= 1
 	match kind:
 		"lodo":
-			if on_ground:
+			# anda em pulinhos que não machucam; perto do herói, encolhe (preparo) e dá o bote
+			if state == "windup":
+				vx *= 0.6
+				if t >= 26:
+					state = "bote"; t = 0
+					vx = 2.9 * dir; vy = -3.6; on_ground = false
+					_golpe_corpo("bote", dmg, 2.5, 2.5, 3.0)
+					Som.tocar("esquiva", 0.5, 0.7)
+			elif state == "bote":
+				if on_ground and t > 3:
+					state = "recover"; t = 0; vx = 0.0
+					game.dust(x + w / 2, y + h, 4)
+			elif state == "recover":
+				vx *= 0.7
+				if t > 46:
+					state = "walk"; t = 0
+			elif on_ground:
 				vx *= 0.75
-				if t % 70 == 0 and alive:
+				if alive and dist < 46 and absf(dy) < 30 and atk_cd <= 0:
 					dir = 1 if dx >= 0 else -1
-					vx = 1.7 * dir; vy = -4.2
+					state = "windup"; t = 0; atk_cd = 100
+				elif t % 55 == 0 and alive and dist > 30:
+					dir = 1 if dx >= 0 else -1
+					vx = 1.3 * dir; vy = -2.6
 		"saqueador":
 			if state == "windup":
 				vx = 0
@@ -131,9 +151,32 @@ func tick() -> void:
 				if dist < 30 and absf(dy) < 20 and atk_cd <= 0 and alive:
 					state = "windup"; t = 0; atk_cd = 70
 		"morcego":
-			vx = clampf(vx + signf(dx) * 0.07, -1.6, 1.6)
-			vy = clampf(vy + signf(dy - 12) * 0.05 + sin(t * 0.12) * 0.06, -1.3, 1.3)
-			dir = 1 if vx >= 0 else -1
+			# ronda por cima do herói; para atacar, para no ar (preparo) e mergulha em linha reta
+			if state == "windup":
+				vx *= 0.8; vy = vy * 0.8 - 0.05
+				if dx != 0: dir = 1 if dx > 0 else -1
+				if t >= 24:
+					var alvo := Vector2(dx, dy + 2.0)
+					if alvo.length() < 1.0: alvo = Vector2(dir, 0.3)
+					alvo = alvo.normalized() * 3.6
+					vx = alvo.x; vy = alvo.y
+					state = "dive"; t = 0
+					_golpe_corpo("dive", dmg, 2.2, 2.0, 2.0)
+					Som.tocar("esquiva", 0.5, 1.5)
+			elif state == "dive":
+				if t > 30 or y + h >= GameData.GROUND - 1:
+					state = "recover"; t = 0
+			elif state == "recover":
+				vx *= 0.92; vy = maxf(vy - 0.12, -1.4)
+				if t > 40:
+					state = "walk"; t = 0
+			else:
+				var lado := -1.0 if dx > 0 else 1.0
+				vx = clampf(vx + signf(dx + lado * 38.0) * 0.07, -1.5, 1.5)
+				vy = clampf(vy + signf(dy + 38.0) * 0.05 + sin(t * 0.12) * 0.06, -1.2, 1.2)
+				dir = 1 if dx >= 0 else -1
+				if alive and atk_cd <= 0 and dist < 80 and absf(dy) < 90:
+					state = "windup"; t = 0; atk_cd = 130
 			x += vx; y = clampf(y + vy, 30, GameData.GROUND - h)
 			game.apply_barriers(self)
 			return
@@ -214,6 +257,7 @@ func boss_ai(p, dx: float, dist: float) -> void:
 				game.aviso(clampf(meio + vx * 46.0, GameData.ARENA_L + 20, GameData.ARENA_R - 20), 76.0, 46)
 			elif on_ground and air and t > 24:
 				air = false; game.shake = 9.0; game.dust(x + w / 2, GameData.GROUND, 14); vx = 0
+				game.spawn_hitbox({"owner": "e", "de": self, "dmg": 18, "kbx": 3.5, "kby": 4.5, "life": 6, "x": x - 12, "y": y + h - 26, "w": w + 24, "h": 26.0})
 				for s in [-1, 1]:
 					game.spawn_proj({"owner": "e", "x": x + w / 2 - 5, "y": GameData.GROUND - 14, "w": 10.0, "h": 14.0, "vx": 3.3 * s * sp, "vy": 0.0,
 						"dmg": 15, "kbx": 3.0, "kby": 4.0, "life": 80, "kind": "wave", "no_ground": true, "de": self})
@@ -226,6 +270,7 @@ func boss_ai(p, dx: float, dist: float) -> void:
 					var borda := GameData.ARENA_R if dir > 0 else GameData.ARENA_L
 					game.aviso((meio + borda) / 2.0, absf(borda - meio), 30, true)
 			elif t < 100:
+				if t == 35: _golpe_corpo("charge", 20.0, 3.5, 3.5, 2.0)
 				vx = 4.3 * dir * sp
 				if t % 3 == 0: game.dust(x + w / 2, GameData.GROUND, 2)
 				if t > 40 and (x <= GameData.ARENA_L + 1 or x + w >= GameData.ARENA_R - 1):
@@ -299,18 +344,16 @@ func perder_postura(n: float) -> void:
 	game.sparks(x + w / 2, y + h / 2, "#ffe9a8", 30, 5)
 	Som.tocar("critico", 1.0, 0.7); Som.tocar("queda", 0.9, 0.7)
 
-## Só alguns inimigos machucam ao encostar (os que atacam com o corpo).
-func toca() -> bool:
-	if state == "launched" or state == "down" or state == "intro" or imune > 0:
-		return false
-	match kind:
-		"lodo": return not on_ground
-		"morcego": return true
-		"boss": return state != "recover" and state != "quebrado"
-	return false
-
-func contact_damage() -> float:
-	return 20.0 if (boss and state == "charge") else dmg
+## Golpe feito com o próprio corpo (bote, mergulho, investida): a área de dano acompanha o inimigo
+## só enquanto ele está no estado `est`. Encostar no inimigo fora de um golpe não machuca.
+func _golpe_corpo(est: String, dano: float, kbx: float, kby: float, folga: float) -> void:
+	var eu := self
+	game.spawn_hitbox({"owner": "e", "de": self, "dmg": dano, "kbx": kbx, "kby": kby, "life": 120,
+		"place": func(o: Dictionary) -> void:
+			if not is_instance_valid(eu) or eu.state != est or eu.hurt_t > 0 or eu.hp <= 0 or (est == "charge" and eu.t < 35):
+				o.x = -9999.0; o.w = 0.0; o.h = 0.0; o.life = 0
+			else:
+				o.x = eu.x - folga; o.y = eu.y - folga; o.w = eu.w + folga * 2; o.h = eu.h + folga * 2})
 
 # ---------------- Desenho ----------------
 func _exit_tree() -> void:
@@ -336,9 +379,20 @@ func _sync_esp() -> void:
 	match kind:
 		"saqueador": prep = state == "windup"
 		"atirador": prep = state == "aim"
-		"morcego": prep = state == "dive" or state == "swoop"
-		"boss": prep = (state == "charge" and t < 35) or (state == "slam" and t < 20)
+		"morcego": prep = state == "windup"
+		"lodo": prep = state == "windup"
+		"boss": prep = (state == "charge" and t < 35) or (state == "slam" and t < 20) or (state == "rocks" and t < 20) or (state == "pilares" and t < 12)
 	esp.preparo += ((1.0 if prep else 0.0) - esp.preparo) * 0.25
+	# aviso de golpe: o inimigo pisca branco enquanto prepara, cada vez mais rápido
+	if prep and hurt_t <= 0:
+		if not avisou:
+			avisou = true
+			game.anel(x + w / 2, y + h / 2, "#ffffff", maxf(w, h) * 0.9 + 6.0)
+			Som.tocar("menu", 0.5, 1.9, 0.0)
+		var ciclo := 8 if t < 12 else 4
+		if t % ciclo < ciclo / 2: esp.flash = 0.03
+	elif not prep:
+		avisou = false
 	var alvo_t := 0.0
 	if state == "launched": alvo_t = clampf(0.5 + t * 0.06, 0.5, 1.25)
 	elif state == "down": alvo_t = 1.5

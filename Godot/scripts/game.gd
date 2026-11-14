@@ -508,11 +508,6 @@ func step() -> void:
 		Som.tema("chefe"); Som.tocar("chefe")
 	for e in enemies:
 		if e.hp > 0: e.tick()
-	# dano por contato (só de quem ataca com o corpo)
-	for p in alive_players():
-		for e in enemies:
-			if e.hp > 0 and e.hurt_t <= 0 and e.toca() and overlap(e, p):
-				hurt_player(p, e.contact_damage(), 1 if p.cx() >= e.x + e.w / 2 else -1, 2.5, 2.5, e)
 	# golpes
 	for hb in hitboxes:
 		if hb.has("place"): hb.place.call(hb)

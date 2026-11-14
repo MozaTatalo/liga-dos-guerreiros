@@ -46,7 +46,7 @@ Cancelamentos: depois do acerto, qualquer golpe pode virar esquiva ou pulo. Aper
 - **Caído:** fica um instante no chão (dano reduzido, pode ser relançado uma vez) e levanta com um momento de invulnerabilidade.
 - **Chefes** têm super armadura: não são lançados. Em vez disso têm **postura** (abaixo).
 - **Pelas costas:** +25% de dano. **Crítico:** 12% de chance, dano ×1,5.
-- Só machucam ao encostar os inimigos que atacam com o corpo (Lodo no pulo, Morcego, chefe). Os espectros só ferem com o golpe.
+- **Encostar no inimigo nunca machuca** (regra do Italo, 2026-11-14). Todo inimigo só fere com um golpe, e todo golpe tem preparo: o inimigo **pisca branco** (cada vez mais rápido) e solta um anel de luz antes de atacar. Ver [[Bestiário]].
 
 ## Combo
 - Contador na tela com barra de tempo (2,5 s para continuar).
