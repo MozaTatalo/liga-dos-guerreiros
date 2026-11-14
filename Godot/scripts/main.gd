@@ -1,7 +1,6 @@
 extends Node
 ## Raiz do jogo: alterna entre a tela de título e a partida.
 
-const BgScript := preload("res://scripts/background.gd")
 const TitleScript := preload("res://scripts/title.gd")
 const GameScript := preload("res://scripts/game.gd")
 
@@ -10,11 +9,17 @@ var current: Node
 var last_sel := 0
 
 func _ready() -> void:
-	var layer := CanvasLayer.new()
-	layer.layer = -1
-	add_child(layer)
-	bg = BgScript.new()
-	layer.add_child(bg)
+	bg = Cenario3D.new()   # mapa gótico em 3D, atrás de tudo que é 2D
+	add_child(bg)
+	var moldura := CanvasLayer.new()   # cantos escurecidos por cima do jogo, por baixo da interface
+	moldura.layer = 1
+	var r := ColorRect.new()
+	r.size = Vector2(GameData.W, GameData.H)
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var m := ShaderMaterial.new(); m.shader = preload("res://shaders/vinheta.gdshader")
+	r.material = m
+	moldura.add_child(r)
+	add_child(moldura)
 	show_title()
 
 func _clear() -> void:

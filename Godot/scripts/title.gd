@@ -6,6 +6,15 @@ signal start_game(class_indexes: Array)
 var sel := 0
 var bg
 var t := 0
+var views := []
+
+func _ready() -> void:
+	for i in 3:
+		var v := HeroView.new(GameData.CLASSES[i])
+		v.position = Vector2(GameData.W / 2 - 150 + i * 100 + 45, 56 + 78)
+		v.scale = Vector2(1.4, 1.4)
+		add_child(v)
+		views.append(v)
 
 func _physics_process(_d: float) -> void:
 	t += 1
@@ -16,6 +25,9 @@ func _physics_process(_d: float) -> void:
 		return
 	bg.cam_x = fmod(t * 0.4, 1200.0)
 	bg.queue_redraw()
+	for i in 3:
+		views[i].boneco.estado = "run" if i == sel else "idle"
+		views[i].animar(1.0 / 60.0)
 	queue_redraw()
 
 func _draw() -> void:
@@ -31,7 +43,6 @@ func _draw() -> void:
 		Gfx.rect(self, x, y, 90, 96, "#3c326e" if on else "#0f0f23", 0.9 if on else 0.8)
 		if on:
 			Gfx.rect(self, x, y, 90, 2, c.trim); Gfx.rect(self, x, y + 94, 90, 2, c.trim)
-		Gfx.hero(self, c, {"state": "run" if on else "idle", "anim": t, "on_ground": true}, Transform2D(0.0, Vector2(2, 2), 0.0, Vector2(x + 45, y + 76)))
 		Gfx.text(self, c.name, x + 45, y + 84, "#ffffff", 8, 1)
 		Gfx.text(self, c.cls, x + 45, y + 92, c.trim, 6, 1)
 	var d: Dictionary = GameData.CLASSES[sel]
@@ -45,4 +56,4 @@ func _draw() -> void:
 		Gfx.text(self, "%s  %s  (%d MP)" % ["ASD"[i], s.n, s.mp], W / 2 - 142, 211 + i * 9, s.c, 6)
 	Gfx.text(self, "Vida %d  ·  Mana %d" % [d.hp, d.mp], W / 2 + 132, 211, "#cfd3e6", 6, 2)
 	if t % 60 < 40:
-		Gfx.text(self, "← → escolher  ·  Enter ou Z para começar", W / 2, 264, "#ffffff", 7, 1)
+		Gfx.text(self, "Setas: escolher  ·  Enter ou Z: começar", W / 2, 264, "#ffffff", 7, 1)

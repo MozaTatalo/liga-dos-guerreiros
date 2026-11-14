@@ -29,6 +29,7 @@ var still := false
 var anim := 0.0
 var air := false
 var landed := false
+var esp: Inimigo3D   # corpo 3D do inimigo (espectro, lodo ou morcego), vive no Cenario3D
 
 func setup(g, k: String, px: float, s: int, plat_y = null) -> void:
 	game = g; kind = k; sec = s; x = px
@@ -44,6 +45,11 @@ func setup(g, k: String, px: float, s: int, plat_y = null) -> void:
 		y = GameData.GROUND - h
 	t = randi_range(0, 59)
 	anim = randf_range(0, 100)
+	if g.bg is Cenario3D:
+		if Espectro3D.TIPOS.has(k): esp = Espectro3D.new(k)
+		elif k == "lodo": esp = Lodo3D.new()
+		elif k == "morcego": esp = Morcego3D.new()
+		if esp: g.bg.add_child(esp)
 
 func tick() -> void:
 	var p: Hero = game.nearest_player(x + w / 2)
@@ -178,7 +184,41 @@ func contact_damage() -> float:
 	return 20.0 if (boss and state == "charge") else dmg
 
 # ---------------- Desenho ----------------
+func _exit_tree() -> void:
+	if is_instance_valid(esp):
+		esp.morrer()
+	if game and game.bg is Cenario3D:
+		game.bg.sombra(self, 0, 0, 0, false)
+
+func _sync_esp() -> void:
+	var PX := Cenario3D.PX
+	var pe_y := (y + h / 2) if fly else (y + h)
+	esp.position = Vector3((x + w / 2) / PX, (GameData.GROUND - pe_y) / PX, 0.0)
+	esp.lado = dir
+	esp.vx = vx
+	esp.vy = vy
+	esp.no_chao = on_ground
+	game.bg.sombra(self, x + w / 2, y + h, w * (3.2 if boss else 1.7))
+	esp.furia = boss and hp < maxhp * 0.5
+	if flash_t > 0:
+		esp.flash = 0.05
+		esp.amasso = maxf(esp.amasso, 0.6)
+	var prep := false
+	match kind:
+		"saqueador": prep = state == "windup"
+		"atirador": prep = state == "aim"
+		"morcego": prep = state == "dive" or state == "swoop"
+		"boss": prep = (state == "charge" and t < 35) or (state == "slam" and t < 20)
+	esp.preparo += ((1.0 if prep else 0.0) - esp.preparo) * 0.25
+	esp.posar(1.0 / 60.0)
+
 func _draw() -> void:
+	if esp:
+		_sync_esp()
+		if not boss and hp < maxhp:
+			Gfx.rect(self, roundf(x) - 1, roundf(y) - 14, w + 2, 3, "#000000")
+			Gfx.rect(self, roundf(x), roundf(y) - 13, w * (hp / maxhp), 1, "#ff4d4d")
+		return
 	var fl := flash_t > 0
 	var R := func(a, b, c, e, col): Gfx.rect(self, a, b, c, e, "#ffffff" if fl else col)
 	var X := roundf(x)
@@ -186,9 +226,9 @@ func _draw() -> void:
 	match kind:
 		"lodo":
 			var sq := 0 if on_ground else 2
-			Gfx.rect(self, X, Y + sq, w, h - sq, "#ffffff" if fl else "#5fc35a")
-			Gfx.rect(self, X + 1, Y - 1 + sq, w - 2, 1, "#ffffff" if fl else "#5fc35a")
-			Gfx.rect(self, X + 2, Y + 2 + sq, w - 4, 2, "#ffffff" if fl else "#8fe388")
+			Gfx.rect(self, X, Y + sq, w, h - sq, "#ffffff" if fl else "#3f8f8a")
+			Gfx.rect(self, X + 1, Y - 1 + sq, w - 2, 1, "#ffffff" if fl else "#3f8f8a")
+			Gfx.rect(self, X + 2, Y + 2 + sq, w - 4, 2, "#ffffff" if fl else "#8fe8e0")
 			Gfx.rect(self, X + (8 if dir > 0 else 3), Y + 4, 2, 2, "#112233")
 			Gfx.rect(self, X + (11 if dir > 0 else 1), Y + 4, 2, 2, "#112233")
 		"saqueador":
@@ -204,7 +244,7 @@ func _draw() -> void:
 				Gfx.rect(self, -6, -24, 12, 1, "#ff5050")
 		"morcego":
 			var fw := sin(anim * 0.4) * 4
-			var c := "#ffffff" if fl else "#5a3f86"
+			var c := "#ffffff" if fl else "#2a2238"
 			Gfx.rect(self, X + 3, Y + 1, 6, 6, c)
 			Gfx.tri(self, Vector2(X + 3, Y + 3), Vector2(X - 5, Y + 3 - fw), Vector2(X + 1, Y + 6), c)
 			Gfx.tri(self, Vector2(X + 9, Y + 3), Vector2(X + 17, Y + 3 - fw), Vector2(X + 11, Y + 6), c)
