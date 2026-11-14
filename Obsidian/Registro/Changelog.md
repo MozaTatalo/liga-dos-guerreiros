@@ -68,3 +68,12 @@ tags: [changelog, registro]
   - **Oren teleporta** no lugar da esquiva.
   - **Chefe:** apresentação com faixas de cinema e nome, áreas vermelhas no chão avisando cada golpe, barra de postura que quebra e deixa o chefe atordoado, e um golpe novo (pilares sombrios) abaixo de metade da vida.
   - Detalhes em [[Combate]], [[Bestiário]] e [[Interface e Menus]]. Mesmo link: https://claude.ai/artifact/DbFEAxdA1fhGAuE5BqX7fa
+- **Projeto Godot v0.8** (arte e animação, 2026-11-14): passada de beleza e fluidez feita a partir de uma pesquisa na internet ([[Pesquisa - Arte e Animação]]). Lista completa em [[Arte e Animação no Jogo]].
+  - **Animação:** juntas com molas, golpes com antecipação, balanço, contato e recuperação, quatro cortes diferentes para o Kael, estica e amassa no pulo e no pouso, respiração e troca de peso parado, cabelo em pêndulo, virada de corpo. Poses reunidas em `poses.gd`.
+  - **Rastro da arma** medido na lâmina 3D de verdade, no lugar do arco pintado.
+  - **Sombreamento anime:** sombras coloridas por material, contorno tingido, luz de recorte na silhueta, brilho em faixa no cabelo.
+  - **Impacto:** pausa de impacto por peso do golpe, tremor de câmera suave com empurrão na direção do golpe, aproximação da câmera no golpe pesado, câmera lenta ao limpar a sala e ao derrotar o chefe, faíscas em camadas, poeira, imagens fantasma do próprio boneco na esquiva.
+  - **Cenário:** vitrais desenhados por shader, pedra com juntas e desgaste, chão molhado refletindo os braseiros, raios de luz melhores, cor final da imagem.
+  - **Interface:** retrato do painel segue a cabeça; corte de cena da Fúria com pose nova.
+  - Corpo base, rosto e macacão não mudaram. Regras de jogo não mudaram (dano, alcance, tempos dos golpes).
+  - Mesmo link: https://claude.ai/artifact/DbFEAxdA1fhGAuE5BqX7fa

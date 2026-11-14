@@ -8,54 +8,31 @@ extends Node2D
 const CARGA_INI := 12      # passos segurando o ataque até começar a carregar
 const CARGA_NIVEL := 24    # passos para carregar cada nível
 
-## Poses do boneco (ângulos das juntas). "pre" é a preparação, "pos" é o golpe.
-const POSE := {
-	"lanca_pre": {"S": -0.9, "E": 0.2, "W": -1.5, "inc": -0.38, "sobe": -0.2, "cA": 0.95, "jA": -1.0, "cB": -0.5, "jB": -0.5, "tor": 0.5},
-	"lanca_pos": {"S": 3.05, "E": 0.05, "W": -1.38, "inc": 0.2, "sobe": 0.06, "cA": 0.3, "jA": -0.1, "cB": -0.35, "tor": -0.4, "cab": -0.2},
-	"escudo_pre": {"S2": 0.2, "E2": 1.9, "S": -0.6, "E": 0.6, "tor": -0.5, "inc": -0.1, "cA": 0.5, "cB": -0.4},
-	"escudo_pos": {"S2": 1.45, "E2": 0.25, "S": -0.9, "E": 0.4, "tor": 0.55, "inc": -0.32, "cA": 0.85, "jA": -0.7, "cB": -0.75, "jB": -0.1, "sobe": -0.1},
-	"mergulho": {"S": 0.75, "E": 0.05, "W": -0.35, "S2": -0.8, "E2": 0.6, "inc": -0.55, "cA": 0.9, "jA": -1.5, "cB": -0.1, "jB": -0.9, "sobe": 0.0},
-	"tiro_pre": {"S": 1.5, "E": 0.05, "W": -1.3, "S2": 1.1, "E2": 2.0, "tor": 0.55, "inc": 0.02, "cA": 0.45, "jA": -0.2, "cB": -0.45},
-	"tiro_pos": {"S": 1.55, "E": 0.0, "W": -1.3, "S2": 0.7, "E2": 0.9, "tor": 0.35, "inc": 0.06, "cA": 0.45, "jA": -0.2, "cB": -0.45},
-	"tiro_baixo_pre": {"S": 0.9, "E": 0.05, "W": -1.3, "S2": 0.6, "E2": 1.9, "tor": 0.5, "inc": -0.25, "cA": 0.8, "jA": -1.2, "cB": -0.2, "jB": -0.8},
-	"tiro_baixo_pos": {"S": 0.9, "E": 0.0, "W": -1.3, "S2": 0.3, "E2": 0.8, "tor": 0.3, "inc": -0.2, "cA": 0.8, "jA": -1.2, "cB": -0.2, "jB": -0.8},
-	"chute_pre": {"cA": 0.5, "jA": -1.6, "inc": 0.1, "S": -0.5, "E": 0.5, "S2": -0.4, "E2": 0.8, "cB": -0.15, "jB": -0.1},
-	"chute_pos": {"cA": 1.55, "jA": -0.02, "inc": 0.32, "S": -0.8, "E": 0.3, "S2": -0.7, "E2": 0.4, "cB": -0.2, "jB": -0.05, "sobe": 0.02},
-	"chute_alto": {"cA": 2.3, "jA": -0.02, "inc": 0.5, "S": -1.0, "E": 0.3, "S2": -0.9, "E2": 0.4, "cB": -0.1, "jB": -0.05, "sobe": 0.06, "cab": -0.2},
-	"rasteira": {"cA": 1.35, "jA": -0.02, "inc": 0.55, "S": -1.1, "E": 0.2, "S2": -1.0, "E2": 0.3, "cB": -0.9, "jB": -1.6, "sobe": -0.42},
-	"conjura_pre": {"S": 2.5, "E": 0.5, "W": -1.2, "S2": 0.6, "E2": 1.4, "inc": 0.1, "cA": 0.3, "cB": -0.35},
-	"conjura_pos": {"S": 1.35, "E": 0.05, "W": -0.9, "S2": 1.2, "E2": 0.3, "inc": -0.15, "tor": 0.25, "cA": 0.6, "jA": -0.4, "cB": -0.55},
-	"pilar_pre": {"S": 0.5, "E": 0.3, "W": -1.5, "S2": 0.4, "E2": 0.6, "inc": -0.35, "sobe": -0.18, "cA": 0.8, "jA": -0.9, "cB": -0.5, "jB": -0.5},
-	"pilar_pos": {"S": 2.9, "E": 0.05, "W": -1.38, "S2": 2.6, "E2": 0.1, "inc": 0.18, "sobe": 0.05, "cA": 0.25, "cB": -0.3, "cab": -0.25},
-	"carga": {"S": 0.95, "E": 1.7, "W": -1.5, "S2": 0.9, "E2": 1.6, "inc": -0.16, "sobe": -0.12, "cA": 0.62, "jA": -0.7, "cB": -0.6, "jB": -0.35, "cab": 0.15},
-	"vitoria": {"S": 3.0, "E": 0.08, "W": -1.38, "S2": 0.5, "E2": 1.5, "inc": 0.1, "cA": 0.3, "cB": -0.3, "cab": -0.2, "tor": -0.2},
-	"furia": {"S": 2.95, "E": 0.1, "W": -1.38, "S2": 0.3, "E2": 1.2, "inc": 0.05, "tor": -0.3, "cab": 0.0, "cA": 0.45, "jA": -0.3, "cB": -0.4, "jB": -0.2},
-	"guarda": {"S2": 1.3, "E2": 1.25, "S": -0.45, "E": 0.55, "inc": -0.12, "sobe": -0.14, "cA": 0.55, "jA": -0.7, "cB": -0.5, "jB": -0.4, "tor": 0.25},
-	"giro": {"S": 1.55, "E": 0.02, "W": -1.38, "S2": -0.6, "E2": 0.8, "inc": -0.05, "cA": 0.4, "cB": -0.4, "sobe": -0.05},
-}
+## Poses do boneco: ficam em poses.gd.
+const POSE := Poses.P
 
 ## Golpes de cada classe. dur: passos; hit: passo(s) do acerto; next: golpe seguinte se apertar de novo;
-## anim: número (golpe de espada 0, 1 ou 2 do boneco) ou [pose_pre, pose_pos].
+## anim: [pose de antecipação, pose do golpe] (ver poses.gd); r: rastro de luz da "arma" ou do "pe".
 const GOLPES := {
 	"guardiao": {
-		"g1": {"dur": 17, "hit": [5], "next": "g2", "anim": 0},
-		"g2": {"dur": 17, "hit": [5], "next": "g3", "anim": 1},
-		"g3": {"dur": 19, "hit": [6], "next": "g4", "anim": 0},
-		"g4": {"dur": 30, "hit": [9], "next": "", "anim": 2},
-		"lanca": {"dur": 28, "hit": [8], "next": "", "anim": ["lanca_pre", "lanca_pos"]},
+		"g1": {"dur": 17, "hit": [5], "next": "g2", "anim": ["corte1_pre", "corte1_pos"], "r": "arma"},
+		"g2": {"dur": 17, "hit": [5], "next": "g3", "anim": ["corte2_pre", "corte2_pos"], "r": "arma"},
+		"g3": {"dur": 19, "hit": [6], "next": "g4", "anim": ["corte3_pre", "corte3_pos"], "r": "arma"},
+		"g4": {"dur": 30, "hit": [9], "next": "", "anim": ["corte4_pre", "corte4_pos"], "r": "arma"},
+		"lanca": {"dur": 28, "hit": [8], "next": "", "anim": ["lanca_pre", "lanca_pos"], "r": "arma"},
 		"corrida": {"dur": 26, "hit": [5], "next": "", "anim": ["escudo_pre", "escudo_pos"]},
-		"ar1": {"dur": 15, "hit": [4], "next": "ar2", "anim": 0},
-		"ar2": {"dur": 15, "hit": [4], "next": "ar3", "anim": 1},
-		"ar3": {"dur": 22, "hit": [7], "next": "", "anim": 2},
+		"ar1": {"dur": 15, "hit": [4], "next": "ar2", "anim": ["corte1_pre", "corte1_pos"], "r": "arma"},
+		"ar2": {"dur": 15, "hit": [4], "next": "ar3", "anim": ["corte2_pre", "corte2_pos"], "r": "arma"},
+		"ar3": {"dur": 22, "hit": [7], "next": "", "anim": ["corte4_pre", "corte4_pos"], "r": "arma"},
 		"mergulho": {"dur": 999, "hit": [3], "next": "", "anim": ["mergulho", "mergulho"]},
-		"contra": {"dur": 28, "hit": [4], "next": "", "anim": ["escudo_pos", "lanca_pos"]},
+		"contra": {"dur": 28, "hit": [4], "next": "", "anim": ["escudo_pos", "lanca_pos"], "r": "arma"},
 	},
 	"cacadora": {
 		"g1": {"dur": 15, "hit": [5], "next": "g2", "anim": ["tiro_pre", "tiro_pos"]},
 		"g2": {"dur": 15, "hit": [5], "next": "g3", "anim": ["tiro_pre", "tiro_pos"]},
-		"g3": {"dur": 17, "hit": [6], "next": "g4", "anim": ["chute_pre", "chute_pos"]},
+		"g3": {"dur": 17, "hit": [6], "next": "g4", "anim": ["chute_pre", "chute_pos"], "r": "pe"},
 		"g4": {"dur": 30, "hit": [11], "next": "", "anim": ["tiro_pre", "tiro_pos"]},
-		"lanca": {"dur": 28, "hit": [7], "next": "", "anim": ["chute_pre", "chute_alto"]},
+		"lanca": {"dur": 28, "hit": [7], "next": "", "anim": ["chute_pre", "chute_alto"], "r": "pe"},
 		"corrida": {"dur": 26, "hit": [4, 12], "next": "", "anim": ["rasteira", "rasteira"]},
 		"ar1": {"dur": 14, "hit": [5], "next": "ar2", "anim": ["tiro_baixo_pre", "tiro_baixo_pos"]},
 		"ar2": {"dur": 14, "hit": [5], "next": "ar3", "anim": ["tiro_baixo_pre", "tiro_baixo_pos"]},
@@ -63,8 +40,8 @@ const GOLPES := {
 		"mergulho": {"dur": 24, "hit": [7], "next": "", "anim": ["tiro_baixo_pre", "tiro_baixo_pos"]},
 	},
 	"arcanista": {
-		"g1": {"dur": 17, "hit": [5], "next": "g2", "anim": 0},
-		"g2": {"dur": 17, "hit": [5], "next": "g3", "anim": 1},
+		"g1": {"dur": 17, "hit": [5], "next": "g2", "anim": ["corte1_pre", "corte1_pos"], "r": "arma"},
+		"g2": {"dur": 17, "hit": [5], "next": "g3", "anim": ["corte2_pre", "corte2_pos"], "r": "arma"},
 		"g3": {"dur": 20, "hit": [7], "next": "g4", "anim": ["conjura_pre", "conjura_pos"]},
 		"g4": {"dur": 32, "hit": [11], "next": "", "anim": ["pilar_pre", "conjura_pos"]},
 		"lanca": {"dur": 30, "hit": [10], "next": "", "anim": ["pilar_pre", "pilar_pos"]},
@@ -121,6 +98,8 @@ var furia := 0.0           # barra de Fúria, 0 a 1
 var desperto := 0          # passos restantes do despertar
 var contra_t := 0          # janela do contra-ataque depois da defesa perfeita
 var subiu_t := 0           # efeito de subir de nível
+var parado_t := 0          # quadros seguidos em pausa ou hitstop
+var rastro_id := -1        # rastro de luz aberto no momento
 var view: HeroView
 var view_corte: HeroView   # o mesmo boneco em resolução alta, só para o corte de cena da Fúria
 
@@ -352,6 +331,7 @@ func tick() -> void:
 		jumps = 0; air_n = 0
 		if was_air:
 			game.dust(cx(), y + h, 3)
+			view.boneco.impulso("est", -clampf(vy_ant, 2.0, 8.5) * 1.4); view.boneco.impulso("sobe", -clampf(vy_ant, 2.0, 8.5) * 0.25)
 			if state == "attack" and mv == "mergulho" and d.id == "guardiao": _pouso_mergulho(vy_ant)
 			elif state == "attack" and (mv.begins_with("ar") or mv == "mergulho"): set_idle()
 	game.apply_barriers(self)
@@ -361,9 +341,11 @@ func _pular() -> void:
 		drop_t = 10; y += 1
 	elif on_ground:
 		vy = -6.3; jumps = 1
+		view.boneco.impulso("est", 7.5)
 		game.dust(cx(), y + h); Som.tocar("pulo", 0.8)
 	elif jumps < 2:
 		vy = -5.5; jumps = 2
+		view.boneco.impulso("est", 5.0)
 		game.sparks(cx(), y + h, "#ffffff", 5, 1.5); Som.tocar("pulo", 0.8, 1.25)
 
 func _esquivar() -> void:
@@ -496,25 +478,25 @@ func _hit_guardiao(f: int) -> void:
 		"g1", "g2", "g3":
 			if on_ground: vx = f * 1.6
 			golpe(10 if mv != "g3" else 12, [-4, 0, 26, 20])
-			corte(19.0, 1 if mv == "g2" else 0); Som.tocar("golpe")
+			Som.tocar("golpe")
 		"g4":
 			if on_ground: vx = f * 2.6
 			golpe(24, [-4, -8, 30, 30], {"kbx": 4.6, "launch": 3.4, "heavy": true})
-			corte(25.0, 2, "#ffe9a8"); Som.tocar("golpe2")
+			Som.tocar("golpe2")
 		"lanca":
 			golpe(14, [-6, -14, 26, 38], {"kbx": 0.5, "launch": 7.2, "heavy": true})
-			corte(24.0, 1, "#bfe4ff"); Som.tocar("golpe2", 1.0, 1.2)
+			Som.tocar("golpe2", 1.0, 1.2)
 		"corrida":
 			invuln = maxi(invuln, 8)
 			golpe(16, [-4, 0, 16, 24], {"kbx": 3.8, "launch": 2.6, "heavy": true, "life": 12, "place": follow(-4, 0, 16, 24)})
 			game.dust(cx(), y + h, 4); Som.tocar("golpe2", 0.9, 0.9)
 		"ar1", "ar2":
 			golpe(10, [-4, -4, 26, 26], {"kbx": 0.6, "launch": 2.4})
-			corte(19.0, 1 if mv == "ar2" else 0); Som.tocar("golpe")
+			Som.tocar("golpe")
 			vy = -1.4
 		"ar3":
 			golpe(16, [-4, -8, 28, 34], {"kbx": 2.0, "launch": -6.0, "heavy": true})   # crava o inimigo no chão
-			corte(24.0, 2, "#ffe9a8"); Som.tocar("golpe2")
+			Som.tocar("golpe2")
 		"mergulho":
 			golpe(8, [-6, 4, 24, 26], {"kbx": 0.4, "launch": -4.0, "life": 40, "rehit": 8, "place": follow(-6, 4, 24, 26)})
 			Som.tocar("esquiva", 0.8, 0.7)
@@ -522,7 +504,7 @@ func _hit_guardiao(f: int) -> void:
 			invuln = maxi(invuln, 16); contra_t = 0
 			if on_ground: vx = f * 2.4
 			golpe(34, [-6, -14, 34, 40], {"kbx": 1.2, "launch": 7.6, "heavy": true, "postura": 3.0})
-			corte(30.0, 1, "#ffe9a8"); game.anel(cx() + f * 14, y + 8, "#ffe9a8", 30.0)
+			game.anel(cx() + f * 14, y + 8, "#ffe9a8", 30.0)
 			Som.tocar("golpe2", 1.0, 0.85); Som.tocar("critico", 0.7)
 
 func _pouso_mergulho(queda: float) -> void:
@@ -543,7 +525,7 @@ func _hit_cacadora(f: int, i: int) -> void:
 			if on_ground: vx = -f * 0.5
 		"g3":
 			golpe(9, [-4, 2, 20, 18], {"kbx": 3.4, "launch": 1.6})   # chute que afasta
-			corte(15.0, 0, "#c9f2c0"); Som.tocar("golpe", 1.0, 1.3)
+			Som.tocar("golpe", 1.0, 1.3)
 			if on_ground: vx = f * 1.2
 		"g4":
 			tiro(20, {"pierce": true, "w": 18.0, "kbx": 4.2, "launch": 2.2, "color": "#ffd23f", "heavy": true, "vx": 8.0 * f})
@@ -551,7 +533,7 @@ func _hit_cacadora(f: int, i: int) -> void:
 			Som.tocar("golpe2", 0.7, 1.4)
 		"lanca":
 			golpe(12, [-6, -14, 22, 38], {"kbx": 0.4, "launch": 7.0, "heavy": true})
-			corte(22.0, 1, "#c9f2c0"); Som.tocar("golpe2", 1.0, 1.3)
+			Som.tocar("golpe2", 1.0, 1.3)
 			vy = -3.2; on_ground = false
 		"corrida":
 			if i == 0:
@@ -577,7 +559,7 @@ func _hit_arcanista(f: int) -> void:
 		"g1", "g2":
 			if on_ground: vx = f * 1.0
 			golpe(8, [-4, 0, 22, 20], {"kbx": 1.2})
-			corte(16.0, 1 if mv == "g2" else 0, "#59d0ff"); Som.tocar("golpe", 1.0, 1.15)
+			Som.tocar("golpe", 1.0, 1.15)
 		"g3":
 			_raio_arcano(12, 5.0, 0.0)
 		"g4":
@@ -636,7 +618,7 @@ func skill_start(i: int) -> void:
 			elif i == 1:
 				vy = -6.6; vx = 1.4 * facing; invuln = maxi(invuln, 24)
 				game.spawn_hitbox({"owner": "p", "src": self, "skill": true, "dmg": 36 * atk, "kbx": 0.8, "launch": 8.2, "life": 14, "heavy": true, "dir": facing, "place": follow(-6, -16, 26, 42)})
-				corte(30.0, 1, "#bfe4ff"); Som.tocar("golpe2", 1.0, 1.2)
+				Som.tocar("golpe2", 1.0, 1.2)
 			else:
 				invuln = maxi(invuln, 90)
 				game.spawn_hitbox({"owner": "p", "src": self, "skill": true, "dmg": 9 * atk, "kbx": -1.6, "launch": 2.2, "life": 60, "rehit": 6, "dir": 0,
@@ -774,32 +756,37 @@ func sync_node() -> void:
 		view.boneco.luz_quente(Vector3(lb.x * facing, lb.y, lb.z), lb.w)
 	queue_redraw()
 
-## Traduz o estado do herói para a pose do boneco 3D.
+## Traduz o estado do herói para a animação do boneco 3D.
 func _animar_boneco() -> void:
 	var b := view.boneco
 	var dt := 1.0 / 60.0
+	# pausa e hitstop: o boneco congela na pose do impacto (o primeiro quadro do hitstop ainda anda, para chegar no contato)
+	parado_t = parado_t + 1 if ((game.hitstop > 0 and state != "furia") or game.paused) else 0
+	if parado_t > 1:
+		return
+	if view.virado != facing and not b.J.is_empty() and state != "skill":
+		b.J.gira = -1.2      # virada: o corpo passa de frente para a câmera e assenta
 	view.virado = facing
 	b.vento = clampf(absf(vx) / 2.5, 0.0, 1.0)
 	b.vy = -vy
+	b.corrida = 1.0 if (running or state == "dash") else 0.0
 	b.taxa_livre = 30.0
+	b.rastro_livre = false
+	b.olhos_fechados = dead or state == "hurt"
 	if dead or state == "hurt":
 		b.estado = "dor"
 	elif game.result != null:
 		b.estado = "livre"; b.alvo = POSE.vitoria; b.taxa_livre = 8.0
 	elif state == "attack":
-		var an = M.anim
-		var hit: float = M.hit[0]
-		if an is int:
-			b.estado = "atk"; b.passo = an
-			var dur: float = minf(M.dur, hit + 20.0)
-			if state_t <= hit:
-				b.t = state_t / hit * b.ACERTO[an]
-			else:
-				b.t = b.ACERTO[an] + minf(1.0, (state_t - hit) / maxf(1.0, dur - hit)) * (b.DUR[an] - b.ACERTO[an])
+		var an: Array = M.anim
+		if an[0] == an[1]:
+			b.estado = "livre"; b.alvo = POSE[an[0]]; b.taxa_livre = 45.0
 		else:
-			b.estado = "livre"
-			b.alvo = POSE[an[0]] if state_t < hit else POSE[an[1]]
-			b.taxa_livre = 26.0 if state_t < hit else 55.0
+			var no_ar := mv.begins_with("ar")
+			b.estado = "golpe"
+			b.g_pre = Poses.pose(an[0], no_ar); b.g_pos = Poses.pose(an[1], no_ar)
+			b.g_t = state_t; b.g_hit = M.hit[0]; b.g_fim = minf(M.dur, M.hit[0] + 26.0)
+			b.g_rastro = M.get("r", "")
 	elif state == "charge":
 		b.estado = "livre"; b.alvo = POSE.carga; b.taxa_livre = 14.0
 	elif state == "furia":
@@ -807,30 +794,53 @@ func _animar_boneco() -> void:
 	elif state == "guard":
 		b.estado = "livre"; b.alvo = POSE.guarda; b.taxa_livre = 40.0
 	elif state == "skill":
-		b.estado = "livre"; b.taxa_livre = 50.0
-		if d.id == "guardiao":
-			if skill == 0:
-				b.alvo = POSE.escudo_pos
-			elif skill == 1:
-				b.alvo = POSE.lanca_pos if state_t > 3 else POSE.lanca_pre
-			else:
-				b.alvo = POSE.giro if state_t < 60 else POSE.lanca_pos
-				if state_t < 60: view.virado = 1 if (state_t / 4) % 2 == 0 else -1
-		elif d.id == "cacadora":
-			var solta: int = [6, 9, 10][skill]
-			if skill == 2: b.alvo = POSE.pilar_pre if state_t < solta else POSE.pilar_pos
-			else: b.alvo = POSE.tiro_pre if state_t < solta else POSE.tiro_pos
-		else:
-			var solta2: int = [8, 10, 12][skill]
-			if skill == 2: b.alvo = POSE.pilar_pre if state_t < solta2 else POSE.pilar_pos
-			else: b.alvo = POSE.conjura_pre if state_t < solta2 else POSE.conjura_pos
+		_animar_habilidade(b)
 	elif state == "dash":
-		b.estado = "run"; dt *= 1.6
+		b.estado = "run"; dt *= 1.5
 	elif not on_ground:
 		b.estado = "ar"
 	elif state == "run":
 		b.estado = "run"
-		if running: dt *= 1.35
+		if running: dt *= 1.15
 	else:
 		b.estado = "idle"
 	view.animar(dt)
+	_rastro(b)
+
+func _animar_habilidade(b: Boneco3D) -> void:
+	var dur: float = d.skills[skill].dur
+	b.g_t = state_t; b.g_fim = dur; b.g_rastro = ""
+	if d.id == "guardiao":
+		if skill == 0:
+			b.estado = "golpe"; b.g_pre = POSE.escudo_pre; b.g_pos = POSE.escudo_pos; b.g_hit = 3.0
+		elif skill == 1:
+			b.estado = "golpe"; b.g_pre = POSE.lanca_pre; b.g_pos = POSE.lanca_pos; b.g_hit = 6.0; b.g_rastro = "arma"
+		elif state_t < 60:
+			# Tempestade de Aço: o corpo gira de verdade, com a lâmina estendida
+			var giro: Dictionary = POSE.giro.duplicate()
+			giro.gira = state_t * 0.52
+			b.estado = "livre"; b.alvo = giro; b.taxa_livre = 60.0; b.rastro_livre = true
+		else:
+			if b.J.has("gira"): b.J.gira = fposmod(b.J.gira + PI, TAU) - PI
+			b.estado = "golpe"; b.g_pre = POSE.corte4_pre; b.g_pos = POSE.corte4_pos; b.g_t = state_t - 54.0; b.g_hit = 8.0; b.g_fim = 30.0; b.g_rastro = "arma"
+	elif d.id == "cacadora":
+		b.estado = "golpe"; b.g_hit = [6, 9, 10][skill]
+		if skill == 2:
+			b.g_pre = POSE.pilar_pre; b.g_pos = POSE.pilar_pos
+		else:
+			b.g_pre = POSE.tiro_pre; b.g_pos = POSE.tiro_pos
+	else:
+		b.estado = "golpe"; b.g_hit = [8, 10, 12][skill]
+		if skill == 2:
+			b.g_pre = POSE.pilar_pre; b.g_pos = POSE.pilar_pos
+		else:
+			b.g_pre = POSE.conjura_pre; b.g_pos = POSE.conjura_pos
+
+## Passa os pontos da arma deste quadro para o rastro de luz (em coordenadas do jogo).
+func _rastro(b: Boneco3D) -> void:
+	if b.amostras.is_empty():
+		rastro_id = -1
+		return
+	var cor: String = M.get("cor", d.trim) if state == "attack" else d.skills[maxi(skill, 0)].c
+	for a in b.amostras:
+		rastro_id = game.rastro(rastro_id, position + view.para_jogo(a[0]), position + view.para_jogo(a[1]), cor)

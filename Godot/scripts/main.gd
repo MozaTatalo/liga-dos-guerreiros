@@ -22,6 +22,8 @@ func _ready() -> void:
 	moldura.add_child(r)
 	add_child(moldura)
 	var direto := OS.get_environment("LIGA_TESTE")   # só para testes: "jogo" pula os menus
+	var roteiro := OS.get_environment("LIGA_ROTEIRO")   # só para testes: script externo que joga sozinho e tira capturas
+	if roteiro != "": add_child(load(roteiro).new())
 	if direto.begins_with("jogo"): start_game()
 	else: show_menu(direto if direto != "" else "titulo")
 

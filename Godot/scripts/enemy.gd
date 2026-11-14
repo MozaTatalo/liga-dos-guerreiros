@@ -344,6 +344,14 @@ func _sync_esp() -> void:
 	elif state == "down": alvo_t = 1.5
 	elif state == "quebrado": alvo_t = 0.32 + sin(t * 0.08) * 0.04
 	tombo += (alvo_t - tombo) * 0.3
+	if game.hitstop > 0 and not game.paused:
+		# pausa do impacto: quem apanhou treme (de lado no chão, na vertical no ar), forte no começo e sumindo
+		if flash_t > 0:
+			var amp := minf(game.hitstop, 8) * 0.012 * (1.0 if int(game.hitstop) % 2 == 0 else -1.0)
+			if on_ground or boss: esp.position.x += amp
+			else: esp.position.y += amp
+		esp.rotation.z = tombo
+		return
 	esp.posar(1.0 / 60.0)
 	esp.rotation.z = tombo
 

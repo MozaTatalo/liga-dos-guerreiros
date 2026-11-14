@@ -4,6 +4,7 @@ extends Node2D
 
 var game
 var luz: Node2D
+var eco: Node2D     # imagens fantasma dos heróis (silhueta de luz colorida)
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
@@ -12,10 +13,23 @@ func _ready() -> void:
 	luz.material = m
 	luz.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	luz.draw.connect(_draw_luz)
+	eco = Node2D.new()
+	var me := ShaderMaterial.new(); me.shader = preload("res://shaders/fantasma.gdshader")
+	eco.material = me
+	eco.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	eco.draw.connect(_draw_eco)
+	add_child(eco)
 	add_child(luz)
 
 func _process(_d: float) -> void:
 	luz.queue_redraw()
+	eco.queue_redraw()
+
+func _draw_eco() -> void:
+	for f in game.fantasmas:
+		var k: float = float(f.t) / f.vida
+		var c: Color = f.c
+		eco.draw_texture_rect(f.tex, Rect2(f.pos.x - f.tam / 2.0, f.pos.y - f.alt / 2.0, f.tam, f.alt), false, Color(c.r, c.g, c.b, 0.55 * (1.0 - k)))
 
 func _draw() -> void:
 	for k in game.pickups:
@@ -30,6 +44,11 @@ func _draw() -> void:
 		var p := Vector2(k.x + 4, k.y + 4 + b)
 		draw_colored_polygon(PackedVector2Array([p + Vector2(0, -5), p + Vector2(4, 0), p + Vector2(0, 5), p + Vector2(-4, 0)]), c)
 		draw_colored_polygon(PackedVector2Array([p + Vector2(0, -5), p + Vector2(4, 0), p + Vector2(0, 0)]), c.lightened(0.5))
+	for q in game.parts:
+		if q.has("po"):
+			var kp: float = 1.0 - q.life / q.vida          # 0 nasce, 1 some
+			var cp := Gfx.col(q.c, 0.5 * (1.0 - kp) * (1.0 - kp))
+			draw_circle(Vector2(q.x, q.y), q.s * (0.7 + kp * 1.6), cp)
 	for o in game.projs:
 		_proj(o)
 	for f in game.fx:
@@ -37,8 +56,11 @@ func _draw() -> void:
 			f.draw.call(self, f.t / float(f.life))
 	draw_set_transform_matrix(Transform2D.IDENTITY)
 	for n in game.nums:
-		var sz: int = (13 if n.big else 9) + (3 if n.t < 4 else 0)
-		Ui.txt(self, n.v, n.x, n.y - n.t * 0.5, n.c, sz, 1, minf(1.0, (45 - n.t) / 15.0), Ui.neg())
+		# número de dano: nasce grande e encolhe, sobe rápido e desacelera
+		var u: float = n.t / 45.0
+		var pulo := maxf(0.0, 1.0 - n.t / 6.0)
+		var sz: int = int(roundf((13 if n.big else 9) * (1.0 + 0.55 * pulo)))
+		Ui.txt(self, n.v, n.x, n.y - (1.0 - (1.0 - u) * (1.0 - u)) * 20.0, n.c, sz, 1, minf(1.0, (45 - n.t) / 12.0), Ui.neg())
 
 func _draw_luz() -> void:
 	for k in game.pickups:
@@ -46,13 +68,23 @@ func _draw_luz() -> void:
 		var c := Color("#ff4060") if k.kind == "hp" else (Color("#4a8bff") if k.kind == "mp" else Color("#e8b93a"))
 		luz.draw_circle(Vector2(k.x + 4, k.y + 4 + b), 8 if k.kind != "ouro" else 4, Color(c.r, c.g, c.b, 0.25 + 0.1 * sin(k.t * 0.2)))
 	for q in game.parts:
+		if q.has("po"): continue
 		var a: float = q.get("a", minf(1.0, q.life / 10.0))
 		var c := Gfx.col(q.c, a)
 		var p := Vector2(q.x, q.y)
-		luz.draw_circle(p, q.s * 1.3, Color(c.r, c.g, c.b, a * 0.18))
-		luz.draw_circle(p, q.s * 0.75, c)
-		if absf(q.vx) + absf(q.vy) > 1.2:
-			luz.draw_line(p, p - Vector2(q.vx, q.vy) * 2.2, Color(c.r, c.g, c.b, a * 0.6), q.s * 0.6)
+		var v := Vector2(q.vx, q.vy)
+		luz.draw_circle(p, q.s * 1.4, Color(c.r, c.g, c.b, a * 0.16))
+		if v.length_squared() > 0.5:
+			# faísca em agulha: comprida na direção em que voa, com o miolo claro
+			var d := v.normalized()
+			var comp: float = minf(v.length() * 2.6, 12.0) + q.s
+			var lat: Vector2 = Vector2(-d.y, d.x) * q.s * 0.5
+			luz.draw_colored_polygon(PackedVector2Array([p + d * q.s, p + lat, p - d * comp, p - lat]), c)
+			luz.draw_line(p, p - d * comp * 0.5, Color(1, 1, 1, a * 0.7), 0.6)
+		else:
+			luz.draw_colored_polygon(PackedVector2Array([p + Vector2(0, -q.s), p + Vector2(q.s * 0.7, 0), p + Vector2(0, q.s), p + Vector2(-q.s * 0.7, 0)]), c)
+	for r in game.rastros:
+		Gfx.rastro(luz, r)
 	for o in game.projs:
 		_proj_luz(o)
 	for f in game.fx:

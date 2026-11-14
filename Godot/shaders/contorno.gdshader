@@ -1,4 +1,5 @@
-// Contorno por casca invertida, como o contorno() do kael.js.
+// Contorno por casca invertida, como o contorno() do kael.js. A linha leva a cor da peça, bem escurecida,
+// em vez de preto puro: fica mais leve e mais "anime" quando o boneco aparece pequeno.
 shader_type spatial;
 render_mode unshaded, cull_front;
 uniform float esp = 0.01;

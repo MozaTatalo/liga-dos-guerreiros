@@ -15,7 +15,8 @@ Menus: setas escolhem, Z ou Enter confirma, C ou Esc volta.
 | Arquivo | O que faz |
 |---|---|
 | `scripts/game_data.gd` | Números do jogo: classes, habilidades, inimigos, fases, dificuldades |
-| `scripts/hero.gd` | Personagem jogável: golpes de cada classe (tabela `GOLPES`), poses (`POSE`), carga de mana e habilidades |
+| `scripts/hero.gd` | Personagem jogável: golpes de cada classe (tabela `GOLPES`), carga de mana e habilidades |
+| `scripts/poses.gd` | Todas as poses dos heróis (ângulos das juntas). Cada golpe usa um par: antecipação e contato |
 | `scripts/enemy.gd` | Inimigos e chefe: IA e reações (lançado, caído) |
 | `scripts/game.gd` | A partida: jogadores, golpes, projéteis, câmera, recompensas, pausa, resultado |
 | `scripts/main.gd`, `menus.gd` | Fluxo do jogo e todos os menus (título, lobby, personagens, fases, golpes, opções) |
@@ -26,7 +27,8 @@ Menus: setas escolhem, Z ou Enter confirma, C ou Esc volta.
 | `scripts/player_input.gd` | De onde vêm os comandos de cada jogador (base para multijogador) |
 | `scripts/cenario3d.gd` | Mapa gótico 3D atrás da fase, com a câmera 3D presa à câmera do jogo |
 | `scripts/inimigo3d.gd`, `espectro3d.gd`, `lodo3d.gd`, `morcego3d.gd` | Corpos 3D dos inimigos |
-| `scripts/boneco3d.gd`, `hero_view.gd` | Boneco 3D do herói (corpo base) e como ele aparece no jogo 2D |
+| `scripts/boneco3d.gd`, `hero_view.gd` | Boneco 3D do herói (corpo base), animação por molas, rastro da arma, e como ele aparece no jogo 2D |
+| `shaders/` | Sombreamento anime dos bonecos (`toon`, `contorno`, `heroi_sprite`), cenário (`cenario`, `vitral`, `raio`, `ceu`, `nevoa`) e cor final da imagem (`vinheta`) |
 | `scripts/gfx.gd`, `fx_layer.gd`, `world.gd` | Efeitos de golpe, projéteis, itens, barreiras e portal |
 | `assets/fontes/` | Cinzel e Alegreya Sans (licença aberta OFL, textos das licenças na pasta) |
 | `assets/som/` | Efeitos e músicas provisórios, gerados por `ferramentas/gerar_som.py` |

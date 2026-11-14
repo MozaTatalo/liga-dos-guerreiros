@@ -13,9 +13,9 @@ Jogo de ação e plataforma 2D com rolagem lateral, focado em combate com combos
 - **Sistemas:** [[Combate]] · [[Classes e Armas]] · [[Equipamentos]] · [[Progressão]] · [[Interface e Menus]] · [[Áudio]]
 - **Mapas:** [[Fase 1 - Ruínas de Arvália]]
 - **Inimigos:** [[Bestiário]]
-- **Arte:** [[Pipeline de Arte]] · [[Direção de Arte]] · [[Personagens em 2.5D]]
+- **Arte:** [[Pipeline de Arte]] · [[Direção de Arte]] · [[Personagens em 2.5D]] · [[Pesquisa - Arte e Animação]] · [[Arte e Animação no Jogo]]
 - **Tecnologia:** [[Engine e Plataforma]] · [[Projeto Godot]] · [[Multijogador]] · [[Protótipo]]
 - **Registro:** [[Pedidos do Italo]] · [[Decisões]] · [[Changelog]]
 
 ## Tags usadas
-#personagem #classe #combate #mapa #inimigo #chefe #arte #tecnologia #decisao #pendente #pedido #changelog #prototipo #multijogador #godot #planejamento #interface #audio #progressao
+#personagem #classe #combate #mapa #inimigo #chefe #arte #tecnologia #decisao #pendente #pedido #changelog #prototipo #multijogador #godot #planejamento #interface #audio #progressao #animacao #pesquisa

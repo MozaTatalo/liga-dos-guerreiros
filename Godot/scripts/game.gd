@@ -18,6 +18,8 @@ var nums: Array = []
 var fx: Array = []
 var timers: Array = []
 var pickups: Array = []
+var rastros: Array = []      # rastros de luz das armas: {id, c, pts: [[base, ponta, idade]]}
+var _rastro_n := 0
 
 var fase: Dictionary
 var dif := 0
@@ -39,7 +41,12 @@ var cleared := [false, false]
 var result = null
 var result_t := 0
 var hitstop := 0
-var shake := 0.0
+var shake := 0.0             # pedido de tremor (em "força" antiga, até 14); vira trauma no passo seguinte
+var trauma := 0.0            # 0..1: o tremor da tela é o trauma ao quadrado vezes um ruído suave, e decai sozinho
+var empurrao := Vector2.ZERO # empurrão da câmera na direção do golpe
+var zoom_p := 0.0            # aproximação rápida da câmera nos golpes pesados
+var lento_t := 0             # câmera lenta (quadros reais restantes)
+var fantasmas: Array = []    # imagens fantasma dos heróis: {tex, pos, tam, c, t, vida}
 var paused := false
 var pausa_sel := 0
 var all_dead_t := 0
@@ -162,6 +169,19 @@ func spawn_proj(o: Dictionary) -> void:
 	if not o.has("grav"): o.grav = 0.0
 	projs.append(o)
 
+## Rastro de luz da arma: acrescenta um ponto ao rastro `id` (id < 0 abre um novo). Devolve o id.
+func rastro(id: int, base: Vector2, ponta: Vector2, c) -> int:
+	var r = null
+	for x in rastros:
+		if x.id == id:
+			r = x; break
+	if r == null:
+		_rastro_n += 1
+		r = {"id": _rastro_n, "c": Color(c), "pts": []}
+		rastros.append(r)
+	r.pts.append([base, ponta, 0.0])
+	return r.id
+
 func add_fx(life: int, draw_fn: Callable) -> void:
 	fx.append({"t": 0, "life": life, "draw": draw_fn})
 
@@ -176,24 +196,32 @@ func anel(px: float, py: float, c, r: float, achat := 1.0) -> void:
 		cv.draw_arc(Vector2.ZERO, r * (0.25 + 0.75 * (1.0 - pow(1.0 - k, 3.0))), 0, TAU, 32, Gfx.col(c, 1.0 - k), 2.5 * (1.0 - k) + 0.5)
 		cv.draw_set_transform_matrix(Transform2D.IDENTITY))
 
-## Estrela de impacto e faíscas no ponto do golpe.
-func impacto(px: float, py: float, c, forte := false) -> void:
-	var tam := 9.0 if forte else 6.0
-	add_fx(10 if forte else 8, func(cv, k): Gfx.impacto(cv, px, py, c, k, tam))
-	sparks(px, py, c, 8 if forte else 5, 3.5 if forte else 2.5)
+## Impacto do golpe em três camadas: clarão, riscos na direção do golpe e anel que abre. `dir` é o lado do golpe.
+func impacto(px: float, py: float, c, forte := false, dir := 0) -> void:
+	var tam := 11.0 if forte else 7.0
+	var semente := randf() * 10.0
+	add_fx(12 if forte else 9, func(cv, k): Gfx.impacto(cv, px, py, c, k, tam, dir, semente))
+	sparks(px, py, c, 9 if forte else 5, 4.5 if forte else 3.2, dir)
 
-func sparks(px: float, py: float, c, n: int, sp := 2.5) -> void:
+## Faíscas: saem rápido e freiam (estouro seco); com `dir` saem mais para o lado do golpe.
+func sparks(px: float, py: float, c, n: int, sp := 2.5, dir := 0) -> void:
 	for i in n:
 		var a := randf_range(0, TAU)
-		var s := randf_range(0.5, sp)
-		parts.append({"x": px, "y": py, "vx": cos(a) * s, "vy": sin(a) * s - 0.5, "life": randf_range(14, 26), "c": c, "s": randf_range(1, 2.5), "g": 0.1})
+		var s := randf_range(0.6, sp) * 1.5
+		parts.append({"x": px, "y": py, "vx": cos(a) * s + dir * sp * 0.7, "vy": sin(a) * s - 0.6, "life": randf_range(12, 24), "c": c, "s": randf_range(1, 2.2), "g": 0.09, "d": 0.88})
 
+## Poeira: nuvenzinhas opacas que crescem e somem (ao correr, pousar, esquivar).
 func dust(px: float, py: float, n := 4) -> void:
 	for i in n:
-		parts.append({"x": px + randf_range(-4, 4), "y": py, "vx": randf_range(-1, 1), "vy": randf_range(-1, -0.2), "life": randf_range(12, 22), "c": "#9a94c8", "s": 2.0, "g": 0.0})
+		var vida := randf_range(14, 24)
+		parts.append({"x": px + randf_range(-4, 4), "y": py - 1.0, "vx": randf_range(-1.1, 1.1), "vy": randf_range(-0.7, -0.1), "life": vida, "vida": vida, "c": "#b9b2e0", "s": randf_range(1.6, 2.8), "g": -0.01, "d": 0.9, "po": true})
 
+## Imagem fantasma: uma cópia do herói como está agora, que fica para trás e some.
 func ghost(p: Hero, c = null) -> void:
-	parts.append({"x": p.cx(), "y": p.y + 12, "vx": 0.0, "vy": 0.0 if c == null else -0.5, "life": 10.0, "c": p.d.body if c == null else c, "s": 7.0, "g": 0.0, "a": 0.35})
+	var cor := Color(p.d.trim) if c == null else Color(c)
+	var v: HeroView = p.view
+	fantasmas.append({"tex": v.fotografar(), "pos": p.position + v.spr.position, "tam": v.spr.scale.x * v.RES * (1.0 if v.virado > 0 else -1.0),
+		"alt": v.spr.scale.x * v.RES, "c": cor, "t": 0, "vida": 14})
 
 ## Aviso no chão: uma área vermelha que enche até o golpe cair. `larg` é a largura; `dur` em passos.
 func aviso(px: float, larg: float, dur: int, faixa_ := false) -> void:
@@ -239,13 +267,21 @@ func damage_enemy(e: Enemy, src: Dictionary, dir: int) -> void:
 	var forte := heavy or crit
 	var ex := e.x + e.w / 2
 	var ey := e.y + e.h / 2
-	impacto(ex - dir * e.w * 0.25, ey, "#fff0b8" if forte else "#bfe4ff", forte)
+	impacto(ex - dir * e.w * 0.25, ey, "#fff0b8" if forte else "#bfe4ff", forte, dir)
 	e.apanhar(src, dir, heavy)
 	num(ex, e.y - 4, amount, "#ffd23f" if crit else ("#ffb38a" if costas else "#ffffff"), crit)
 	if costas and not crit and combo % 3 == 0: callout(ex, e.y - 14, "Pelas costas!", "#ffb38a")
-	sparks(ex - dir * 4, ey, "#ffd23f" if crit else "#fff3c4", 10 if crit else 6)
-	hitstop = maxi(hitstop, 6 if heavy else 3)
-	if forte and tremor_ligado(): shake = maxf(shake, 4)
+	sparks(ex - dir * 4, ey, "#ffd23f" if crit else "#fff3c4", 8 if crit else 4, 2.5, dir)
+	# pausa do impacto: curta nos golpes leves e nos de vários acertos, mais longa nos pesados
+	var pausa := 7 if heavy else 3
+	if src.has("rehit"): pausa = 1
+	elif src.has("kind"): pausa = 4 if heavy else 2
+	if crit: pausa += 2
+	hitstop = maxi(hitstop, pausa)
+	if tremor_ligado():
+		shake = maxf(shake, 4.5 if forte else 1.6)
+		empurrao += Vector2(dir * (2.6 if forte else 1.0), 0)
+		if heavy and not src.has("rehit"): zoom_p = maxf(zoom_p, 0.035)
 	Som.tocar("critico" if crit else ("acerto2" if heavy else "acerto"), 0.9)
 	combo += 1; combo_t = 150; max_combo = maxi(max_combo, combo)
 	for r in GameData.RANKS_COMBO:
@@ -280,7 +316,7 @@ func kill_enemy(e: Enemy) -> void:
 		pickups.append({"x": ex - 3, "y": ey - 4, "w": 6.0, "h": 6.0, "vx": randf_range(-1.8, 1.8), "vy": randf_range(-4.5, -2.0), "kind": "ouro",
 			"v": total / qtd + (1 if i < total % qtd else 0), "t": 0})
 	if e.boss:
-		boss_dead = true; shake = 14.0; hitstop = 24
+		boss_dead = true; shake = 14.0; hitstop = 24; lento_t = 70; zoom_p = 0.07
 		show_msg("%s derrotado! Siga para o portal" % def.nome, 240)
 		Som.tema(""); Som.tocar("explosao")
 		for i in 6:
@@ -298,8 +334,10 @@ func hurt_player(p: Hero, dmg: float, dir: int, kbx := 2.0, kby := 2.0, de = nul
 	p.hp -= dmg; dmg_taken += int(dmg)
 	num(p.cx(), p.y - 4, int(dmg), "#ff5b5b")
 	sparks(p.cx(), p.y + 10, "#ff5b5b", 8)
-	if tremor_ligado(): shake = maxf(shake, 5)
-	hitstop = maxi(hitstop, 4); combo = 0
+	if tremor_ligado():
+		shake = maxf(shake, 6); empurrao += Vector2(dir * 2.5, 0)
+	hitstop = maxi(hitstop, 5); combo = 0
+	p.view.pisca_t = 8
 	p.ganhar_mana(0.08); p.ganhar_furia(0.09)
 	Som.tocar("dano")
 	if p.hp <= 0:
@@ -389,7 +427,15 @@ func _physics_process(_delta: float) -> void:
 	elif paused:
 		_menu_pausa()
 	if not paused:
-		step()
+		# tremor por trauma: os pedidos de tremor somam trauma, que decai sozinho (também durante o hitstop)
+		if shake > 0:
+			trauma = maxf(trauma, pow(clampf(shake / 14.0, 0.0, 1.0), 0.7)); shake = 0.0
+		trauma = maxf(0.0, trauma - 2.4 / 60.0)
+		empurrao *= 0.78
+		zoom_p *= 0.86
+		if lento_t > 0: lento_t -= 1
+		if lento_t <= 0 or lento_t % 3 == 0:     # câmera lenta: o jogo anda um passo a cada três quadros
+			step()
 	redraw()
 
 func _menu_pausa() -> void:
@@ -440,6 +486,7 @@ func step() -> void:
 		if faixa.t > 70: faixa = {}
 	if hitstop > 0:
 		hitstop -= 1
+		_efeitos()      # faíscas, números e clarões continuam durante a pausa do impacto; o resto congela
 		return
 	if result == null and not everyone_dead:
 		t += 1
@@ -506,6 +553,7 @@ func step() -> void:
 	for i in 2:
 		if not cleared[i] and sec_cleared(i):
 			cleared[i] = true
+			lento_t = 40      # câmera lenta no último inimigo da área
 			show_msg("Área liberada! Avance" if i == 0 else "Caminho para a arena liberado", 150)
 			Som.tocar("item", 0.8, 0.8)
 	# timers, itens, partículas
@@ -515,13 +563,11 @@ func step() -> void:
 			tm.fn.call(); tm.done = true
 	timers = timers.filter(func(tm): return not tm.get("done", false))
 	_itens()
-	for q in parts:
-		q.x += q.vx; q.y += q.vy; q.vy += q.g; q.life -= 1
-	parts = parts.filter(func(q): return q.life > 0)
-	for n in nums: n.t += 1
-	nums = nums.filter(func(n): return n.t < 45)
-	for f in fx: f.t += 1
-	fx = fx.filter(func(f): return f.t < f.life)
+	_efeitos()
+	for r in rastros:
+		for pt in r.pts: pt[2] += 1.0
+		r.pts = r.pts.filter(func(pt): return pt[2] < Gfx.RASTRO_VIDA)
+	rastros = rastros.filter(func(r): return not r.pts.is_empty())
 	if combo_t > 0:
 		combo_t -= 1
 		if combo_t == 0: combo = 0
@@ -533,9 +579,20 @@ func step() -> void:
 				_concluir()
 				break
 	update_camera()
-	if shake > 0:
-		shake *= 0.85
-		if shake < 0.3: shake = 0.0
+
+## Anda com tudo que é só visual: partículas, números de dano, clarões e imagens fantasma.
+func _efeitos() -> void:
+	for q in parts:
+		q.x += q.vx; q.y += q.vy; q.vy += q.g; q.life -= 1
+		if q.has("d"):
+			q.vx *= q.d; q.vy *= q.d
+	parts = parts.filter(func(q): return q.life > 0)
+	for n in nums: n.t += 1
+	nums = nums.filter(func(n): return n.t < 45)
+	for f in fx: f.t += 1
+	fx = fx.filter(func(f): return f.t < f.life)
+	for f in fantasmas: f.t += 1
+	fantasmas = fantasmas.filter(func(f): return f.t < f.vida)
 
 func _itens() -> void:
 	for k in pickups:
@@ -583,8 +640,15 @@ func update_camera() -> void:
 	cam_x += (clampf(target, mn, maxf(mn, mx)) - cam_x) * 0.12
 
 func redraw() -> void:
-	var off := Vector2(randf_range(-shake, shake), randf_range(-shake, shake)) if (shake > 0 and not paused) else Vector2.ZERO
+	var off := Vector2.ZERO
+	if not paused and tremor_ligado():
+		# ruído suave (soma de senos) em vez de sorteio: a tela treme sem "pipocar"
+		var tt := Time.get_ticks_msec() * 0.001
+		var r := Vector2(sin(tt * 61.0) + sin(tt * 37.3 + 1.7), sin(tt * 53.0 + 0.6) + sin(tt * 29.1 + 2.3)) * 0.5
+		off = r * Vector2(6.0, 4.0) * trauma * trauma - empurrao
 	camera.position = Vector2(roundf(cam_x) + GameData.W / 2, GameData.H / 2) - off
+	camera.zoom = Vector2.ONE * (1.0 + zoom_p)
+	bg.zoom = 1.0 + zoom_p
 	bg.cam_x = cam_x
 	bg.tremor = -off
 	bg.chefe = clampf((cam_x - 2050) / 250.0, 0, 1)

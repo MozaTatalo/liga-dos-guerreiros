@@ -47,8 +47,9 @@ func _painel(p: Hero, px: float) -> void:
 	Ui.losango(self, c, 20.5, Ui.TINTA); Ui.losango(self, c, 19.2, Ui.OURO); Ui.losango(self, c, 17.6, Color("#1c1532"))
 	if p.view and p.view.vp:
 		# recorte da cabeça do próprio boneco 3D (ao vivo, até pisca), dentro do losango
-		var uv0 := Vector2(136, 86) / 384.0
-		var uv1 := Vector2(237, 194) / 384.0
+		var des: Vector2 = p.view.desvio_cabeca()
+		var uv0 := Vector2(143, 93) / 384.0 + des
+		var uv1 := Vector2(244, 201) / 384.0 + des
 		var pts := PackedVector2Array([c + Vector2(0, -17), c + Vector2(17, 0), c + Vector2(0, 17), c + Vector2(-17, 0)])
 		var uvs := PackedVector2Array()
 		for q in pts:
@@ -189,10 +190,11 @@ func _corte() -> void:
 		var hx := -60.0 + chega * 128.0 + t * 0.5
 		var hy := topo + inc * (1.0 - hx / W) + alt / 2
 		var hh := alt - 4.0
-		var hw := hh * 1.15
+		var hw := hh * 1.53     # recorte mais largo para a arma caber inteira à frente do rosto
 		var uv0 := Vector2(110, 70) / 384.0
-		var uv1 := Vector2(262, 202) / 384.0
-		var q := PackedVector2Array([Vector2(hx - hw / 2, hy - hh / 2), Vector2(hx + hw / 2, hy - hh / 2), Vector2(hx + hw / 2, hy + hh / 2), Vector2(hx - hw / 2, hy + hh / 2)])
+		var uv1 := Vector2(312, 202) / 384.0
+		var esq := hx - hh * 0.575
+		var q := PackedVector2Array([Vector2(esq, hy - hh / 2), Vector2(esq + hw, hy - hh / 2), Vector2(esq + hw, hy + hh / 2), Vector2(esq, hy + hh / 2)])
 		var uvs := PackedVector2Array([uv0, Vector2(uv1.x, uv0.y), uv1, Vector2(uv0.x, uv1.y)])
 		var br := Color(1, 1, 1, a)
 		draw_polygon(q, PackedColorArray([br, br, br, br]), uvs, p.view_corte.vp.get_texture())

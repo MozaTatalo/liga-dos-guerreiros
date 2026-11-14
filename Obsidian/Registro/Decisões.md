@@ -43,3 +43,7 @@ tags: [decisao, registro]
 | 2026-11-14 | Ordem de construção das próximas versões definida em [[Roteiro de Versões]] | decidido |
 | 2026-11-14 | Som e música provisórios feitos por síntese em código, sem amostras de terceiros, até existir trilha de verdade | decidido |
 | 2026-11-14 | Fontes da interface: Cinzel (títulos) e Alegreya Sans (texto), ambas de licença aberta | decidido |
+| 2026-11-14 | Animação dos heróis é procedural, com molas por junta e golpes em quatro tempos (antecipação, balanço, contato, recuperação), em vez de animações gravadas. Poses ficam em `poses.gd`. Ver [[Arte e Animação no Jogo]] | decidido |
+| 2026-11-14 | Sombreamento dos personagens no estilo anime: sombra colorida por material, contorno tingido e luz de recorte, tudo em shader próprio, porque o renderizador do navegador não tem os efeitos prontos. Ver [[Pesquisa - Arte e Animação]] | decidido |
+| 2026-11-14 | O rastro dos golpes é medido na arma 3D de verdade; arcos pintados à mão saem | decidido |
+| 2026-11-14 | A passada de arte não mexe em regra de jogo (dano, alcance, duração dos golpes); só em pausa de impacto, câmera e efeitos | decidido |

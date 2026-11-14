@@ -3,6 +3,9 @@
 export/
 export_presets.cfg
 mono_crash.*.json
+# texturas que o Godot extrai dos .glb ao importar
+Godot/assets/**/*_[0-9].png
+Godot/assets/**/*_[0-9].png.import
 
 # Obsidian (configurações locais do app)
 .obsidian/workspace.json

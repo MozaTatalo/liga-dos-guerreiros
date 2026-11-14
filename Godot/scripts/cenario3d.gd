@@ -14,6 +14,7 @@ const SH_NEVOA := preload("res://shaders/nevoa.gdshader")
 const SH_ESTANDARTE := preload("res://shaders/estandarte.gdshader")
 const SH_RAIO := preload("res://shaders/raio.gdshader")
 const SH_SOMBRA := preload("res://shaders/sombra.gdshader")
+const SH_VITRAL := preload("res://shaders/vitral.gdshader")
 const CENA := preload("res://assets/cenario/catedral.glb")
 const CORES := {
 	"pedra": Color("#4b4f62"), "pedraEsc": Color("#33364a"), "ferro": Color("#1c1d26"), "osso": Color("#bdb6a4"),
@@ -22,6 +23,7 @@ const CORES := {
 
 var cam_x := 0.0      # mesma câmera do jogo (px, canto esquerdo da tela)
 var tremor := Vector2.ZERO
+var zoom := 1.0       # aproximação da câmera do jogo (a câmera 3D chega mais perto na mesma proporção)
 var chefe := 0.0
 var cam: Camera3D
 var mat_ceu: ShaderMaterial
@@ -167,13 +169,16 @@ func _juntar(cena: Node3D, brasas: PackedVector3Array) -> void:
 			grupos[nm].append_from(mi.mesh, s, cena.global_transform.affine_inverse() * mi.global_transform)
 	for nm in grupos:
 		var st: SurfaceTool = grupos[nm]
-		var m := ShaderMaterial.new(); m.shader = SHADER
+		var m := ShaderMaterial.new(); m.shader = SH_VITRAL if nm == "vitral" else SHADER
 		m.set_shader_parameter("cor", CORES.get(nm, Color.WHITE))
 		if texs.has(nm):
 			m.set_shader_parameter("tex", texs[nm]); m.set_shader_parameter("tem_tex", true)
 		if nm == "chao" or nm == "lado":
 			m.set_shader_parameter("forca_aro", 0.0)   # sem brilho de borda no chão (ficava lavado)
-			if nm == "chao": m.set_shader_parameter("cor", Color(0.78, 0.78, 0.82))
+			if nm == "chao":
+				m.set_shader_parameter("cor", Color(0.78, 0.78, 0.82)); m.set_shader_parameter("molhado", 1.0)
+		if nm == "pedra" or nm == "pedraEsc":
+			m.set_shader_parameter("pedra", 1.0)
 		if nm == "longe":
 			m.set_shader_parameter("sem_luz", true)
 		elif nm == "vitral":
@@ -248,7 +253,7 @@ func _cinzas() -> void:
 ## Chamado pelo jogo e pela tela de título a cada quadro.
 func queue_redraw() -> void:
 	var cx := (cam_x + GameData.W / 2.0 + tremor.x) / PX
-	cam.position = Vector3(cx, CENTRO_Y - tremor.y / PX, _distancia())
+	cam.position = Vector3(cx, CENTRO_Y - tremor.y / PX, _distancia() / zoom)
 	var cz: CPUParticles3D = get_meta("cinzas")
 	cz.position.x = cx
 	mat_ceu.set_shader_parameter("desloc", cam_x / PX)
