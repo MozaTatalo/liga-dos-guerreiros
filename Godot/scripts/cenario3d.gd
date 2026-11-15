@@ -31,6 +31,16 @@ var mats := []
 var nevoas := []
 var brasas := PackedVector3Array()
 var sombras := {}     # dono -> MeshInstance3D
+## Visual novo (v0.9): camadas pintadas no Blender. A tecla V alterna com o antigo para comparar.
+static var visual_novo := true
+const PASTA_NOVO := "res://assets/cenario/fase1/"
+const SH_CAMADA := preload("res://shaders/camada.gdshader")
+var antigo: Node3D
+var novo: Node3D
+var alvo: Node3D
+var brasas_antigo := PackedVector3Array()
+var brasas_novo := PackedVector3Array()
+var mats_novo := []
 func _ready() -> void:
 	cam = Camera3D.new()
 	cam.fov = FOV
@@ -40,6 +50,20 @@ func _ready() -> void:
 	cam.make_current()
 	_ambiente()
 	_ceu()
+	antigo = Node3D.new(); antigo.name = "visual_antigo"; add_child(antigo)
+	alvo = antigo
+	_montar_antigo()
+	novo = Node3D.new(); novo.name = "visual_novo"; add_child(novo)
+	alvo = novo
+	_montar_pintado()
+	alvo = self
+	_nevoa()
+	_cinzas()
+	aplicar_visual()
+
+## Visual da v0.4 a v0.8: ruínas montadas com formas simples (vem do teste gotico.html).
+func _montar_antigo() -> void:
+	var brasas := PackedVector3Array()
 	var cena: Node3D = CENA.instantiate()
 	add_child(cena)
 	for m in cena.find_child("marcas", true, false).get_children():
@@ -61,10 +85,8 @@ func _ready() -> void:
 		elif nm.begins_with("vela"):
 			_brilho(p, Color("#ffc070"), 0.4, 0.95, true)
 	_juntar(cena, brasas)
-	self.brasas = brasas
+	brasas_antigo = brasas
 	cena.queue_free()
-	_nevoa()
-	_cinzas()
 
 ## Brilho (bloom) nas luzes e um pouco mais de cor e contraste, no clima de anime.
 func _ambiente() -> void:
@@ -95,7 +117,7 @@ func _raio(p: Vector3, c: Color) -> void:
 	q.material_override = m
 	q.position = Vector3(p.x + 1.6, 2.4, p.z + 4.6)
 	q.rotation = Vector3(-0.55, 0.0, 0.32)
-	add_child(q)
+	alvo.add_child(q)
 	# poça de luz colorida no chão
 	var poca := MeshInstance3D.new()
 	var pm := QuadMesh.new(); pm.size = Vector2(3.2, 2.2)
@@ -104,7 +126,7 @@ func _raio(p: Vector3, c: Color) -> void:
 	mp.set_shader_parameter("cor", Color(c.r, c.g, c.b, 0.22)); mp.set_shader_parameter("forca", 1.0)
 	poca.material_override = mp
 	poca.position = Vector3(p.x + 2.6, 0.03, p.z + 8.2)
-	add_child(poca)
+	alvo.add_child(poca)
 
 ## Estandarte rasgado da Ordem pendurado no pilar.
 func _estandarte(p: Vector3) -> void:
@@ -115,16 +137,16 @@ func _estandarte(p: Vector3) -> void:
 	m.set_shader_parameter("fase", p.x * 0.9)
 	q.material_override = m
 	q.position = p + Vector3(0, -1.5, 0)
-	add_child(q)
+	alvo.add_child(q)
 	var barra := MeshInstance3D.new()
 	var cm := CylinderMesh.new(); cm.top_radius = 0.035; cm.bottom_radius = 0.035; cm.height = 1.25
 	barra.mesh = cm; barra.rotation.z = PI / 2; barra.position = p + Vector3(0, 0.02, 0)
 	var mb := ShaderMaterial.new(); mb.shader = SHADER; mb.set_shader_parameter("cor", Color("#b8913f"))
 	barra.material_override = mb
-	add_child(barra)
+	alvo.add_child(barra)
 	for sx in [-0.62, 0.62]:
 		var b := MeshInstance3D.new(); var sm := SphereMesh.new(); sm.radius = 0.06; sm.height = 0.12
-		b.mesh = sm; b.material_override = mb; b.position = p + Vector3(sx, 0.02, 0); add_child(b)
+		b.mesh = sm; b.material_override = mb; b.position = p + Vector3(sx, 0.02, 0); alvo.add_child(b)
 
 ## Corrente com lanterna no primeiro plano, pendurada do alto da tela (moldura e profundidade).
 func _corrente(p: Vector3) -> void:
@@ -140,12 +162,12 @@ func _corrente(p: Vector3) -> void:
 		elo.mesh = tm; elo.material_override = mf
 		elo.position = Vector3(p.x, y, p.z)
 		elo.rotation = Vector3(PI / 2, (PI / 2) * (i % 2), 0)
-		add_child(elo)
+		alvo.add_child(elo)
 		y -= 0.15; i += 1
 	var lant := MeshInstance3D.new()
 	var lm := CylinderMesh.new(); lm.top_radius = 0.12; lm.bottom_radius = 0.18; lm.height = 0.42; lm.radial_segments = 6
 	lant.mesh = lm; lant.material_override = mf; lant.position = Vector3(p.x, fim - 0.3, p.z)
-	add_child(lant)
+	alvo.add_child(lant)
 	var g := _brilho(Vector3(p.x, fim - 0.3, p.z + 0.05), Color("#ffb45a"), 0.55, 0.95, true)
 	g.get_parent()
 	_brilho(Vector3(p.x, fim - 0.3, p.z + 0.04), Color("#ff7a2a"), 2.4, 0.22, true)
@@ -190,7 +212,7 @@ func _juntar(cena: Node3D, brasas: PackedVector3Array) -> void:
 		mi.material_override = m
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mi.extra_cull_margin = 1000.0
-		add_child(mi)
+		alvo.add_child(mi)
 		mats.append(m)
 
 func _brilho(p: Vector3, c: Color, escala: float, opac: float, treme: bool) -> MeshInstance3D:
@@ -204,7 +226,7 @@ func _brilho(p: Vector3, c: Color, escala: float, opac: float, treme: bool) -> M
 	m.set_shader_parameter("fase", p.x * 1.7)
 	q.material_override = m
 	q.position = p
-	add_child(q)
+	alvo.add_child(q)
 	return q
 
 func _ceu() -> void:
@@ -250,6 +272,74 @@ func _cinzas() -> void:
 	add_child(p)
 	set_meta("cinzas", p)
 
+## Monta o cenário novo: cada camada é um retrato (pré-renderizado) de uma faixa de profundidade,
+## posto exatamente na profundidade dela, então a câmera 3D do jogo dá o parallax certo sozinha.
+func _montar_pintado() -> void:
+	var f := FileAccess.open(PASTA_NOVO + "camadas.json", FileAccess.READ)
+	if f == null:
+		return
+	var meta: Dictionary = JSON.parse_string(f.get_as_text())
+	for fg in meta.get("fogos", []):
+		var p := Vector3(fg[0], fg[2], -fg[1])
+		brasas_novo.append(p)
+		_brilho(p + Vector3(0, 0.05, 0.05), Color("#ff7a2a"), 1.1, 0.8, true)
+		_brilho(p + Vector3(0, -0.02, 0.06), Color("#ffd9a0"), 0.42, 0.95, true)
+		_brilho(p + Vector3(0, 0.1, 0.04), Color("#ff6a20"), 4.0, 0.14, true)
+	# névoa da distância por camada: quanto mais longe, mais some no azul da noite
+	var nevoa_de := {"longe": 0.38, "meio": 0.10, "perto": 0.0, "chao": 0.0, "borda": 0.0}
+	for nome in ["longe", "meio", "chao", "perto", "borda"]:
+		if meta.has(nome):
+			_camada(meta[nome], nome, nevoa_de[nome])
+	for p in meta.get("plat", []):
+		_camada(p, "plat", 0.0)
+	var n := 0
+	for fg in meta.get("fogos", []):
+		n += 1
+
+func _camada(c: Dictionary, nome: String, nevoa_k: float) -> void:
+	var y: float = c.y
+	for t in c.tiles:
+		var tex: Texture2D = load(PASTA_NOVO + String(t.arq).get_basename() + ".webp")
+		if tex == null:
+			continue
+		var mi := MeshInstance3D.new()
+		var m := ShaderMaterial.new(); m.shader = SH_CAMADA
+		m.set_shader_parameter("tex", tex)
+		m.set_shader_parameter("forca_nevoa", nevoa_k)
+		m.set_shader_parameter("brasas", brasas_novo)
+		m.set_shader_parameter("n_brasas", mini(brasas_novo.size(), 24))
+		var x0: float = t.x0; var x1: float = t.x1
+		if nome == "chao":
+			# vista de cima: o plano deitado no chão, da borda da frente até o pé do muro
+			var pm := PlaneMesh.new(); pm.size = Vector2(x1 - x0, c.z1 - c.z0)
+			mi.mesh = pm
+			mi.position = Vector3((x0 + x1) / 2.0, 0.0, -(c.z0 + c.z1) / 2.0)
+			m.set_shader_parameter("opaca", true)
+			m.render_priority = -2
+		else:
+			var qm := QuadMesh.new(); qm.size = Vector2(x1 - x0, c.z1 - c.z0)
+			mi.mesh = qm
+			mi.position = Vector3((x0 + x1) / 2.0, (c.z0 + c.z1) / 2.0, -y)
+		mi.material_override = m
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.extra_cull_margin = 50.0
+		alvo.add_child(mi)
+		mats_novo.append(m)
+
+## Liga o visual escolhido (novo ou antigo) e a luz dos braseiros que vale para os bonecos.
+func aplicar_visual() -> void:
+	var tem_novo := novo.get_child_count() > 0
+	var usar_novo := visual_novo and tem_novo
+	novo.visible = usar_novo
+	antigo.visible = not usar_novo
+	brasas = brasas_novo if usar_novo else brasas_antigo
+
+func _unhandled_key_input(e: InputEvent) -> void:
+	if e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_V:
+		visual_novo = not visual_novo
+		aplicar_visual()
+		get_tree().call_group("corpo_inimigo", "trocar_visual")
+
 ## Chamado pelo jogo e pela tela de título a cada quadro.
 func queue_redraw() -> void:
 	var cx := (cam_x + GameData.W / 2.0 + tremor.x) / PX
@@ -260,6 +350,9 @@ func queue_redraw() -> void:
 	mat_ceu.set_shader_parameter("chefe", chefe)
 	for m in mats:
 		m.set_shader_parameter("tom", 1.0 - chefe * 0.25)
+	if novo.visible:
+		for m in mats_novo:
+			m.set_shader_parameter("tom", 1.0 - chefe * 0.6)
 
 ## Sombra macia no chão (ou na plataforma) embaixo de quem pede. px/py em pixels do jogo (pés).
 func sombra(dono: Object, px: float, py: float, largura: float, vivo := true) -> void:

@@ -85,3 +85,9 @@ tags: [changelog, registro]
   - Fúria com o símbolo de cada classe, aura de desperto, carga de mana com estouro por nível.
   - Acerto por tipo de golpe, morte dos inimigos e aviso branco de golpe redesenhados.
   - Só visual: nenhuma regra de jogo mudou. Mesmo link: https://claude.ai/artifact/DbFEAxdA1fhGAuE5BqX7fa
+- **Projeto Godot v0.9, prova de acabamento visual** (2026-11-15): primeira prova do [[Plano de Acabamento Visual]] para tirar a cara de protótipo.
+  - **Fase 1 refeita no Blender:** nave de catedral em ruínas ao luar, com pilares compostos, arcos ogivais, parede de vitrais, rosácea gigante atrás da arena do chefe, bancos tombados, entulho, braseiros e cidade ao longe. Renderizada com luz realista em camadas por profundidade (parallax pela própria câmera). Ver [[Fase 1 - Ruínas de Arvália]].
+  - **Espectro refeito:** monge caído com esqueleto, textura pintada e 6 animações feitas à mão; o Conjurador usa o mesmo modelo em roxo. Ver [[Bestiário]].
+  - **Tecla V** alterna entre o visual antigo e o novo durante o jogo.
+  - Scripts do Blender em `Godot/ferramentas/blender/` ([[Pipeline de Arte]]). Regras de jogo não mudaram.
+  - Capturas antes/depois em `capturas/v09-antes-depois_*.png` e `capturas/v09-espectro.png`. Mesmo link: https://claude.ai/artifact/DbFEAxdA1fhGAuE5BqX7fa

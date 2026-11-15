@@ -1,3 +1,7 @@
 .godot/
 *.import
+!assets/cenario/fase1/*.import
+!assets/inimigos/espectro_novo_*.png.import
 export/
+assets/cenario/fase1/_bruto/
+ferramentas/blender/__pycache__/

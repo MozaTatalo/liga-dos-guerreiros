@@ -38,6 +38,7 @@ var peso := 1.0
 var avisou := false     # já mostrou o brilho de aviso deste golpe
 var postura := 100.0    # só o chefe: golpes pesados gastam; em zero ele fica atordoado
 var esp: Inimigo3D   # corpo 3D do inimigo (espectro, lodo ou morcego), vive no Cenario3D
+var esp_novo := true
 
 func setup(g, k: String, px: float, s: int, plat_y = null) -> void:
 	game = g; kind = k; sec = s; x = px
@@ -55,10 +56,18 @@ func setup(g, k: String, px: float, s: int, plat_y = null) -> void:
 	t = randi_range(0, 59)
 	anim = randf_range(0, 100)
 	if g.bg is Cenario3D:
-		if Espectro3D.TIPOS.has(k): esp = Espectro3D.new(k)
-		elif k == "lodo": esp = Lodo3D.new()
-		elif k == "morcego": esp = Morcego3D.new()
-		if esp: g.bg.add_child(esp)
+		_criar_corpo()
+
+## Corpo 3D: o Espectro e o Conjurador têm o modelo novo (v0.9); a tecla V volta ao antigo para comparar.
+func _criar_corpo() -> void:
+	var k := kind
+	if Cenario3D.visual_novo and EspectroNovo.TIPOS.has(k): esp = EspectroNovo.new(k)
+	elif Espectro3D.TIPOS.has(k): esp = Espectro3D.new(k)
+	elif k == "lodo": esp = Lodo3D.new()
+	elif k == "morcego": esp = Morcego3D.new()
+	if esp:
+		esp_novo = Cenario3D.visual_novo
+		game.bg.add_child(esp)
 
 func tick() -> void:
 	var p: Hero = game.nearest_player(x + w / 2)
@@ -363,6 +372,9 @@ func _exit_tree() -> void:
 		game.bg.sombra(self, 0, 0, 0, false)
 
 func _sync_esp() -> void:
+	if esp_novo != Cenario3D.visual_novo and EspectroNovo.TIPOS.has(kind):
+		esp.queue_free(); esp = null
+		_criar_corpo()
 	var PX := Cenario3D.PX
 	var pe_y := (y + h / 2) if fly else (y + h)
 	esp.position = Vector3((x + w / 2) / PX, (GameData.GROUND - pe_y) / PX, 0.0)
@@ -370,6 +382,7 @@ func _sync_esp() -> void:
 	esp.vx = vx
 	esp.vy = vy
 	esp.no_chao = on_ground
+	esp.estado = state
 	game.bg.sombra(self, x + w / 2, y + h, w * (3.2 if boss else 1.7))
 	esp.furia = boss and hp < maxhp * 0.5
 	if flash_t > 0:

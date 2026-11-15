@@ -25,6 +25,9 @@ Falta:
 - Fase 2 (Cripta dos Sussurros) com salas ligadas por portais, 3 inimigos novos e chefe novo
 - Golpe de Fúria próprio para cada classe
 
+## Acabamento visual (2026-11-15)
+Plano em [[Plano de Acabamento Visual]]. Prova pronta (v0.9 no título): Fase 1 e Espectro refeitos no Blender. Próximo: resto dos inimigos e chefe, interface, efeitos em quadros.
+
 ## v0.8 — Equipamentos e habilidades
 - Itens que caem, raridade, inventário e tela de equipar
 - Armaduras e armas de verdade no modelo (espaços que já existem)

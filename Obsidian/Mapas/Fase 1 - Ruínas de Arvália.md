@@ -15,3 +15,14 @@ Fluxo: **Início (acampamento) → Área 1 → Área 2 → Arena do chefe → Po
 
 ## v0.6
 É a fase 1 de 5 do primeiro mundo (Reino Caído de Arvália), escolhida na tela de fases, com três dificuldades. As próximas: Cripta dos Sussurros, Floresta Morta, Torre do Relógio e Catedral Afundada. Ver [[Roteiro de Versões]].
+
+## v0.9 — cenário refeito no Blender (2026-11-15) #arte
+Primeira prova do [[Plano de Acabamento Visual]]. A fase agora é a **nave de uma catedral em ruínas, sem teto, ao luar**:
+- **Arcada da frente:** pilares compostos (quatro colunetas, base moldada, capitel com folhagem e ábaco), arcos ogivais em duas ordens com pedra-chave, cornija e trifório. Dois pilares partidos com tambores caídos, três arcos desabados.
+- **Parede dos vitrais:** pares de lancetas com óculo em cada baia, vitrais com chumbo e barras de ferro, contrafortes, banco de pedra. Duas baias desabadas deixam ver a cidade ao longe.
+- **Arena do chefe:** a **rosácea da Ordem** (oito pétalas) atrás da luta, com duas lancetas altas dos lados.
+- **Longe:** torres, agulhas e muralha da cidade caída de Arvália.
+- **Chão:** lajes com juntas, musgo e pedrinhas; borda da frente em blocos com cordão de pedra e musgo pendurado.
+- **Plataformas:** lajes partidas presas por correntes que somem no alto.
+- **Luz:** lua fria do alto à esquerda, braseiros quentes na frente dos pilares (a chama tremula no jogo), velas, névoa com raios de luz nos vitrais.
+- Os braseiros continuam iluminando os heróis. Tecla V alterna com o cenário antigo.
