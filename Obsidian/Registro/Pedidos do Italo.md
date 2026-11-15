@@ -40,3 +40,4 @@ tags: [pedido, registro]
 - **2026-11-14** — Escolheu o combate de **um botão com barra carregada** e o lobby em **menu com o herói em destaque**. #pedido #decisao
 - **2026-11-14** — Achou tudo muito legal e pediu para melhorar ao máximo a arte, em todos os sentidos, e a animação: jogo mais bonito e fluido, "animações perfeitas e visual deslumbrante". Pediu uma pesquisa profunda na internet sobre como melhorar nesse aspecto. Ver [[Pesquisa - Arte e Animação]] e [[Arte e Animação no Jogo]]. #pedido #arte #animacao
 - **2026-11-14** — Correção: os inimigos estavam dando dano só de encostar. Eles precisam ter golpes e só ferir durante o golpe, e devem brilhar branco logo antes de atacar. #pedido #combate #inimigo
+- **2026-11-15** — Pediu efeitos de ataques e poderes mais bonitos (ficou com a conversa de arte) e que o jogador também possa escolher a habilidade por um botão. #pedido #combate #interface

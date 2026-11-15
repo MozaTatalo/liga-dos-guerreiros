@@ -78,3 +78,4 @@ tags: [changelog, registro]
   - Corpo base, rosto e macacão não mudaram. Regras de jogo não mudaram (dano, alcance, tempos dos golpes).
   - Mesmo link: https://claude.ai/artifact/DbFEAxdA1fhGAuE5BqX7fa
 - **Inimigos só ferem com golpe** (2026-11-14, em cima da v0.8): saiu o dano por encostar. Lodo ganhou o bote, Morcego o mergulho, e o chefe só fere no pisão, na investida e nos projéteis. Todo inimigo pisca branco antes de atacar. Ver [[Bestiário]].
+- **Habilidades por botão** (2026-11-15): A, S e D soltam as habilidades 1, 2 e 3 na hora. Fúria passou para a tecla F. As teclas aparecem em cima dos ícones e na lista de golpes. Carregar segurando Z continua valendo.

@@ -120,6 +120,8 @@ func _habilidades(p: Hero) -> void:
 		if not liberado:
 			draw_rect(r, Color(0.02, 0.01, 0.05, 0.55))
 			Ui.txt(self, "Nv %d" % (i + 1), r.get_center().x, r.get_center().y, Ui.CLARO, 6, 1, 1.0, Ui.neg())
+		else:
+			Ui.teclas(self, [["A", "S", "D"][i]], r.position.x - 1.5, r.position.y - 0.5, 5)
 	_furia(p, 10.0 + 3 * 27.0 + 4.0, y)
 	var hx := Ui.teclas(self, ["segure", "Z"], 126, H - 14, 5)
 	Ui.txt(self, "carrega a habilidade", hx + 1, H - 14, Ui.APAGADO, 5)
@@ -154,7 +156,7 @@ func _furia(p: Hero, x: float, y: float) -> void:
 	draw_colored_polygon(PackedVector2Array([c + Vector2(0, -6.5), c + Vector2(3.6, 0.5), c + Vector2(2.2, 4.5), c + Vector2(-2.2, 4.5), c + Vector2(-3.6, 0.5)]), Color(cc.r, cc.g, cc.b, cc.a * 0.9))
 	draw_colored_polygon(PackedVector2Array([c + Vector2(0, -1.5), c + Vector2(1.6, 2.0), c + Vector2(0, 4.2), c + Vector2(-1.6, 2.0)]), Color("#140d22", 0.8))
 	if cheia:
-		Ui.teclas(self, ["A"], c.x - 4.5, y - 7.5, 6)
+		Ui.teclas(self, ["F"], c.x - 4.5, y - 7.5, 6)
 	elif ativa:
 		Ui.txt(self, "%d" % ceili(p.desperto / 60.0), c.x, y - 10, cf, 7, 1, 1.0, Ui.neg())
 	Ui.txt(self, "FÚRIA", c.x, y + 27.5, cf if (cheia or ativa) else Ui.APAGADO, 4, 1, 1.0, Ui.tit(), 1)
@@ -338,7 +340,7 @@ func _pausa() -> void:
 	Ui.painel(self, Rect2(200, 44, 240, 182), 0.95)
 	Ui.titulo(self, "GOLPES", 320, 60, Ui.OURO, 13)
 	Ui.filete(self, 250, 72, 140)
-	Ui.ajuda(self, 212, 84, 11.4, 6)
+	Ui.ajuda(self, 212, 83, 10.7, 6)
 	Ui.txt(self, "Setas: escolher e ajustar   ·   Z: confirmar   ·   P: voltar ao jogo", W / 2, H - 14, Ui.APAGADO, 6, 1)
 
 func _derrota() -> void:
@@ -414,7 +416,7 @@ func _resultado() -> void:
 func _dicas() -> void:
 	var a := clampf(game.t / 30.0, 0, 1) * clampf((720 - game.t) / 40.0, 0, 1)
 	var y := GameData.H - 44.0
-	var itens := [[["Z"], "atacar"], [["baixo", "Z"], "lançar"], [["X"], "pular"], [["C"], "esquiva"], [["dir", "dir"], "correr"], [["segure", "Z"], "habilidade"], [["A"], "fúria"]]
+	var itens := [[["Z"], "atacar"], [["baixo", "Z"], "lançar"], [["X"], "pular"], [["C"], "esquiva"], [["dir", "dir"], "correr"], [["A", "S", "D"], "ou"], [["segure", "Z"], "habilidade"], [["F"], "fúria"]]
 	var total := 0.0
 	for it in itens:
 		total += it[0].size() * 10.0 + Ui.largura(it[1], 6) + 12.0

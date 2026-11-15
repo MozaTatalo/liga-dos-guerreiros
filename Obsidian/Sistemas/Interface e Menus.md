@@ -40,3 +40,4 @@ Mouse nos menus, suporte a controle, remapear teclas, inventário, árvore de ha
 - **Apresentação do chefe:** faixas de cinema em cima e embaixo, título e nome no alto, HUD escondida enquanto dura.
 - **Postura do chefe:** barra amarela fina embaixo da vida. Mostra "ATORDOADO" quando quebra.
 - Lista de golpes e dicas do começo da fase ganharam Fúria, defesa e teleporte.
+- (2026-11-15) Cada ícone de habilidade mostra a tecla de atalho (A, S, D) no canto. A Fúria mostra F quando está cheia.

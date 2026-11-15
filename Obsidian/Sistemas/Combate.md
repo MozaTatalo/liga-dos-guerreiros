@@ -16,7 +16,8 @@ Decisão do Italo (2026-11-14): **um botão de ataque** com variações por situ
 | Z | atacar |
 | segurar Z | carregar a mana, soltar para usar a habilidade |
 | C | esquiva (atravessa golpes). Oren: teleporte |
-| A | Fúria, com a barra cheia |
+| A, S, D | soltam a habilidade 1, 2 e 3 na hora (se houver mana) |
+| F | Fúria, com a barra cheia |
 | ↓ (segurar) | Kael: defender |
 | P ou Esc | pausa (com lista de golpes e opções) |
 
@@ -37,6 +38,7 @@ Cancelamentos: depois do acerto, qualquer golpe pode virar esquiva ou pulo. Aper
 - **Segurar Z** começa a carregar depois de um instante. Cada nível leva 0,4 s. Soltar usa a habilidade do nível alcançado e gasta esse tanto de níveis.
 - Nível 1, 2 e 3 = habilidade 1, 2 e 3 da classe. A de nível 3 é a **máxima**: o tempo para um instante, a tela escurece e o nome atravessa a tela. A **suprema** agora é a Fúria (abaixo).
 - As habilidades 2 e 3 liberam quando o personagem chega ao nível 2 e 3.
+- **Atalho por botão (pedido do Italo, 2026-11-15):** A, S e D soltam direto a habilidade 1, 2 e 3, gastando os mesmos níveis de mana, sem precisar carregar. Funciona parado, andando, no ar, na defesa e cancelando um golpe depois do acerto. As duas formas valem. A Fúria passou da tecla A para a **F**.
 - Levar dano cancela a carga. Dá para sair da carga com a esquiva.
 
 ## Inimigos reagem
@@ -55,7 +57,7 @@ Cancelamentos: depois do acerto, qualquer golpe pode virar esquiva ou pulo. Aper
 
 ## Fúria (v0.7) #furia
 - Barra em losango ao lado das habilidades. Enche batendo (golpe pesado enche mais; habilidade enche pouco), apanhando e defendendo. Cerca de 60 a 70 golpes para encher.
-- Cheia, a tecla **A** solta a **habilidade suprema**: corte de cena com o herói de perto e o nome do golpe, o tempo para, e um golpe acerta e lança tudo que está na tela (55 de dano base, gasta muita postura do chefe).
+- Cheia, a tecla **F** solta a **habilidade suprema**: corte de cena com o herói de perto e o nome do golpe, o tempo para, e um golpe acerta e lança tudo que está na tela (55 de dano base, gasta muita postura do chefe).
 - Depois o herói fica **desperto por 10 s**: +30% de dano, +15% de velocidade, mana enchendo 4 vezes mais rápido, aura de chamas e rastro colorido. A barra vai esvaziando e mostra os segundos.
 - Nome e cor por classe: Kael **Juramento da Rosácea** (dourado), Lyra **Olho da Tempestade** (verde), Oren **Eclipse Arcano** (violeta). O golpe em si é igual para os três por enquanto. #pendente dar um golpe próprio para cada um.
 

@@ -249,7 +249,7 @@ func tick() -> void:
 		if anim % 5 == 0: game.ghost(self, GameData.FURIA[d.id].c)
 		if desperto == 0:
 			_atributos(); Som.tocar("volta", 0.6, 0.7)
-	elif furia >= 1.0 and input.tapped("skill1") and state != "hurt":
+	elif furia >= 1.0 and input.tapped("furia") and state != "hurt":
 		despertar()
 	ganhar_mana(0.0036 if desperto > 0 else 0.0009)
 	state_t += 1
@@ -261,6 +261,7 @@ func tick() -> void:
 			if tap_dir == dr and tap_t > 0: running = true
 			tap_dir = dr; tap_t = 14
 	if not L and not R: running = false
+	_teclas_habilidade()
 	match state:
 		"hurt":
 			vx *= 0.85
@@ -335,6 +336,26 @@ func tick() -> void:
 			if state == "attack" and mv == "mergulho" and d.id == "guardiao": _pouso_mergulho(vy_ant)
 			elif state == "attack" and (mv.begins_with("ar") or mv == "mergulho"): set_idle()
 	game.apply_barriers(self)
+
+## Atalho: A, S e D soltam a habilidade 1, 2 e 3 na hora, se houver mana (sem precisar carregar).
+func _teclas_habilidade() -> void:
+	for i in 3:
+		if not input.tapped("skill%d" % (i + 1)): continue
+		var livre: bool = state in ["idle", "run", "jump", "guard", "charge"]
+		if state == "attack" and mv != "mergulho" and mv != "pouso" and state_t > int(M.hit[-1]): livre = true
+		if not livre: return
+		if i >= niveis():
+			if deny_t <= 0:
+				deny_t = 40; Som.tocar("volta", 0.7)
+				game.callout(cx(), y - 16, "Libera no nível %d" % (i + 1), "#ff8a8a")
+		elif mp < float(i + 1):
+			if deny_t <= 0:
+				deny_t = 40; Som.tocar("volta", 0.7)
+		else:
+			if input.held("left"): facing = -1
+			if input.held("right"): facing = 1
+			cast(i)
+		return
 
 func _pular() -> void:
 	if input.held("down") and on_ground and y + h < GameData.GROUND - 1:
