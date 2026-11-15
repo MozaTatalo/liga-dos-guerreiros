@@ -387,7 +387,7 @@ func _sync_esp() -> void:
 	if prep and hurt_t <= 0:
 		if not avisou:
 			avisou = true
-			game.anel(x + w / 2, y + h / 2, "#ffffff", maxf(w, h) * 0.9 + 6.0)
+			Efeitos.aviso(game, Vector2(x + w / 2, y + h / 2), maxf(w, h) * 0.9 + 6.0)
 			Som.tocar("menu", 0.5, 1.9, 0.0)
 		var ciclo := 8 if t < 12 else 4
 		if t % ciclo < ciclo / 2: esp.flash = 0.03

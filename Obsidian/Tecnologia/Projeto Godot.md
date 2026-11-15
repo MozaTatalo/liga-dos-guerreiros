@@ -1,11 +1,11 @@
 ---
 tags: [tecnologia, godot, multijogador]
-versao: 0.8
+versao: 0.8.1
 ---
 # Projeto Godot
 
 - **Pasta:** `B:\Antigravity\Liga Dos Guerreiros\Godot` (abrir `project.godot` no Godot 4.5, F5 para jogar)
-- **Versão:** 0.8 (2026-11-14): passada de arte e animação, ver [[Arte e Animação no Jogo]]. 0.7 parte 1 (2026-11-14): Fúria com corte de cena, defesa do Kael, teleporte do Oren, apresentação do chefe, golpes avisados, postura. 0.6 (2026-11-14): combate de um botão com carga de mana, menus completos, HUD gótica, progressão, som. 0.5: polimento visual. 0.4: mapa gótico 3D e espectros. 0.3: heróis com os bonecos 3D. 0.2: migração do [[Protótipo]] HTML5
+- **Versão:** 0.8.1 (2026-11-15): efeitos de golpes e poderes, e habilidades por botão (A, S, D). 0.8 (2026-11-14): passada de arte e animação, ver [[Arte e Animação no Jogo]]. 0.7 parte 1 (2026-11-14): Fúria com corte de cena, defesa do Kael, teleporte do Oren, apresentação do chefe, golpes avisados, postura. 0.6 (2026-11-14): combate de um botão com carga de mana, menus completos, HUD gótica, progressão, som. 0.5: polimento visual. 0.4: mapa gótico 3D e espectros. 0.3: heróis com os bonecos 3D. 0.2: migração do [[Protótipo]] HTML5
 - **Jogar no navegador:** https://claude.ai/artifact/DbFEAxdA1fhGAuE5BqX7fa
 - **Conteúdo:** [[Kael - Guardião]], [[Lyra - Caçadora]], [[Oren - Arcanista]] · [[Fase 1 - Ruínas de Arvália]] · [[Bestiário]] · [[Combate]] · [[Progressão]] · [[Interface e Menus]] · [[Áudio]]
 - **Resolução:** base 480×270 ampliada com texto e formas nítidos, janela 1440×810, 60 passos fixos por segundo.
@@ -29,6 +29,7 @@ versao: 0.8
 - A câmera 3D segue a câmera 2D: FOV 28°, distância calculada para que no plano z = 0 uma unidade valha 26 px. O 3D é desenhado atrás de tudo que é 2D.
 - `inimigo3d.gd`: base dos inimigos 3D (`espectro3d.gd`, `lodo3d.gd`, `morcego3d.gd`). Lodo e Morcego são montados no próprio Godot.
 - Brilho (bloom) e ajuste de cor no `WorldEnvironment` do `cenario3d.gd`; moldura escura em `shaders/vinheta.gdshader`; efeitos de golpe em `fx_layer.gd` (camada aditiva) e `Gfx.slash`/`Gfx.impacto`.
+- `efeitos.gd` (classe `Efeitos`, v0.8.1): todos os efeitos de golpes, habilidades, Fúria, acertos e mortes. Peças de desenho (meia-lua, anel, feixe, bola, relâmpago, runas, rosácea) e partículas (brasa, chama, fumaça, lasca, centelha). `fx_layer.gd` desenha em três camadas: `luz` (aditiva), `energia` (aditiva, com `shaders/energia.gdshader`) e normal. Efeito novo entra por `Efeitos.fx(jogo, vida, desenho, camada)`; efeitos presos a uma habilidade usam `Efeitos.fx_hab` para andar no relógio da habilidade.
 - `espectro3d.gd`: espectro do `gotico.html` (`assets/inimigos/espectro.glb`) para Saqueador, Atirador e chefe. O `enemy.gd` passa posição, lado, golpe recebido e preparo do ataque.
 - O `world.gd` desenha só placa de início, barreiras e portal. Chão e plataformas são 3D; a colisão continua nos números do `game_data.gd`.
 

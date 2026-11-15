@@ -69,7 +69,7 @@ static func impacto(c: CanvasItem, px: float, py: float, cor, k: float, tam: flo
 		var lat := Vector2(-v.y, v.x) * tam * 0.14 * a
 		c.draw_colored_polygon(PackedVector2Array([p0, (p0 + p1) * 0.5 + lat, p1, (p0 + p1) * 0.5 - lat]), Color(lerpf(base.r, 1.0, 0.5), lerpf(base.g, 1.0, 0.5), lerpf(base.b, 1.0, 0.5), a))
 	# anel que abre afinando
-	c.draw_arc(o, tam * (0.7 + k * 1.6), 0, TAU, 24, Color(base.r, base.g, base.b, a * 0.8), 1.8 * a + 0.3)
+	c.draw_arc(o, tam * (0.7 + k * 1.6), 0, TAU, 24, Color(base.r, base.g, base.b, a * 0.3), 1.0 * a + 0.3)
 
 const RASTRO_VIDA := 7.0   # quadros que cada pedaço do rastro dura
 
@@ -96,10 +96,10 @@ static func rastro(c: CanvasItem, r: Dictionary) -> void:
 			var ponta: Vector2 = (b[1] as Vector2).cubic_interpolate(d[1], a[1], e[1], u)
 			var base: Vector2 = (b[0] as Vector2).cubic_interpolate(d[0], a[0], e[0], u)
 			pontas.append(ponta)
-			bases.append(base.lerp(ponta, 0.4 + 0.58 * k))        # a cauda afina em direção à ponta
+			bases.append(base.lerp(ponta, 0.58 + 0.4 * k))        # a cauda afina em direção à ponta
 			alfas.append(pow(1.0 - k, 1.4))
 	var ult: Array = pts[n - 1]
-	pontas.append(ult[1]); bases.append((ult[0] as Vector2).lerp(ult[1], 0.4 + 0.58 * ult[2] / RASTRO_VIDA)); alfas.append(pow(1.0 - ult[2] / RASTRO_VIDA, 1.4))
+	pontas.append(ult[1]); bases.append((ult[0] as Vector2).lerp(ult[1], 0.58 + 0.4 * ult[2] / RASTRO_VIDA)); alfas.append(pow(1.0 - ult[2] / RASTRO_VIDA, 1.4))
 	# três fileiras de vértices: base (transparente), meio (cor) e ponta (branco)
 	var vs := PackedVector2Array()
 	var cs := PackedColorArray()

@@ -48,3 +48,4 @@ tags: [decisao, registro]
 | 2026-11-14 | O rastro dos golpes é medido na arma 3D de verdade; arcos pintados à mão saem | decidido |
 | 2026-11-14 | A passada de arte não mexe em regra de jogo (dano, alcance, duração dos golpes); só em pausa de impacto, câmera e efeitos | decidido |
 - **2026-11-14** — Inimigo nunca fere por contato; só com golpe, e todo golpe é avisado com brilho branco. #decisao #combate
+- **2026-11-15** — Efeitos de golpe e de poder são desenhados por código em três camadas (luz, energia, matéria), com peças reaproveitáveis em `efeitos.gd`, em vez de imagens prontas. Cada classe tem cores e formas próprias. Efeito nunca muda regra de jogo. Ver [[Arte e Animação no Jogo]]. #decisao #arte #combate

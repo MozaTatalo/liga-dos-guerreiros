@@ -30,6 +30,7 @@ Menus: setas escolhem, Z ou Enter confirma, C ou Esc volta.
 | `scripts/boneco3d.gd`, `hero_view.gd` | Boneco 3D do herói (corpo base), animação por molas, rastro da arma, e como ele aparece no jogo 2D |
 | `shaders/` | Sombreamento anime dos bonecos (`toon`, `contorno`, `heroi_sprite`), cenário (`cenario`, `vitral`, `raio`, `ceu`, `nevoa`) e cor final da imagem (`vinheta`) |
 | `scripts/gfx.gd`, `fx_layer.gd`, `world.gd` | Efeitos de golpe, projéteis, itens, barreiras e portal |
+| `scripts/efeitos.gd`, `shaders/energia.gdshader` | Efeitos de golpes, habilidades e Fúria de cada classe (camadas de luz, energia e matéria) |
 | `assets/fontes/` | Cinzel e Alegreya Sans (licença aberta OFL, textos das licenças na pasta) |
 | `assets/som/` | Efeitos e músicas provisórios, gerados por `ferramentas/gerar_som.py` |
 | `ferramentas/publicar.sh` | Gera a versão web e prepara os arquivos para publicar |

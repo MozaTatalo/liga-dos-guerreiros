@@ -188,12 +188,8 @@ func _golpe_furia() -> void:
 	var c: String = f.c
 	game.spawn_hitbox({"owner": "p", "src": self, "skill": true, "dmg": 55 * atk, "kbx": 3.0, "launch": 7.0, "life": 6, "dir": 0, "heavy": true, "postura": 4.0,
 		"x": cx() - 240, "y": -60.0, "w": 480.0, "h": GameData.GROUND + 60})
-	for r in [50.0, 110.0, 190.0]:
-		game.anel(cx(), y + h / 2, c, r)
-	game.anel(cx(), y + h, "#ffffff", 150.0, 0.3)
-	game.sparks(cx(), y + h / 2, c, 50, 6); game.sparks(cx(), y + h / 2, "#ffffff", 20, 4)
-	var g = game
-	game.add_fx(12, func(cv, k): cv.draw_rect(Rect2(g.cam_x - 20, -40, GameData.W + 40, GameData.H + 80), Gfx.col("#ffffff", 0.55 * (1.0 - k))))
+	game.sparks(cx(), y + h / 2, c, 30, 6); game.sparks(cx(), y + h / 2, "#ffffff", 12, 4)
+	Efeitos.furia(self)
 	if game.tremor_ligado(): game.shake = 12.0
 	Som.tocar("explosao", 1.0, 0.7); Som.tocar("critico", 0.9, 0.8)
 
@@ -489,6 +485,7 @@ func corte(r: float, s: int, c = "#ffffff") -> void:
 
 func attack_hit(i: int) -> void:
 	var f := facing
+	Efeitos.golpe(self, i)
 	match d.id:
 		"guardiao": _hit_guardiao(f)
 		"cacadora": _hit_cacadora(f, i)
@@ -509,7 +506,7 @@ func _hit_guardiao(f: int) -> void:
 			Som.tocar("golpe2", 1.0, 1.2)
 		"corrida":
 			invuln = maxi(invuln, 8)
-			golpe(16, [-4, 0, 16, 24], {"kbx": 3.8, "launch": 2.6, "heavy": true, "life": 12, "place": follow(-4, 0, 16, 24)})
+			golpe(16, [-4, 0, 16, 24], {"kbx": 3.8, "launch": 2.6, "heavy": true, "life": 12, "place": follow(-4, 0, 16, 24), "fx": "pancada", "cor": Efeitos.OURO})
 			game.dust(cx(), y + h, 4); Som.tocar("golpe2", 0.9, 0.9)
 		"ar1", "ar2":
 			golpe(10, [-4, -4, 26, 26], {"kbx": 0.6, "launch": 2.4})
@@ -524,8 +521,7 @@ func _hit_guardiao(f: int) -> void:
 		"contra":
 			invuln = maxi(invuln, 16); contra_t = 0
 			if on_ground: vx = f * 2.4
-			golpe(34, [-6, -14, 34, 40], {"kbx": 1.2, "launch": 7.6, "heavy": true, "postura": 3.0})
-			game.anel(cx() + f * 14, y + 8, "#ffe9a8", 30.0)
+			golpe(34, [-6, -14, 34, 40], {"kbx": 1.2, "launch": 7.6, "heavy": true, "postura": 3.0, "cor": Efeitos.OURO_VIVO})
 			Som.tocar("golpe2", 1.0, 0.85); Som.tocar("critico", 0.7)
 
 func _pouso_mergulho(queda: float) -> void:
@@ -534,8 +530,8 @@ func _pouso_mergulho(queda: float) -> void:
 	game.hitboxes = game.hitboxes.filter(func(hb): return hb.get("src") != eu or not hb.has("rehit"))
 	game.spawn_hitbox({"owner": "p", "src": self, "dmg": (14 + minf(queda, 8.5) * 1.2) * atk, "kbx": 2.5, "launch": 5.2, "life": 5, "dir": 0, "heavy": true,
 		"x": cx() - 34, "y": y + h - 16, "w": 68.0, "h": 18.0})
-	game.shake = maxf(game.shake, 5); game.dust(cx(), y + h, 12)
-	game.anel(cx(), y + h, "#bfe4ff", 38.0, 0.35)
+	game.shake = maxf(game.shake, 5); game.dust(cx(), y + h, 8)
+	Efeitos.pouso(self)
 	Som.tocar("acerto2", 0.9, 0.8)
 	state_t = 0; mv = "pouso"; M = {"dur": 14, "hit": [99], "next": "", "anim": ["mergulho", "mergulho"]}
 
@@ -571,7 +567,7 @@ func _hit_cacadora(f: int, i: int) -> void:
 			vy = -2.4; vx = -f * 1.4
 		"mergulho":
 			for a in [-2.2, -1.1, 0.0, 1.1, 2.2]:   # leque para baixo
-				tiro(7, {"vx": a + f * 0.6, "vy": 6.5, "w": 3.0, "h": 12.0, "kind": "rain", "launch": 1.5})
+				tiro(7, {"vx": a + f * 0.6, "vy": 6.5, "w": 3.0, "h": 12.0, "kind": "rain", "launch": 1.5, "on_end": func(o): Efeitos.flecha_no_chao(game, o)})
 			vy = -4.6
 
 func _hit_arcanista(f: int) -> void:
@@ -589,9 +585,6 @@ func _hit_arcanista(f: int) -> void:
 			_pilar(px + f * 30)
 		"corrida":
 			golpe(13, [-4, 0, 30, 22], {"kbx": 3.6, "launch": 2.4, "heavy": true})
-			var ex := px + f * 22
-			var ey := y + 10
-			game.sparks(ex, ey, "#59d0ff", 14, 3.5); game.anel(ex, ey, "#59d0ff", 20.0)
 			Som.tocar("magia", 0.7, 1.4)
 		"ar1", "ar2":
 			_raio_arcano(9, 5.0, 0.6); vy = -1.2
@@ -615,13 +608,7 @@ func _pilar(px: float) -> void:
 	var base := y + h
 	game.spawn_hitbox({"owner": "p", "src": self, "dmg": 13 * atk, "kbx": 0.3, "launch": 7.4, "life": 8, "dir": facing, "heavy": true,
 		"x": px - 13, "y": base - 60, "w": 26.0, "h": 60.0})
-	game.add_fx(18, func(cv, k):
-		var a: float = 1.0 - k
-		var alt: float = 62.0 * minf(1.0, k * 4.0)
-		cv.draw_rect(Rect2(px - 11 * a, base - alt, 22 * a, alt), Color(0.35, 0.8, 1.0, 0.45 * a))
-		cv.draw_rect(Rect2(px - 5 * a, base - alt, 10 * a, alt), Color(0.9, 1.0, 1.0, 0.8 * a)))
-	game.anel(px, base, "#59d0ff", 26.0, 0.35)
-	game.sparks(px, base - 20, "#9ff0ff", 12, 3.5)
+	Efeitos.pilar(game, px, base)
 	Som.tocar("magia", 0.9, 0.8)
 
 # ---------------- Habilidades (nível 1, 2 e 3 da barra) ----------------
@@ -630,11 +617,12 @@ func skill_moves(i: int) -> bool:
 
 func skill_start(i: int) -> void:
 	var me := self
+	Efeitos.habilidade_inicio(self, i)
 	match d.id:
 		"guardiao":
 			if i == 0:
 				invuln = maxi(invuln, 20)
-				game.spawn_hitbox({"owner": "p", "src": self, "skill": true, "dmg": 26 * atk, "kbx": 5.2, "launch": 3.6, "life": 16, "heavy": true, "dir": facing, "place": follow(-4, 0, 16, 24)})
+				game.spawn_hitbox({"owner": "p", "src": self, "skill": true, "dmg": 26 * atk, "kbx": 5.2, "launch": 3.6, "life": 16, "heavy": true, "dir": facing, "place": follow(-4, 0, 16, 24), "fx": "pancada", "cor": Efeitos.OURO_VIVO})
 				Som.tocar("golpe2")
 			elif i == 1:
 				vy = -6.6; vx = 1.4 * facing; invuln = maxi(invuln, 24)
@@ -656,6 +644,7 @@ func skill_start(i: int) -> void:
 func skill_update(i: int, t: int) -> void:
 	var f := facing
 	var me := self
+	Efeitos.habilidade_passo(self, i, t)
 	match d.id:
 		"guardiao":
 			if i == 0:
@@ -668,21 +657,15 @@ func skill_update(i: int, t: int) -> void:
 					vx = ((1.0 if input.held("right") else 0.0) - (1.0 if input.held("left") else 0.0)) * 1.2
 					if t % 8 == 0:
 						Som.tocar("golpe", 0.8, 1.0 + t * 0.006)
-						var px := cx()
-						var py := y + 10
-						var s := (t / 8) % 2
-						game.add_fx(10, func(cv, k): Gfx.slash(cv, px, py, 1 if s == 0 else -1, 40.0, 0, k, "#9fd3ff"))
 				elif t == 62:
 					vx = 0
 					game.explode(cx(), y + 8, 130, 70, 52 * atk, 6.4, "#9fd3ff", self)
-					game.anel(cx(), y + 8, "#ffffff", 80.0, 0.5)
 		"cacadora":
 			if i == 0 and t == 6:
 				for v in [-1.0, 0.0, 1.0]:
-					tiro(15, {"vy": v, "skill": true, "launch": 1.5})
+					tiro(15, {"vy": v, "skill": true, "launch": 1.5, "color": Efeitos.VENTO})
 			elif i == 1 and t == 9:
 				tiro(46, {"pierce": true, "w": 26.0, "h": 5.0, "kbx": 4.6, "launch": 3.0, "color": "#ffd23f", "skill": true, "heavy": true, "vx": 9.0 * f, "life": 90})
-				game.anel(cx() + f * 10, y + 9, "#ffd23f", 20.0)
 				Som.tocar("golpe2", 0.9, 1.5)
 			elif i == 2 and t == 10:
 				var bx := cx()
@@ -690,7 +673,8 @@ func skill_update(i: int, t: int) -> void:
 					var off := randf_range(-20, 230)
 					game.timers.append({"t": 2 + n * 2, "fn": func():
 						me.game.spawn_proj({"owner": "p", "src": me, "skill": true, "x": bx + f * off, "y": -10.0 - randf() * 30, "w": 3.0, "h": 12.0, "vx": 0.7 * f, "vy": 8.0,
-							"dmg": 12 * me.atk, "kbx": 0.4, "launch": 1.8, "life": 60, "kind": "rain", "dir": f})
+							"dmg": 12 * me.atk, "kbx": 0.4, "launch": 1.8, "life": 60, "kind": "rain", "dir": f,
+							"on_end": func(o): Efeitos.flecha_no_chao(me.game, o)})
 						if n % 4 == 0: Som.tocar("flecha", 0.5)})
 		"arcanista":
 			if i == 0 and t == 8:
@@ -708,6 +692,7 @@ func skill_update(i: int, t: int) -> void:
 					"dmg": 24 * atk, "kbx": 2.0, "launch": 2.0, "life": 200, "pierce": true, "kind": "meteor", "dir": f,
 					"on_end": func(o):
 						me.game.explode(o.x + 11, GameData.GROUND - 24, 150, 80, 96 * me.atk, 7.0, "#ff4d2e", me)
+						Efeitos.meteoro_impacto(me.game, o.x + 11)
 						me.game.shake = 14.0})
 
 func chain_lightning() -> void:
@@ -723,11 +708,11 @@ func chain_lightning() -> void:
 	var py := c1 - 6
 	Som.tocar("explosao", 0.7, 1.6)
 	if list.is_empty():
-		game.bolt(px, py, px + facing * 70, py + 20)
+		Efeitos.relampago(game, Vector2(px, py), Vector2(px + facing * 70, py + 20), "#9ff0ff")
 	for e in list:
 		var ex: float = e.x + e.w / 2
 		var ey: float = e.y + e.h / 2
-		game.bolt(px, py, ex, ey)
+		Efeitos.corrente(game, Vector2(px, py), Vector2(ex, ey))
 		px = ex; py = ey
 		game.damage_enemy(e, {"dmg": 38 * atk, "kbx": 1.0, "launch": 4.5, "heavy": true, "skill": true, "src": self}, 1 if ex > c0 else -1)
 		game.sparks(ex, ey, "#9ff0ff", 10, 3)
@@ -750,11 +735,6 @@ func _draw() -> void:
 		# aura do despertar: chamas subindo em volta do herói
 		var cf := Color(GameData.FURIA[d.id].c)
 		var fim := minf(1.0, desperto / 60.0)
-		for i in 7:
-			var fx_ := -10.0 + i * 3.4 + sin(anim * 0.21 + i * 1.7) * 1.5
-			var alt := 20.0 + 16.0 * absf(sin(anim * 0.13 + i * 2.1))
-			draw_rect(Rect2(fx_, -alt - 2, 2.2, alt), Color(cf.r, cf.g, cf.b, 0.16 * fim))
-			draw_rect(Rect2(fx_ + 0.6, -alt * 0.6 - 2, 1.0, alt * 0.6), Color(1, 1, 1, 0.18 * fim))
 		draw_set_transform(Vector2(0, -1), 0.0, Vector2(1, 0.32))
 		draw_arc(Vector2.ZERO, 13.0 + sin(anim * 0.2) * 1.5, 0, TAU, 28, Color(cf.r, cf.g, cf.b, 0.7 * fim), 1.4)
 		draw_set_transform_matrix(Transform2D.IDENTITY)

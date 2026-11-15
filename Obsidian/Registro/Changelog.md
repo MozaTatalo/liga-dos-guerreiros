@@ -79,3 +79,9 @@ tags: [changelog, registro]
   - Mesmo link: https://claude.ai/artifact/DbFEAxdA1fhGAuE5BqX7fa
 - **Inimigos só ferem com golpe** (2026-11-14, em cima da v0.8): saiu o dano por encostar. Lodo ganhou o bote, Morcego o mergulho, e o chefe só fere no pisão, na investida e nos projéteis. Todo inimigo pisca branco antes de atacar. Ver [[Bestiário]].
 - **Habilidades por botão** (2026-11-15): A, S e D soltam as habilidades 1, 2 e 3 na hora. Fúria passou para a tecla F. As teclas aparecem em cima dos ícones e na lista de golpes. Carregar segurando Z continua valendo.
+- **Projeto Godot v0.8.1, efeitos de golpes e poderes** (2026-11-15): todos os golpes e habilidades dos três heróis ganharam efeitos novos, com uma linguagem por classe (Kael ouro e aço, Lyra vento verde, Oren arcano e fogo). Lista completa em [[Arte e Animação no Jogo]], seção 7.
+  - Base nova: camada de **energia** com shader próprio (`energia.gdshader`), brilhos suaves e partículas de brasa, chama, fumaça, lasca e centelha. Tudo em `efeitos.gd`.
+  - Meias-luas de energia nos cortes, círculos de runas nas magias, relâmpago vivo, flechas com cone de energia, meteoro com cauda e cratera de luz.
+  - Fúria com o símbolo de cada classe, aura de desperto, carga de mana com estouro por nível.
+  - Acerto por tipo de golpe, morte dos inimigos e aviso branco de golpe redesenhados.
+  - Só visual: nenhuma regra de jogo mudou. Mesmo link: https://claude.ai/artifact/DbFEAxdA1fhGAuE5BqX7fa

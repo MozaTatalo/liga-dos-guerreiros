@@ -1,6 +1,6 @@
 ---
 tags: [arte, animacao, combate, godot, tecnologia, mapa]
-atualizado: 2026-11-14
+atualizado: 2026-11-15
 ---
 # Arte e animação no jogo (passada de beleza e fluidez)
 
@@ -57,6 +57,25 @@ Arquivos: `shaders/vitral.gdshader` (novo), `cenario.gdshader`, `raio.gdshader`,
 - O retrato no painel de vida agora **segue a cabeça** do boneco (antes saía do quadro quando o herói se mexia).
 - O corte de cena da Fúria mostra a arma inteira.
 
+## 7. Efeitos de golpes e poderes (2026-11-15) #combate #arte
+Pedido do Italo: "está na hora dos efeitos de ataques e poderes terem mais efeitos e serem mais bonitos" ([[Pedidos do Italo]]). Arquivos: `Godot/scripts/efeitos.gd` (novo, todos os efeitos), `Godot/shaders/energia.gdshader` (novo), `fx_layer.gd`, e ganchos em `hero.gd`, `game.gd`, `enemy.gd`. Só visual: dano, alcance e tempo dos golpes não mudaram.
+
+**Como é feito.** Três camadas de efeito por cima do jogo: **luz** (brilhos suaves e riscos, somados à imagem), **energia** (formas com textura de ruído que corre, miolo claro e borda que se desfaz ao sumir, em passos, como efeito desenhado) e **matéria** (fumaça e lascas de pedra, que não brilham). Cada efeito é montado com peças: meia-lua, anel, feixe, bola, fita, relâmpago, círculo de runas, rosácea, brasas, chamas, fumaça, lascas e centelhas.
+
+**Cada classe tem a sua linguagem.**
+- **Kael (ouro e aço):** meias-luas douradas na frente de cada corte, estocada com lança de luz, onda no chão no golpe pesado, barreira de energia na investida de escudo, selo da rosácea no contra-ataque.
+- **Lyra (vento verde e flecha dourada):** clarão e anel de vento na ponta do arco, flechas com fita de luz, cone de energia e anéis nas flechas fortes, meias-luas verdes nos chutes.
+- **Oren (arcano azul, fogo e violeta):** círculo de runas na frente do cajado a cada conjuração, círculo no chão nas magias de área, pilar de energia, orbes com cauda.
+
+**Habilidades.**
+- Kael: Investida de Escudo com barreira e rastro; Lâmina Ascendente com coluna e meia-lua subindo; **Tempestade de Aço** com três meias-luas girando em dois andares, rosácea no chão e explosão em casca no final.
+- Lyra: **Rajada Tripla** com três flechas de vento; **Flecha Perfurante** como um raio dourado com anéis; **Chuva de Flechas** com riscos verdes caindo e respingo de vento em cada flecha no chão.
+- Oren: **Orbe Flamejante** com chama, fumaça e explosão em anéis; **Corrente de Raios** com relâmpago vivo que muda de desenho e estala em cada alvo; **Meteoro** com alvo de runas, cauda de fogo, coluna, onda no chão, lascas e fumaça.
+
+**Fúria.** O despertar agora tem leque de luz, três anéis, coluna e o símbolo da classe: rosácea (Kael), anéis de vento subindo (Lyra), runas do eclipse (Oren). Desperto, o herói fica com línguas de fogo pelos lados, sem cobrir o corpo.
+
+**Outros.** Acerto diferente por tipo de golpe (corte, pancada, flecha, magia). Carga de mana com anel e coluna que estouram a cada nível. Morte dos inimigos com estouro próprio. O aviso de golpe dos inimigos virou um anel branco que se fecha (continua branco, regra do Italo). Explosões grandes crescem em tamanho, não em branco, para não esconder a cena.
+
 ## Para testar sem jogar (ferramenta)
 `main.gd` aceita duas variáveis de ambiente, só para testes: `LIGA_TESTE=jogo` pula os menus e `LIGA_ROTEIRO=<caminho de um .gd>` carrega um script que joga sozinho e tira capturas. Foi assim que cada animação foi conferida quadro a quadro.
 
@@ -64,7 +83,7 @@ Arquivos: `shaders/vitral.gdshader` (novo), `cenario.gdshader`, `raio.gdshader`,
 - Animação dos inimigos no mesmo nível dos heróis (molas, antecipação).
 - Fundo com mais camadas e vida (pássaros, bandeiras distantes), e uma segunda paleta para a fase 2.
 - Expressões de rosto (dor, esforço, vitória) trocando a textura dos olhos e da boca.
-- Efeitos próprios por habilidade (cada suprema com seu desenho).
+- Efeitos dos inimigos e do chefe no mesmo nível dos heróis (hoje só o aviso, os projéteis e a morte foram refeitos).
 - Roupas e armaduras por cima do corpo base, quando os equipamentos entrarem ([[Equipamentos]]).
 
 Ver também: [[Direção de Arte]] · [[Combate]] · [[Projeto Godot]] · [[Changelog]]

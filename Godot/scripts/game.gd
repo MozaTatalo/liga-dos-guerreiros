@@ -197,11 +197,26 @@ func anel(px: float, py: float, c, r: float, achat := 1.0) -> void:
 		cv.draw_set_transform_matrix(Transform2D.IDENTITY))
 
 ## Impacto do golpe em três camadas: clarão, riscos na direção do golpe e anel que abre. `dir` é o lado do golpe.
-func impacto(px: float, py: float, c, forte := false, dir := 0) -> void:
+## `src` é o golpe ou projétil que acertou: dele sai o tipo do efeito ("fx": corte, pancada, flecha, magia) e a cor ("cor").
+func impacto(px: float, py: float, c, forte := false, dir := 0, src := {}) -> void:
 	var tam := 11.0 if forte else 7.0
 	var semente := randf() * 10.0
 	add_fx(12 if forte else 9, func(cv, k): Gfx.impacto(cv, px, py, c, k, tam, dir, semente))
 	sparks(px, py, c, 9 if forte else 5, 4.5 if forte else 3.2, dir)
+	var tipo: String = src.get("fx", "")
+	if tipo == "":
+		match String(src.get("kind", "")):
+			"arrow", "rain": tipo = "flecha"
+			"bolt", "fire", "meteor": tipo = "magia"
+	if tipo == "" and src.get("src") is Hero:
+		tipo = {"guardiao": "corte", "cacadora": "pancada", "arcanista": "magia"}.get(src.src.d.id, "")
+	var cor = src.get("cor", c)
+	if not src.has("cor"):
+		match String(src.get("kind", "")):
+			"bolt": cor = "#59d0ff"
+			"fire", "meteor": cor = "#ff8a3d"
+			"arrow": cor = src.get("color", c)
+	Efeitos.acerto(self, Vector2(px, py), dir, cor, forte, tipo)
 
 ## Faíscas: saem rápido e freiam (estouro seco); com `dir` saem mais para o lado do golpe.
 func sparks(px: float, py: float, c, n: int, sp := 2.5, dir := 0) -> void:
@@ -267,7 +282,7 @@ func damage_enemy(e: Enemy, src: Dictionary, dir: int) -> void:
 	var forte := heavy or crit
 	var ex := e.x + e.w / 2
 	var ey := e.y + e.h / 2
-	impacto(ex - dir * e.w * 0.25, ey, "#fff0b8" if forte else "#bfe4ff", forte, dir)
+	impacto(ex - dir * e.w * 0.25, ey, "#fff0b8" if forte else "#bfe4ff", forte, dir, src)
 	e.apanhar(src, dir, heavy)
 	num(ex, e.y - 4, amount, "#ffd23f" if crit else ("#ffb38a" if costas else "#ffffff"), crit)
 	if costas and not crit and combo % 3 == 0: callout(ex, e.y - 14, "Pelas costas!", "#ffb38a")
@@ -302,8 +317,9 @@ func kill_enemy(e: Enemy) -> void:
 	var ex := e.x + e.w / 2
 	var ey := e.y + e.h / 2
 	var c: String = {"lodo": "#6fd36b", "saqueador": "#7a9cff", "morcego": "#7a5ca8", "atirador": "#b88aff", "boss": "#d9a066"}[e.kind]
-	sparks(ex, ey, c, 60 if e.boss else 16, 5 if e.boss else 3)
-	sparks(ex, ey, "#ffffff", 30 if e.boss else 6, 3)
+	sparks(ex, ey, c, 40 if e.boss else 10, 5 if e.boss else 3)
+	sparks(ex, ey, "#ffffff", 20 if e.boss else 4, 3)
+	Efeitos.morte(self, Vector2(ex, ey), c, e.boss)
 	Som.tocar("morte", 0.8, 0.7 if e.boss else 1.0)
 	var def: Dictionary = GameData.ENEMIES[e.kind]
 	var bonus := 1.0 + mini(combo, 100) * 0.004   # combo alto rende mais experiência
@@ -369,9 +385,9 @@ func _defender(p: Hero, dmg: float, dir: int, de) -> void:
 func explode(px: float, py: float, w: float, h: float, dmg: float, launch: float, c: String, quem = null) -> void:
 	spawn_hitbox({"owner": "p", "src": quem, "skill": true, "x": px - w / 2, "y": py - h / 2, "w": w, "h": h, "dmg": dmg, "kbx": 2.6, "launch": launch, "life": 6, "heavy": true})
 	if tremor_ligado(): shake = maxf(shake, 6)
-	sparks(px, py, c, 26, 4); sparks(px, py, "#fff6d0", 10, 3)
-	add_fx(16, func(cv, k): cv.draw_circle(Vector2(px, py), (w / 2) * (0.4 + k * 0.8), Gfx.col(c, 1 - k)))
-	anel(px, py, c, w * 0.7)
+	sparks(px, py, c, 14, 4); sparks(px, py, "#fff6d0", 6, 3)
+	var cor := Color(c)
+	Efeitos.explosao(self, Vector2(px, py), w * 0.5, c, cor.r > cor.b)     # cor quente = fogo; fria = arcano
 	Som.tocar("explosao", 0.9, clampf(60.0 / w + 0.6, 0.8, 1.6))
 
 func bolt(x1: float, y1: float, x2: float, y2: float) -> void:
@@ -534,11 +550,6 @@ func step() -> void:
 			o.dead = true
 			if o.kind == "arrow" or o.kind == "rain": sparks(o.x + o.w / 2, GameData.GROUND, "#e8dcc0", 2, 1.2)
 		if o.t > o.life or o.x < -50 or o.x > GameData.LEVEL_W + 50: o.dead = true
-		if o.kind == "fire" and o.t % 2 == 1:
-			parts.append({"x": o.x + 6, "y": o.y + 6, "vx": randf_range(-0.3, 0.3), "vy": randf_range(-0.6, 0), "life": 14.0, "c": "#ff8a3d" if randf() < 0.5 else "#ffd23f", "s": 3.0, "g": 0.0})
-		if o.kind == "meteor":
-			for i in 2:
-				parts.append({"x": o.x + 11, "y": o.y + 11, "vx": randf_range(-0.5, 0.5), "vy": randf_range(-0.5, 0.5), "life": 20.0, "c": "#ff4d2e" if randf() < 0.5 else "#ffb347", "s": 4.0, "g": 0.0})
 		if o.get("dead", false) and o.has("on_end"):
 			o.on_end.call(o)
 	projs = projs.filter(func(o): return not o.get("dead", false))
