@@ -17,6 +17,7 @@ var morto := 0.0
 var vx := 0.0
 var vy := 0.0
 var no_chao := true
+var estado := ""       # estado da IA do inimigo 2D (walk, windup, aim, recover, launched, down...)
 
 func posar(_dt: float) -> void:
 	pass
