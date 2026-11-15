@@ -1,0 +1,33 @@
+<!DOCTYPE html><html><body>
+<script src="node_modules/three/build/three.min.js"></script>
+<script src="node_modules/three/examples/js/exporters/GLTFExporter.js"></script>
+<script>
+window.exportar = async function (src, corpo, pal) {
+  // marca a espessura do contorno no material, para o Godot refazer o contorno
+  src = src.replace("var m = new T.MeshBasicMaterial({ color: 0x06050a, side: T.BackSide });", "var m = new T.MeshBasicMaterial({ color: 0x06050a, side: T.BackSide }); m.userData.esp = esp; m.name = 'contorno';");
+  var Lib = (new Function('THREE', src + '; return KaelLib(THREE);'))(THREE);
+  var a = Lib.criar({ corpo: corpo });
+  Lib.paleta(a, pal);
+  ['armadura', 'manto', 'espada', 'escudo'].forEach(function (n) { Lib.equipar(a, n, false); });
+  for (var k in a.m) a.m[k].name = k;
+  var P = a.p;
+  var nomes = { quadril: P.quadril, tronco: P.tronco, cabeca: P.cabeca, cab: a.cab, cabeloTras: P.cabeloTras, cabeloLongo: P.cabeloLongo,
+    ombroE: P.bracoEspada.ombro, cotoveloE: P.bracoEspada.cotovelo, maoE: P.bracoEspada.mao, espadaBase: a.base.espada,
+    ombroS: P.bracoEscudo.ombro, cotoveloS: P.bracoEscudo.cotovelo, maoS: P.bracoEscudo.mao, escudoBase: a.base.escudo,
+    coxaA: P.pernaA.coxa, joelhoA: P.pernaA.joelho, coxaB: P.pernaB.coxa, joelhoB: P.pernaB.joelho };
+  for (var n in nomes) nomes[n].name = n;
+  a.raiz.remove(a.rastro);
+  // remove o que está escondido (armadura etc.) e os sprites de brilho
+  var tirar = [];
+  a.raiz.traverse(function (o) { if (!o.visible || o.isSprite) tirar.push(o); });
+  tirar.forEach(function (o) { o.parent && o.parent.remove(o); });
+  var nc = 0;
+  a.raiz.traverse(function (o) { if (o.isMesh && o.material.name === 'contorno') { o.name = 'ct_' + Math.round(o.material.userData.esp * 10000) + '_' + (nc++); } });
+  a.raiz.name = 'boneco';
+  var fech = a.texFechado.image.toDataURL('image/png');
+  var glb = await new Promise(function (ok) { new THREE.GLTFExporter().parse(a.raiz, ok, { binary: true, onlyVisible: true, maxTextureSize: 2048 }); });
+  var b = new Uint8Array(glb), s = '';
+  for (var i = 0; i < b.length; i += 32768) s += String.fromCharCode.apply(null, b.subarray(i, i + 32768));
+  return { glb: btoa(s), fechado: fech, malhas: nc };
+};
+</script></body></html>

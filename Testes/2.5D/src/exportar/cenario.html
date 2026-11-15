@@ -1,0 +1,213 @@
+<!DOCTYPE html><html><body>
+<script src="node_modules/three/build/three.min.js"></script>
+<script src="node_modules/three/examples/js/exporters/GLTFExporter.js"></script>
+<script>
+// Exporta o cenário gótico (gotico.html) e o espectro para o Godot.
+// Unidade: 1 = 26 px do jogo. Plano de jogo em z = 0, chão em y = 0 (GROUND = 230 px).
+var T = THREE, PI = Math.PI, PX = 26, G = 230;
+function cor(h) { return new T.Color(h).convertSRGBToLinear(); }
+var semente = 7;
+function rnd() { semente = (semente * 16807) % 2147483647; return (semente - 1) / 2147483646; }
+function texturaCanvas(w, h, desenhar) {
+  var c = document.createElement('canvas'); c.width = w; c.height = h; desenhar(c.getContext('2d'), w, h);
+  var t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; return t;
+}
+function toon(hex, nome, extra) { var o = { color: cor(hex) }; if (extra) for (var k in extra) o[k] = extra[k]; var m = new T.MeshStandardMaterial(o); m.name = nome; return m; }
+
+window.exportarCena = async function (PLATS, LARG) {
+  var scene = new T.Group(); scene.name = 'cenario';
+  var matPedra = toon(0x4b4f62, 'pedra'), matPedraEsc = toon(0x33364a, 'pedraEsc'), matFerro = toon(0x1c1d26, 'ferro'), matOsso = toon(0xbdb6a4, 'osso');
+  var marcas = new T.Group(); marcas.name = 'marcas'; scene.add(marcas);
+  function marca(nome, x, y, z) { var o = new T.Object3D(); o.name = nome; o.position.set(x, y, z); marcas.add(o); }
+  function add(geo, mat, x, y, z) { var m = new T.Mesh(geo, mat); m.position.set(x, y, z); scene.add(m); return m; }
+  function formaArco(l, esp) {
+    var s = new T.Shape(), a = l / 2;
+    s.moveTo(-a - esp, 0); s.quadraticCurveTo(-a - esp, l * 0.8, 0, l * 1.1 + esp);
+    s.quadraticCurveTo(a + esp, l * 0.8, a + esp, 0); s.lineTo(a, 0);
+    s.quadraticCurveTo(a, l * 0.72, 0, l * 0.98); s.quadraticCurveTo(-a, l * 0.72, -a, 0); s.lineTo(-a - esp, 0);
+    return s;
+  }
+  function formaJanela(l, h) {
+    var s = new T.Shape(), a = l / 2;
+    s.moveTo(-a, 0); s.lineTo(-a, h); s.quadraticCurveTo(-a, h + l * 0.8, 0, h + l * 1.15);
+    s.quadraticCurveTo(a, h + l * 0.8, a, h); s.lineTo(a, 0); s.lineTo(-a, 0);
+    return s;
+  }
+  function pilar(x, z, alt, quebrado) {
+    add(new T.BoxGeometry(1.0, 0.35, 1.0), matPedraEsc, x, 0.17, z);
+    add(new T.CylinderGeometry(0.4, 0.46, 0.3, 8), matPedraEsc, x, 0.5, z);
+    var f = add(new T.CylinderGeometry(0.27, 0.3, alt, 10), matPedra, x, 0.65 + alt / 2, z);
+    [0.19, -0.19].forEach(function (d) { add(new T.CylinderGeometry(0.09, 0.09, alt, 6), matPedraEsc, x + d, 0.65 + alt / 2, z + 0.24); });
+    if (quebrado) f.rotation.z = 0.03; else add(new T.BoxGeometry(0.9, 0.3, 0.9), matPedraEsc, x, 0.8 + alt, z);
+  }
+  function braseiro(x, z) {
+    add(new T.CylinderGeometry(0.035, 0.05, 1.3, 6), matFerro, x, 0.65, z);
+    add(new T.CylinderGeometry(0.2, 0.05, 0.08, 6), matFerro, x, 0.04, z);
+    add(new T.SphereGeometry(0.24, 10, 6, 0, PI * 2, PI / 2, PI / 2), matFerro, x, 1.48, z);
+    marca('brasa', x, 1.72, z);
+  }
+  function lapide(x, z, tipo, giro) {
+    var g = new T.Group();
+    if (tipo === 0) {
+      var c = new T.Mesh(new T.BoxGeometry(0.5, 0.6, 0.14), matPedra); c.position.y = 0.3;
+      var gt = new T.CylinderGeometry(0.25, 0.25, 0.14, 14); gt.rotateX(PI / 2);
+      var t = new T.Mesh(gt, matPedra); t.position.y = 0.6; g.add(c, t);
+    } else {
+      var v = new T.Mesh(new T.BoxGeometry(0.13, 1.0, 0.12), matPedraEsc); v.position.y = 0.5;
+      var hz = new T.Mesh(new T.BoxGeometry(0.55, 0.13, 0.12), matPedraEsc); hz.position.y = 0.72; g.add(v, hz);
+    }
+    g.position.set(x, 0, z); g.rotation.z = giro; g.rotation.y = giro * 2; scene.add(g);
+  }
+  function arvoreMorta(x, z, s) {
+    function galho(pai, comp, raio, nivel) {
+      var geo = new T.CylinderGeometry(raio * 0.6, raio, comp, 5); geo.translate(0, comp / 2, 0);
+      var m = new T.Mesh(geo, matFerro); pai.add(m);
+      if (nivel > 0) for (var i = 0; i < 2; i++) {
+        var g = new T.Group(); g.position.y = comp * (0.75 + rnd() * 0.25);
+        g.rotation.set((rnd() - 0.5) * 1.2, rnd() * 6, (i ? 1 : -1) * (0.45 + rnd() * 0.5));
+        m.add(g); galho(g, comp * 0.68, raio * 0.6, nivel - 1);
+      }
+      return m;
+    }
+    var raiz = new T.Group(); raiz.position.set(x, -0.2, z); raiz.rotation.z = (rnd() - 0.5) * 0.2; scene.add(raiz);
+    galho(raiz, 2.6 * s, 0.22 * s, 3);
+  }
+  // chão de lajotas
+  // chão de lajotas pintado: pedras azul-arroxeadas com chanfro de luz, rachaduras, musgo nas juntas e manchas úmidas
+  var texChao = texturaCanvas(512, 512, function (g, w, h) {
+    g.fillStyle = '#15141f'; g.fillRect(0, 0, w, h);
+    for (var j = 0; j < 6; j++) for (var i = -1; i < 6; i++) {
+      var v = 58 + Math.floor(rnd() * 30), hue = rnd();
+      var r = Math.round(v * (0.92 + hue * 0.12)), gg = Math.round(v * 0.95), bb = Math.round(v * 1.18 + 8);
+      var x = i * 96 + (j % 2) * 48 + 5, y = j * 85.3 + 5, lw = 86, lh = 75;
+      function laje(dx, dy, cor) { g.fillStyle = cor; g.beginPath(); g.moveTo(x + dx + 14, y + dy); g.arcTo(x + dx + lw, y + dy, x + dx + lw, y + dy + lh, 14); g.arcTo(x + dx + lw, y + dy + lh, x + dx, y + dy + lh, 14); g.arcTo(x + dx, y + dy + lh, x + dx, y + dy, 14); g.arcTo(x + dx, y + dy, x + dx + lw, y + dy, 14); g.fill(); }
+      laje(2, 3, 'rgb(' + Math.round(r * 0.55) + ',' + Math.round(gg * 0.55) + ',' + Math.round(bb * 0.6) + ')');
+      laje(-1, -1, 'rgb(' + Math.min(255, r + 26) + ',' + Math.min(255, gg + 26) + ',' + Math.min(255, bb + 30) + ')');
+      laje(0, 0, 'rgb(' + r + ',' + gg + ',' + bb + ')');
+      var gr = g.createRadialGradient(x + lw * 0.35, y + lh * 0.3, 4, x + lw * 0.5, y + lh * 0.5, lw * 0.7);
+      gr.addColorStop(0, 'rgba(255,255,255,0.07)'); gr.addColorStop(1, 'rgba(0,0,0,0.12)');
+      g.fillStyle = gr; g.fillRect(x, y, lw, lh);
+      if (rnd() < 0.45) { // rachadura
+        g.strokeStyle = 'rgba(10,8,18,0.8)'; g.lineWidth = 1.6; g.beginPath();
+        var cx = x + 10 + rnd() * (lw - 20), cy = y + 6; g.moveTo(cx, cy);
+        for (var k = 0; k < 5; k++) { cx += (rnd() - 0.5) * 22; cy += lh / 5; g.lineTo(cx, cy); }
+        g.stroke();
+      }
+      if (rnd() < 0.3) { g.fillStyle = 'rgba(120,140,220,0.08)'; g.beginPath(); g.ellipse(x + lw * rnd(), y + lh * rnd(), 18 + rnd() * 16, 7 + rnd() * 5, 0, 0, 7); g.fill(); }
+    }
+    for (var m = 0; m < 260; m++) { // musgo nas juntas
+      var mx = rnd() * w, my = Math.round(rnd() * 6) * 85.3 + 2 + rnd() * 4;
+      g.fillStyle = rnd() < 0.5 ? 'rgba(52,96,82,0.75)' : 'rgba(70,120,90,0.6)';
+      g.beginPath(); g.arc(mx, my, 1.5 + rnd() * 3, 0, 7); g.fill();
+    }
+  });
+  var X0 = -12, X1 = LARG + 12, MEIO = (X0 + X1) / 2, L = X1 - X0;
+  // topo do chão: plano com UV repetido (o Godot repete a textura)
+  var topo = new T.PlaneGeometry(L, 7); topo.rotateX(-PI / 2);
+  var uv = topo.attributes.uv; for (var i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * L / 3.2, uv.getY(i) * 2.4);
+  add(topo, toon(0xffffff, 'chao', { map: texChao }), MEIO, 0, -1);
+  add(new T.BoxGeometry(L, 1.4, 0.05), toon(0x20222c, 'lado'), MEIO, -0.7, 2.5);
+  add(new T.BoxGeometry(L + 120, 0.5, 90), toon(0x1c2030, 'lado'), MEIO, -1.0, -50);
+
+  // plataformas da fase (mesmas posições das plataformas de colisão)
+  PLATS.forEach(function (p) {
+    var x0 = p.x / PX, x1 = (p.x + p.w) / PX, y = (G - p.y) / PX, l = x1 - x0, cx = (x0 + x1) / 2;
+    add(new T.BoxGeometry(l, 0.3, 2.2), matPedra, cx, y - 0.15, 0);
+    add(new T.BoxGeometry(l + 0.2, 0.1, 2.3), matPedraEsc, cx, y - 0.35, 0);
+    [x0 + 0.3, x1 - 0.3].forEach(function (px) { add(new T.CylinderGeometry(0.13, 0.16, y - 0.4, 8), matPedraEsc, px, (y - 0.4) / 2, -0.85); });
+  });
+  // arcada gótica atrás do plano de jogo
+  var VAO = 6.5, ALT = 4.6;
+  for (var i = 0; X0 + i * VAO < X1; i++) {
+    var x = X0 + i * VAO, quebrado = i % 4 === 2;
+    pilar(x, -3.3, quebrado ? 2.0 + (i % 3) : ALT, quebrado);
+    if (!quebrado && i % 2 === 0) marca('estandarte', x, ALT + 0.4, -2.95);
+    if (i % 3 === 1) marca('corrente', x + VAO / 2 + 1.2, 0, 5.5);
+    if (!quebrado && (i + 1) % 4 !== 2) {
+      var arco = add(new T.ExtrudeGeometry(formaArco(VAO - 0.7, 0.4), { depth: 0.7, bevelEnabled: false }), matPedra, x + VAO / 2, ALT + 0.95, -3.65);
+      arco.scale.y = 0.62;
+    }
+  }
+  // parede da catedral com vitrais
+  var texVitral = texturaCanvas(64, 256, function (g, w, h) {
+    var cs = ['#7a1f3d', '#28407a', '#5a2f7a', '#1f5a6a', '#8a5a1f'];
+    for (var yy = 0; yy < 16; yy++) for (var xx = 0; xx < 4; xx++) { g.fillStyle = cs[Math.floor(rnd() * cs.length)]; g.fillRect(xx * 16, yy * 16, 16, 16); }
+    g.strokeStyle = '#07070c'; g.lineWidth = 2;
+    for (var k = 0; k <= 16; k++) { g.beginPath(); g.moveTo(0, k * 16); g.lineTo(w, k * 16); g.stroke(); }
+    for (var q = 0; q <= 4; q++) { g.beginPath(); g.moveTo(q * 16, 0); g.lineTo(q * 16, h); g.stroke(); }
+  });
+  var matVitral = new T.MeshBasicMaterial({ map: texVitral }); matVitral.name = 'vitral';
+  var geoJanela = new T.ShapeGeometry(formaJanela(1.3, 4.2));
+  (function () { var p = geoJanela.attributes.position, uv = geoJanela.attributes.uv; for (var i = 0; i < p.count; i++) uv.setXY(i, (p.getX(i) + 0.65) / 1.3, p.getY(i) / 5.7); })();
+  for (var s = 0; X0 + s * 12.5 < X1 + 12; s++) {
+    var sx = X0 + s * 12.5, alt = 8.3 + (s % 2);
+    if (s % 6 === 3) continue; // vão aberto, como no teste
+    add(new T.BoxGeometry(10.5, alt, 1.2), matPedraEsc, sx, alt / 2 - 0.5, -11);
+    add(new T.BoxGeometry(1.4, alt + 3, 2.2), matPedraEsc, sx - 5.6, (alt + 3) / 2 - 0.5, -10.6);
+    add(new T.ConeGeometry(0.9, 2.6, 4), matPedraEsc, sx - 5.6, alt + 3.8, -10.6).rotation.y = PI / 4;
+    [-2.6, 0, 2.6].forEach(function (dx, n) {
+      if ((s + n) % 4 === 3) return;
+      add(geoJanela, matVitral, sx + dx, 2.2, -10.38);
+      marca(n % 2 ? 'vitralA' : 'vitralB', sx + dx, 5, -10.2);
+    });
+  }
+  // silhuetas distantes
+  var matLonge = new T.MeshBasicMaterial({ color: cor(0x10131f) }); matLonge.name = 'longe';
+  for (var t = 0; -50 + t * 11 < X1 + 50; t++) {
+    var tx = -50 + t * 11 + rnd() * 5, th = 12 + rnd() * 20, tz = -32 - rnd() * 22;
+    add(new T.BoxGeometry(3 + rnd() * 3, th, 3), matLonge, tx, th / 2 - 1, tz);
+    add(new T.ConeGeometry(2.2 + rnd() * 1.5, 7 + rnd() * 8, 4), matLonge, tx, th + 3, tz).rotation.y = PI / 4;
+  }
+  for (var a = 0; X0 + 4 + a * 7.3 < X1; a++) arvoreMorta(X0 + 4 + a * 7.3 + rnd() * 2, -5.5 - rnd() * 3.5, 1 + rnd() * 0.6);
+  for (var l = 0; X0 + 9 + l * 4.3 < X1; l++) lapide(X0 + 9 + l * 4.3 + rnd() * 1.5, -1.9 - rnd() * 0.5, l % 3 === 1 ? 1 : 0, (rnd() - 0.5) * 0.3);
+  for (var f = 0; X0 + 11 + f * 5.2 < X1; f++) {
+    var fx = X0 + 11 + f * 5.2 + rnd() * 2;
+    add(new T.DodecahedronGeometry(0.28 + rnd() * 0.12, 0), matPedraEsc, fx, 0.1, 2.1);
+    add(new T.CylinderGeometry(0.035, 0.04, 0.22, 6), matOsso, fx + 0.45, 0.11, 2.0);
+    marca('vela', fx + 0.45, 0.28, 2.0);
+  }
+  for (var b = 0; 3.5 + b * 8.2 < LARG + 4; b++) braseiro(3.5 + b * 8.2, -2.1);
+  return await salvar(scene);
+};
+
+window.exportarEspectro = async function () {
+  function texRasgada() {
+    var c = document.createElement('canvas'); c.width = c.height = 128; var g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, 128, 128); g.globalCompositeOperation = 'destination-out';
+    var x = 0;
+    while (x < 128) { var l = 6 + rnd() * 14, a = 8 + rnd() * 30; g.beginPath(); g.moveTo(x, 0); g.lineTo(x + l / 2, a); g.lineTo(x + l, 0); g.fill(); x += l; }
+    var t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; return t;
+  }
+  var raiz = new T.Group(); raiz.name = 'espectro';
+  var contorno = new T.MeshBasicMaterial({ color: 0x050409 }); contorno.name = 'contorno';
+  var manto = toon(0x1d2433, 'manto', { side: T.DoubleSide, map: texRasgada(), alphaTest: 0.5, transparent: false }), mantoEsc = toon(0x121722, 'mantoEsc', { side: T.DoubleSide }), osso = toon(0xb9b3a2, 'osso');
+  function peca(pai, geo, mat, x, y, z, esp) {
+    var m = new T.Mesh(geo, mat); m.position.set(x || 0, y || 0, z || 0);
+    if (esp) { var c = new T.Mesh(geo, contorno); c.name = 'ct_' + Math.round(esp * 10000); m.add(c); }
+    pai.add(m); return m;
+  }
+  function grupo(pai, x, y, z, nome) { var g = new T.Group(); g.position.set(x || 0, y || 0, z || 0); if (nome) g.name = nome; pai.add(g); return g; }
+  var corpo = grupo(raiz, 0, 0.3, 0, 'corpo');
+  var perfil = [[0.001, 1.78], [0.09, 1.75], [0.165, 1.64], [0.185, 1.48], [0.15, 1.33], [0.2, 1.22], [0.29, 1.0], [0.31, 0.7], [0.36, 0.4], [0.44, 0.15], [0.5, -0.05]].map(function (p) { return new T.Vector2(p[0], p[1]); });
+  peca(corpo, new T.LatheGeometry(perfil, 16), manto, 0, 0, 0);
+  var capuz = new T.SphereGeometry(0.2, 14, 10, 0, PI * 2, 0, PI * 0.62); capuz.scale(1.05, 1.15, 1);
+  peca(corpo, capuz, mantoEsc, -0.02, 1.52, 0, 0.011).rotation.z = 0.5;
+  var vm = new T.MeshBasicMaterial({ color: 0x020205 }); vm.name = 'vazio';
+  peca(corpo, new T.SphereGeometry(0.13, 14, 10), vm, 0.07, 1.5, 0);
+  [0.05, -0.05].forEach(function (z, i) { var o = new T.Object3D(); o.name = 'olho' + i; o.position.set(0.19, 1.52, z); corpo.add(o); });
+  [0.2, -0.2].forEach(function (z, n) {
+    var g = grupo(corpo, 0.02, 1.25, z, n ? 'bracoB' : 'bracoA');
+    var manga = new T.CylinderGeometry(0.06, 0.13, 0.62, 8, 1, true); manga.translate(0, -0.31, 0);
+    peca(g, manga, mantoEsc, 0, 0, 0);
+    for (var i = -1; i <= 1; i++) { var d = new T.ConeGeometry(0.014, 0.2, 4); d.translate(0, -0.1, 0); var m = peca(g, d, osso, 0, -0.62, i * 0.04, 0.006); m.rotation.x = i * 0.3; m.rotation.z = 0.25; }
+  });
+  return await salvar(raiz);
+};
+
+async function salvar(obj) {
+  var glb = await new Promise(function (ok) { new T.GLTFExporter().parse(obj, ok, { binary: true, maxTextureSize: 1024 }); });
+  var b = new Uint8Array(glb), s = '';
+  for (var i = 0; i < b.length; i += 32768) s += String.fromCharCode.apply(null, b.subarray(i, i + 32768));
+  return btoa(s);
+}
+</script></body></html>

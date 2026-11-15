@@ -1,6 +1,6 @@
 class_name Gfx
 extends RefCounted
-## Desenho provisório (placeholder) feito em código. Será trocado pelos sprites do PixelLab.
+## Desenho de efeitos feito em código (cortes de luz, impactos) e atalhos de desenho.
 
 static func col(v, a := 1.0) -> Color:
 	var c: Color = v if v is Color else Color(v)
@@ -14,97 +14,103 @@ static func tri(c: CanvasItem, a: Vector2, b: Vector2, d: Vector2, v, al := 1.0)
 	c.draw_colored_polygon(PackedVector2Array([a, b, d]), col(v, al))
 
 static func text(c: CanvasItem, s: String, x: float, y: float, v = "#ffffff", size := 8, align := 0, a := 1.0) -> void:
-	var font: Font = ThemeDB.fallback_font
-	var tw: float = font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-	var ox := x
-	if align == 1:
-		ox = x - tw / 2.0
-	elif align == 2:
-		ox = x - tw
-	var by := y + size * 0.35
-	var sh := Color(0, 0, 0, a)
-	for d in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:
-		c.draw_string(font, Vector2(ox, by) + d * 0.7, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, sh)
-	c.draw_string(font, Vector2(ox, by), s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col(v, a))
+	Ui.txt(c, s, x, y, v, size, align, a)
 
 static func slash(c: CanvasItem, cx: float, cy: float, f: int, r: float, s: int, k: float, v) -> void:
+	# lâmina de luz em meia-lua: borda colorida, miolo branco, afina nas pontas e some abrindo
 	c.draw_set_transform(Vector2(cx, cy), 0.0, Vector2(f, 1))
-	if s == 1:
-		c.draw_arc(Vector2.ZERO, r, 0.9, -1.2, 12, col(v, 1.0 - k), 3.0 * (1.0 - k) + 1.0)
-	else:
-		c.draw_arc(Vector2.ZERO, r, -1.3, 1.0, 12, col(v, 1.0 - k), 3.0 * (1.0 - k) + 1.0)
+	var a0 := -1.3 if s != 1 else 0.9
+	var a1 := 1.0 if s != 1 else -1.2
+	var rr := r * (1.0 + k * 0.28)
+	var th := r * 0.5 * (1.0 - k * 0.6)
+	var fora := PackedVector2Array()
+	var dentro := PackedVector2Array()
+	var n := 18
+	for i in n + 1:
+		var u := i / float(n)
+		var a := lerpf(a0, a1, u)
+		var t := sin(PI * pow(u, 0.8))
+		fora.append(Vector2(cos(a), sin(a)) * rr)
+		dentro.append(Vector2(cos(a), sin(a)) * (rr - th * t))
+	var alfa := 1.0 - k
+	var cor := col(v, alfa)
+	var pts := PackedVector2Array()
+	var cols := PackedColorArray()
+	for i in n:
+		var q := PackedVector2Array([fora[i], fora[i + 1], dentro[i + 1], dentro[i]])
+		var u := i / float(n)
+		var brilho := Color(1, 1, 1, alfa * (0.35 + 0.65 * sin(PI * u)))
+		c.draw_polygon(q, PackedColorArray([cor, cor, brilho, brilho]))
+	c.draw_polyline(fora, Color(1, 1, 1, alfa * 0.9), 1.2)
 	c.draw_set_transform_matrix(Transform2D.IDENTITY)
 
-## Desenha um herói com os pés na origem de `base`. `s` = {state, t, step, skill, anim, on_ground}
-static func hero(c: CanvasItem, d: Dictionary, s: Dictionary, base: Transform2D) -> void:
-	var id: String = d.id
-	var st: String = s.state
-	var t: float = s.get("t", 0)
-	var anim: float = s.anim
-	var air: bool = not s.on_ground
-	var run := sin(anim * 0.3) if st == "run" else 0.0
-	var l1: int = -2 if air else int(roundf(run * 3))
-	var l2: int = 2 if air else -int(roundf(run * 3))
-	var bob: int = 1 if (st == "idle" and sin(anim * 0.08) > 0) else 0
-	c.draw_set_transform_matrix(base)
-	if id == "guardiao":
-		rect(c, -8, -18 + bob, 4, 10, d.trim); rect(c, -7, -17 + bob, 2, 8, "#b38f2a")
-	if id == "cacadora":
-		rect(c, -8, -20 + bob, 3, 9, "#7a4f2a"); rect(c, -8, -22 + bob, 1, 3, "#dddddd"); rect(c, -6, -22 + bob, 1, 3, "#dddddd")
-	if id != "arcanista":
-		rect(c, -4 + l1, -8, 3, 8, "#2b2b3a"); rect(c, 1 + l2, -8, 3, 8, "#2b2b3a")
-		rect(c, -4 + l1, -2, 4, 2, "#4a2f1d"); rect(c, 1 + l2, -2, 4, 2, "#4a2f1d")
-	var bb := base * Transform2D(0.0, Vector2(0, bob))
-	c.draw_set_transform_matrix(bb)
-	if id == "arcanista":
-		rect(c, -5, -16, 10, 14, d.body); rect(c, -6, -4, 12, 4, d.body); rect(c, -6, -1, 12, 1, d.dark)
-		rect(c, -5, -10, 10, 1, d.trim); rect(c, -1 + l1 / 2, 0, 3, 1, "#2b2b3a")
-	else:
-		rect(c, -5, -17, 10, 10, d.body); rect(c, -5, -17, 2, 10, d.dark); rect(c, -5, -10, 10, 2, d.trim)
-	rect(c, -4, -24, 8, 7, "#f1c27d"); rect(c, 2, -22, 1, 2, "#1a1a22")
-	match id:
-		"guardiao":
-			rect(c, -4, -26, 8, 3, d.hair); rect(c, -5, -25, 2, 5, d.hair); rect(c, -4, -27, 6, 1, d.hair)
-		"cacadora":
-			rect(c, -5, -27, 9, 4, d.dark); rect(c, -5, -24, 2, 6, d.dark); rect(c, -8, -22, 3, 7, d.hair); rect(c, 3, -26, 2, 2, d.dark)
-		"arcanista":
-			tri(c, Vector2(-6, -25), Vector2(7, -25), Vector2(-4, -36), d.body)
-			rect(c, -7, -26, 14, 2, d.dark); rect(c, -2, -18, 5, 4, d.hair); rect(c, -4, -31, 3, 1, d.trim)
-	var step: int = s.get("step", 0)
-	var sk: int = s.get("skill", -1)
-	if id == "guardiao":
-		var ang := 0.35
-		if st == "attack":
-			var k := clampf(t / float(GameData.ATK_HIT[step]), 0.0, 1.0)
-			ang = (2.2 - k * 3.6) if step == 1 else (-2.0 + k * 3.8)
-		elif st == "skill" and sk == 1:
-			ang = t * 0.7
-		elif st == "skill" and sk == 2:
-			ang = 1.8 - clampf(t / 8.0, 0.0, 1.0) * 3.2
-		elif st == "skill" and sk == 0:
-			ang = 1.4
-		c.draw_set_transform_matrix(bb * Transform2D(ang, Vector2(3, -13)))
-		rect(c, -1, -16, 3, 15, "#dfe5ee"); rect(c, 0, -16, 1, 15, "#ffffff"); rect(c, -3, -1, 7, 2, d.trim); rect(c, -1, 1, 3, 3, "#5a3b28")
-		c.draw_set_transform_matrix(bb)
-		rect(c, 2, -15, 3, 6, d.dark)
-		if st == "skill" and sk == 0:
-			rect(c, 5, -20, 5, 14, d.trim); rect(c, 6, -19, 3, 12, "#b38f2a")
-	elif id == "cacadora":
-		var pull := 3.0 if ((st == "attack" and t < GameData.ATK_HIT[step]) or (st == "skill" and t < 8)) else 0.0
-		c.draw_arc(Vector2(3, -13), 9, -1.25, 1.25, 10, col("#8b5a2b"), 2.0)
-		c.draw_polyline(PackedVector2Array([Vector2(6.1, -21.6), Vector2(6.1 - pull * 1.5, -13), Vector2(6.1, -4.4)]), col("#eeeeee"), 1.0)
-		if pull > 0:
-			rect(c, 1, -14, 12, 1, "#dddddd")
-		rect(c, 2, -15, 4, 3, "#f1c27d")
-	else:
-		var ang2 := 0.15
-		if st == "attack" and step < 2:
-			var k2 := clampf(t / float(GameData.ATK_HIT[step]), 0.0, 1.0)
-			ang2 = -1.2 + k2 * 2.4
-		c.draw_set_transform_matrix(bb * Transform2D(ang2, Vector2(5, -12)))
-		rect(c, -1, -14, 2, 26, "#7a4f2a"); rect(c, -2, -17, 4, 4, d.trim)
-		if st == "skill" or (st == "attack" and step == 2):
-			c.draw_circle(Vector2(0, -15), 5, col(d.trim, 0.5 + 0.3 * sin(t)))
-		c.draw_set_transform_matrix(bb)
-		rect(c, 3, -15, 3, 5, d.dark)
-	c.draw_set_transform_matrix(Transform2D.IDENTITY)
+## Impacto em três camadas, animado "em degraus" (segura cada desenho por dois quadros, como efeito desenhado à mão):
+## clarão quase branco no primeiro instante, riscos finos que abrem (mais para o lado do golpe) e anel que afina.
+static func impacto(c: CanvasItem, px: float, py: float, cor, k: float, tam: float, dir := 0, semente := 0.0) -> void:
+	k = floorf(k * 5.0) / 5.0
+	var o := Vector2(px, py)
+	var a := 1.0 - k
+	var base: Color = col(cor)
+	if k < 0.21:
+		# clarão: losango branco grande, só no começo
+		var r0 := tam * 0.5
+		c.draw_colored_polygon(PackedVector2Array([o + Vector2(0, -r0), o + Vector2(r0 * 2.6, 0), o + Vector2(0, r0), o + Vector2(-r0 * 2.6, 0)]), Color(1, 1, 1, 0.9))
+		c.draw_colored_polygon(PackedVector2Array([o + Vector2(0, -r0 * 2.2), o + Vector2(r0 * 0.5, 0), o + Vector2(0, r0 * 2.2), o + Vector2(-r0 * 0.5, 0)]), Color(1, 1, 1, 0.9))
+		c.draw_circle(o, tam * 0.75, Color(base.r, base.g, base.b, 0.35))
+	# riscos: agulhas de luz que saem do centro e afinam
+	var n := 7
+	for i in n:
+		var ang := semente + i * TAU / n + sin(semente * 7.0 + i * 3.1) * 0.35
+		var v := Vector2(cos(ang), sin(ang) * 0.8)
+		if dir != 0: v = (v + Vector2(dir * 0.9, -0.1)).normalized()
+		var comp := tam * (1.3 + 1.1 * fposmod(semente * 3.7 + i * 0.37, 1.0))
+		var p0 := o + v * comp * (0.25 + k * 1.3)
+		var p1 := o + v * comp * (0.9 + k * 1.9)
+		var lat := Vector2(-v.y, v.x) * tam * 0.14 * a
+		c.draw_colored_polygon(PackedVector2Array([p0, (p0 + p1) * 0.5 + lat, p1, (p0 + p1) * 0.5 - lat]), Color(lerpf(base.r, 1.0, 0.5), lerpf(base.g, 1.0, 0.5), lerpf(base.b, 1.0, 0.5), a))
+	# anel que abre afinando
+	c.draw_arc(o, tam * (0.7 + k * 1.6), 0, TAU, 24, Color(base.r, base.g, base.b, a * 0.3), 1.0 * a + 0.3)
+
+const RASTRO_VIDA := 7.0   # quadros que cada pedaço do rastro dura
+
+## Rastro de luz da arma: uma fita que segue a lâmina de verdade, com a ponta acesa, e some afinando.
+## Os pontos são alisados (Catmull-Rom) e a fita inteira vai num desenho só.
+static func rastro(c: CanvasItem, r: Dictionary) -> void:
+	var pts: Array = r.pts
+	var n := pts.size()
+	if n < 2:
+		return
+	var cor: Color = r.c
+	var SUB := 3
+	var bases := PackedVector2Array()
+	var pontas := PackedVector2Array()
+	var alfas := PackedFloat32Array()
+	for i in n - 1:
+		var a: Array = pts[maxi(i - 1, 0)]
+		var b: Array = pts[i]
+		var d: Array = pts[i + 1]
+		var e: Array = pts[mini(i + 2, n - 1)]
+		for j in SUB:
+			var u := float(j) / SUB
+			var k: float = lerpf(b[2], d[2], u) / RASTRO_VIDA        # 0 = recém-criado, 1 = sumindo
+			var ponta: Vector2 = (b[1] as Vector2).cubic_interpolate(d[1], a[1], e[1], u)
+			var base: Vector2 = (b[0] as Vector2).cubic_interpolate(d[0], a[0], e[0], u)
+			pontas.append(ponta)
+			bases.append(base.lerp(ponta, 0.58 + 0.4 * k))        # a cauda afina em direção à ponta
+			alfas.append(pow(1.0 - k, 1.4))
+	var ult: Array = pts[n - 1]
+	pontas.append(ult[1]); bases.append((ult[0] as Vector2).lerp(ult[1], 0.58 + 0.4 * ult[2] / RASTRO_VIDA)); alfas.append(pow(1.0 - ult[2] / RASTRO_VIDA, 1.4))
+	# três fileiras de vértices: base (transparente), meio (cor) e ponta (branco)
+	var vs := PackedVector2Array()
+	var cs := PackedColorArray()
+	var idx := PackedInt32Array()
+	var m := pontas.size()
+	for i in m:
+		var al := alfas[i]
+		vs.append(bases[i]); cs.append(Color(cor.r, cor.g, cor.b, 0.0))
+		vs.append(bases[i].lerp(pontas[i], 0.55)); cs.append(Color(cor.r, cor.g, cor.b, al * 0.6))
+		vs.append(pontas[i]); cs.append(Color(lerpf(cor.r, 1.0, 0.75), lerpf(cor.g, 1.0, 0.75), lerpf(cor.b, 1.0, 0.75), al))
+	for i in m - 1:
+		var o := i * 3
+		idx.append_array(PackedInt32Array([o, o + 1, o + 4, o, o + 4, o + 3, o + 1, o + 2, o + 5, o + 1, o + 5, o + 4]))
+	RenderingServer.canvas_item_add_triangle_array(c.get_canvas_item(), idx, vs, cs)
